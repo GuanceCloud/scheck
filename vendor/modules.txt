@@ -1,0 +1,29 @@
+# github.com/influxdata/toml v0.0.0-20180607005434-2a2e3012f7cf
+github.com/influxdata/toml
+github.com/influxdata/toml/ast
+# github.com/kardianos/service v1.2.0
+github.com/kardianos/service
+# github.com/naoina/go-stringutil v0.1.0
+github.com/naoina/go-stringutil
+# gitlab.jiagouyun.com/cloudcare-tools/cliutils v0.0.0-20210103044601-bf434a6898c5
+gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger
+# go.uber.org/atomic v1.6.0
+go.uber.org/atomic
+# go.uber.org/multierr v1.5.0
+go.uber.org/multierr
+# go.uber.org/zap v1.15.0
+go.uber.org/zap
+go.uber.org/zap/buffer
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+go.uber.org/zap/zapcore
+# golang.org/x/sys v0.0.0-20201015000850-e3ed0017c211
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/windows
+golang.org/x/sys/windows/registry
+golang.org/x/sys/windows/svc
+golang.org/x/sys/windows/svc/eventlog
+golang.org/x/sys/windows/svc/mgr
+# gopkg.in/natefinch/lumberjack.v2 v2.0.0
+gopkg.in/natefinch/lumberjack.v2

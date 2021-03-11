@@ -33,7 +33,7 @@
 	rule_id: 事件的规则编号，如k8s-pod-001
 	category: 事件的分类，如 security，network
 
-	level: 当前事件的危险等级，info warning critical（支持模板）
+	level: 当前事件的危险等级
 	title: 当前事件的标题（支持模板）
 	desc: 当前事件的内容（支持模板）
 	cron: 配置事件的执行周期（就是 crontab 的语法规则）
