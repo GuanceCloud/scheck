@@ -60,7 +60,9 @@ func Download(from, to string) {
 	if DownloadOnly {
 		doDownload(io.TeeReader(resp.Body, cnt), to)
 	} else {
-		doExtract(io.TeeReader(resp.Body, cnt), to)
+		if err := doExtract(io.TeeReader(resp.Body, cnt), to); err != nil {
+			l.Fatalf("extract failed: %s, url:%s", err, from)
+		}
 	}
 	fmt.Printf("\n")
 }
@@ -79,21 +81,10 @@ func doDownload(r io.Reader, to string) {
 	f.Close()
 }
 
-func ExtractDatakit(gz, to string) {
-	data, err := os.Open(gz)
-	if err != nil {
-		l.Fatalf("open file %s failed: %s", gz, err)
-	}
-
-	defer data.Close()
-
-	doExtract(data, to)
-}
-
-func doExtract(r io.Reader, to string) {
+func doExtract(r io.Reader, to string) error {
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
-		l.Fatal(err)
+		return err
 	}
 
 	defer gzr.Close()
@@ -102,9 +93,9 @@ func doExtract(r io.Reader, to string) {
 		hdr, err := tr.Next()
 		switch {
 		case err == io.EOF:
-			return
+			return nil
 		case err != nil:
-			l.Fatal(err)
+			return err
 		case hdr == nil:
 			continue
 		}
@@ -137,4 +128,5 @@ func doExtract(r io.Reader, to string) {
 			f.Close()
 		}
 	}
+
 }
