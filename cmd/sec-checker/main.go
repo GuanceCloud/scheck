@@ -16,8 +16,6 @@ var (
 	flagVersion = flag.Bool("version", false, `show version info`)
 	flagDocker  = flag.Bool("docker", false, "run within docker")
 
-	ReleaseType = ""
-
 	l = logger.DefaultSLogger("main")
 )
 
@@ -59,8 +57,7 @@ func applyFlags() {
  Build At(UTC): %s
 Golang Version: %s
       Uploader: %s
-ReleasedInputs: %s
-`, git.Version, git.Commit, git.Branch, git.BuildAt, git.Golang, git.Uploader, ReleaseType)
+`, git.Version, git.Commit, git.Branch, git.BuildAt, git.Golang, git.Uploader)
 
 		os.Exit(0)
 	}

@@ -2,11 +2,13 @@
 
 default: local
 
+LOCAL_DOWNLOAD_ADDR = .
+
 # 正式环境
-RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/sec-checker
+RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com
 
 # 测试环境
-TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/sec-checker
+TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com
 
 PUB_DIR = dist
 BUILD_DIR = dist
@@ -14,8 +16,7 @@ BUILD_DIR = dist
 LOCAL_ARCHS = "local"
 DEFAULT_ARCHS = "all"
 
-BIN = sec-checker
-NAME = sec-checker
+
 ENTRY = cmd/sec-checker/main.go
 
 
@@ -49,9 +50,16 @@ define build
 	@mkdir -p $(BUILD_DIR) $(PUB_DIR)/$(1)
 	@mkdir -p git
 	@echo "$$GIT_INFO" > git/git.go
-	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/make.go -main $(ENTRY) -binary $(BIN) -name $(NAME) -build-dir $(BUILD_DIR) \
+	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/main.go -main $(ENTRY) -build-dir $(BUILD_DIR) \
 		 -env $(1) -pub-dir $(PUB_DIR) -archs $(2) -download-addr $(3)
 	@tree -Csh -L 3 $(BUILD_DIR)
+endef
+
+define pub
+	@echo "publish $(1) $(NAME) ..."
+	@GO111MODULE=off go run cmd/make/make.go -pub -env $(1) -pub-dir $(PUB_DIR) -download-addr $(2) \
+		-build-dir $(BUILD_DIR) -archs $(3)
+	@tree -Csh -L 3 $(PUB_DIR)
 endef
 
 local:
@@ -62,3 +70,10 @@ testing:
 
 release:
 	$(call build,release, $(DEFAULT_ARCHS), $(RELEASE_DOWNLOAD_ADDR))
+
+pub_testing:
+	$(call pub,test,$(TEST_DOWNLOAD_ADDR),$(DEFAULT_ARCHS))
+
+pub_release:
+	$(call pub,release,$(RELEASE_DOWNLOAD_ADDR),$(DEFAULT_ARCHS))
+	

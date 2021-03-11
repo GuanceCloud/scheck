@@ -41,3 +41,19 @@ func LoadConfig(p string) error {
 
 	return nil
 }
+
+func (c *Config) InitCfg(p string) error {
+
+	if mcdata, err := toml.Marshal(c); err != nil {
+		l.Errorf("Toml Marshal(): %s", err.Error())
+		return err
+	} else {
+
+		if err := ioutil.WriteFile(p, mcdata, 0644); err != nil {
+			l.Errorf("error creating %s: %s", p, err)
+			return err
+		}
+	}
+
+	return nil
+}

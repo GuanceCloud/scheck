@@ -8,7 +8,11 @@ import (
 )
 
 var (
-	ServiceName        = "security checker"
+	BinName        = "sec-checker"
+	ServiceDirName = "sec-checker"
+	OSSPath        = "sec-checker"
+
+	ServiceName        = "sec-checker"
 	ServiceDisplayName = "SecurityChecker"
 	ServiceDescription = ``
 	ServiceExecutable  string
@@ -61,7 +65,7 @@ func StartService() error {
 		return err
 	}
 
-	if err := slogger.Info("SecurityChecker set service logger ok, starting..."); err != nil {
+	if err := slogger.Infof("%s set service logger ok, starting...", ServiceDisplayName); err != nil {
 		return err
 	}
 
@@ -72,7 +76,7 @@ func StartService() error {
 		return err
 	}
 
-	if err := slogger.Info("SecurityChecker service exited"); err != nil {
+	if err := slogger.Infof("%s service exited", ServiceDisplayName); err != nil {
 		return err
 	}
 
