@@ -55,7 +55,7 @@ endef
 
 define pub
 	@echo "publish $(1) $(NAME) ..."
-	@GO111MODULE=off go run cmd/make/make.go -pub -env $(1) -pub-dir $(PUB_DIR) -download-addr $(2) \
+	@GO111MODULE=off go run cmd/make/main.go -pub -env $(1) -pub-dir $(PUB_DIR) -download-addr $(2) \
 		-build-dir $(BUILD_DIR) -archs $(3)
 	@tree -Csh -L 3 $(PUB_DIR)
 endef
