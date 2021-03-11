@@ -5,6 +5,7 @@ import (
 
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	secChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/make/build"
 )
 
 var (
@@ -28,23 +29,23 @@ func main() {
 
 	if *flagPub {
 		l = logger.DefaultSLogger("pub")
-		publish()
+		build.Publish()
 	} else {
 		l = logger.DefaultSLogger("build")
-		compile()
+		build.Compile()
 	}
 }
 
 func applyFlags() {
 
-	binName = secChecker.BinName
-	ossPath = secChecker.OSSPath
+	build.BinName = secChecker.BinName
+	build.OSSPath = secChecker.OSSPath
 
-	BuildDir = *flagBuildDir
-	PubDir = *flagPubDir
-	Archs = *flagArchs
+	build.BuildDir = *flagBuildDir
+	build.PubDir = *flagPubDir
+	build.Archs = *flagArchs
 
-	Release = *flagEnv
-	MainEntry = *flagMain
-	DownloadAddr = *flagDownloadAddr
+	build.Release = *flagEnv
+	build.MainEntry = *flagMain
+	build.DownloadAddr = *flagDownloadAddr
 }

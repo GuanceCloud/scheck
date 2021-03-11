@@ -1,4 +1,4 @@
-package main
+package build
 
 import (
 	"encoding/json"
@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 )
 
@@ -30,6 +31,8 @@ var (
 		`windows/amd64`,
 		`windows/386`,
 	}
+
+	l = logger.DefaultSLogger("build")
 )
 
 func runEnv(args, env []string) ([]byte, error) {
@@ -42,6 +45,9 @@ func runEnv(args, env []string) ([]byte, error) {
 }
 
 var (
+	BinName string
+	OSSPath string
+
 	BuildDir     = "build"
 	PubDir       = "pub"
 	Archs        string
@@ -76,7 +82,7 @@ func prepare() {
 	}
 }
 
-func compile() {
+func Compile() {
 	start := time.Now()
 
 	prepare()
@@ -106,7 +112,7 @@ func compile() {
 
 		goos, goarch := parts[0], parts[1]
 
-		dir := fmt.Sprintf("%s/%s-%s-%s", BuildDir, binName, goos, goarch)
+		dir := fmt.Sprintf("%s/%s-%s-%s", BuildDir, BinName, goos, goarch)
 
 		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
@@ -118,7 +124,7 @@ func compile() {
 			l.Fatal(err)
 		}
 
-		compileArch(binName, goos, goarch, dir)
+		compileArch(BinName, goos, goarch, dir)
 
 		installerExeName := fmt.Sprintf("installer-%s-%s", goos, goarch)
 		if goos == "windows" {
@@ -170,7 +176,7 @@ func buildInstaller(output, goos, goarch string) {
 		"-o", output,
 		"-ldflags",
 		fmt.Sprintf("-w -s -X main.OSSLocation=%s -X main.AppVersion=%s", DownloadAddr, git.Version),
-		"cmd/installer/installer.go",
+		"cmd/installer/main.go",
 	}
 
 	env := []string{

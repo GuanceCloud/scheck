@@ -4,7 +4,6 @@ iploc.bin
 .DS_Store
 .orig
 pub
-build
 a.out
 dist/
 old/

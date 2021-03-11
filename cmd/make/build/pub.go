@@ -1,4 +1,4 @@
-package main
+package build
 
 import (
 	"encoding/json"
@@ -28,7 +28,7 @@ type versionDesc struct {
 	Go       string `json:"go"`
 }
 
-func publish() {
+func Publish() {
 
 	start := time.Now()
 	var ak, sk, bucket, ossHost string
@@ -55,7 +55,7 @@ func publish() {
 		AccessKey:  ak,
 		SecretKey:  sk,
 		BucketName: bucket,
-		WorkDir:    ossPath,
+		WorkDir:    OSSPath,
 	}
 
 	if err := oc.Init(); err != nil {
@@ -63,7 +63,7 @@ func publish() {
 	}
 
 	// 请求线上版本信息
-	url := fmt.Sprintf("http://%s.%s/%s/%s", bucket, ossHost, ossPath, "version")
+	url := fmt.Sprintf("http://%s.%s/%s/%s", bucket, ossHost, OSSPath, "version")
 	curVd := getCurrentVersionInfo(url)
 
 	// upload all build archs
@@ -79,7 +79,7 @@ func publish() {
 	}
 
 	ossfiles := map[string]string{
-		path.Join(PubDir, Release, "version"): path.Join(ossPath, "version"),
+		path.Join(PubDir, Release, "version"): path.Join(OSSPath, "version"),
 	}
 
 	renameOssFiles := map[string]string{}
@@ -94,29 +94,29 @@ func publish() {
 
 		tarFiles(parts[0], parts[1])
 
-		gzName := fmt.Sprintf("%s-%s-%s.tar.gz", binName, goos+"-"+goarch, git.Version)
+		gzName := fmt.Sprintf("%s-%s-%s.tar.gz", BinName, goos+"-"+goarch, git.Version)
 
-		ossfiles[path.Join(PubDir, Release, gzName)] = path.Join(ossPath, gzName)
+		ossfiles[path.Join(PubDir, Release, gzName)] = path.Join(OSSPath, gzName)
 
 		installerExeName := ""
 		if goos == "windows" {
 			installerExeName = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
 
 			if curVd != nil && curVd.Version != git.Version {
-				renameOssFiles[path.Join(ossPath, installerExeName)] =
-					path.Join(ossPath, fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, curVd.Version))
+				renameOssFiles[path.Join(OSSPath, installerExeName)] =
+					path.Join(OSSPath, fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, curVd.Version))
 			}
 
 		} else {
 			installerExeName = fmt.Sprintf("installer-%s-%s", goos, goarch)
 
 			if curVd != nil && curVd.Version != git.Version {
-				renameOssFiles[path.Join(ossPath, installerExeName)] =
-					path.Join(ossPath, fmt.Sprintf("installer-%s-%s-%s", goos, goarch, curVd.Version))
+				renameOssFiles[path.Join(OSSPath, installerExeName)] =
+					path.Join(OSSPath, fmt.Sprintf("installer-%s-%s-%s", goos, goarch, curVd.Version))
 			}
 		}
 
-		ossfiles[path.Join(PubDir, Release, installerExeName)] = path.Join(ossPath, installerExeName)
+		ossfiles[path.Join(PubDir, Release, installerExeName)] = path.Join(OSSPath, installerExeName)
 	}
 
 	// backup old installer script online, make it possible to install old version if required
@@ -152,13 +152,13 @@ func publish() {
 func tarFiles(goos, goarch string) {
 
 	gz := filepath.Join(PubDir, Release, fmt.Sprintf("%s-%s-%s-%s.tar.gz",
-		binName, goos, goarch, git.Version))
+		BinName, goos, goarch, git.Version))
 	args := []string{
 		`czf`,
 		gz,
 		`-C`,
 		// the whole buildDir/datakit-<goos>-<goarch> dir
-		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", binName, goos, goarch)), `.`,
+		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", BinName, goos, goarch)), `.`,
 	}
 
 	cmd := exec.Command("tar", args...)
