@@ -6,7 +6,6 @@ iploc.bin
 pub
 a.out
 dist/
-build/
 old/
 *.tar.gz
 git/git.go
