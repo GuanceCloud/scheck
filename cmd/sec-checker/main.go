@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	secChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 )
 
@@ -24,7 +27,10 @@ func main() {
 	flag.Parse()
 	applyFlags()
 
-	secChecker.LoadConfig(secChecker.MainConfPath)
+	if err := secChecker.LoadConfig(secChecker.MainConfPath); err != nil {
+		log.Fatalf("invalid config file, %s", err)
+		return
+	}
 
 	mainCfg := secChecker.Cfg
 	if mainCfg.Log != "" {
@@ -66,6 +72,14 @@ Golang Version: %s
 
 func run() {
 
+	ctx, cancelFun := context.WithCancel(context.Background())
+	done := make(chan bool)
+	c := checker.NewChecker(secChecker.RulesDir)
+	go func() {
+		c.Start(ctx)
+		done <- true
+	}()
+
 	// NOTE:
 	// Actually, the datakit process been managed by system service, no matter on
 	// windows/UNIX, datakit should exit via `service-stop' operation, so the signal
@@ -79,11 +93,15 @@ func run() {
 			// TODO: reload configures
 		} else {
 			l.Infof("get signal %v, wait & exit", sig)
+			cancelFun()
+			<-done
 			secChecker.Quit()
 		}
 
 	case <-secChecker.StopCh:
 		l.Infof("service stopping")
+		cancelFun()
+		<-done
 		secChecker.Quit()
 	}
 

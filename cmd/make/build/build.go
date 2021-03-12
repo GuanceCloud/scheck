@@ -28,8 +28,8 @@ var (
 
 		`darwin/amd64`,
 
-		`windows/amd64`,
-		`windows/386`,
+		//`windows/amd64`,
+		//`windows/386`,
 	}
 
 	l = logger.DefaultSLogger("build")
