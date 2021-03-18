@@ -119,11 +119,15 @@ func (c *Checker) Start(ctx context.Context) {
 		if e := recover(); e != nil {
 			l.Errorf("panic: %s", e)
 		}
-		l.Debugf("exit")
+		l.Infof("exit")
 	}()
 
 	if err := c.loadFiles(); err != nil {
 		return
+	}
+
+	if len(c.rules) == 0 {
+		l.Warnf("no rule found")
 	}
 
 	c.ch = make(chan *Rule, len(c.rules))

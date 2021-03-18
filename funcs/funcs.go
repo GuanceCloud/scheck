@@ -26,10 +26,6 @@ var (
 	moduleLogger = logger.DefaultSLogger("funcs")
 )
 
-func Init() {
-	moduleLogger = logger.SLogger("funcs")
-}
-
 func sendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
 	return nil
 }

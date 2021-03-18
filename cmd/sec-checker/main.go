@@ -23,9 +23,9 @@ import (
 var (
 	flagVersion = flag.Bool("version", false, `show version info`)
 	flagFuncs   = flag.Bool("funcs", false, `show all support lua functions`)
-	flagCmd     = flag.Bool("cmd", false, "run as command")
 
-	flagRuleDir = flag.String("rule", ``, `directory which contains the lua script files`)
+	flagConfig       = flag.String("config", "", "configuration file to load")
+	flagSampleConfig = flag.Bool("sample-config", false, "print out full sample configuration")
 
 	flagTestLuaStr  = flag.String("c", ``, `test a lua string`)
 	flagTestLuaFile = flag.String("f", ``, `test a lua file`)
@@ -33,38 +33,36 @@ var (
 	l = logger.DefaultSLogger("main")
 )
 
+var (
+	AppName = "sec-checker"
+)
+
 func main() {
 
 	flag.Parse()
-
 	applyFlags()
 
-	if err := secChecker.LoadConfig(secChecker.MainConfPath(secChecker.InstallDir)); err != nil {
-		log.Fatalf("fail to laod config file, %s", err)
+	if err := secChecker.LoadConfig(*flagConfig); err != nil {
+		log.Fatalf("fail to laod config file %s, %s", *flagConfig, err)
 		return
 	}
 
+	setupLogger()
+
+	l.Infof("%s(%s-%s-%s)", AppName, git.Branch, git.Version, git.BuildAt)
+
+	run()
+}
+
+func setupLogger() {
 	mainCfg := secChecker.Cfg
 	if mainCfg.Log != "" {
-		logger.MaxSize = mainCfg.LogRotate
-		logger.SetGlobalRootLogger(mainCfg.Log, mainCfg.LogLevel, logger.OPT_DEFAULT)
-		l = logger.SLogger("main")
-	}
-
-	l.Infof("%s(%s-%s-%s)", secChecker.ServiceName, git.Branch, git.Version, git.BuildAt)
-
-	funcs.Init()
-
-	if *flagCmd {
-		run()
-	} else {
-		secChecker.Entry = run
-		if err := secChecker.StartService(); err != nil {
-			l.Errorf("start service failed: %s", err.Error())
-			return
+		if mainCfg.LogRotate > 0 {
+			logger.MaxSize = mainCfg.LogRotate
 		}
+		logger.SetGlobalRootLogger(mainCfg.Log, mainCfg.LogLevel, logger.OPT_DEFAULT)
 	}
-
+	l = logger.SLogger("main")
 }
 
 func applyFlags() {
@@ -111,11 +109,16 @@ Golang Version: %s
 		os.Exit(0)
 	}
 
+	if *flagSampleConfig {
+		fmt.Printf(secChecker.SampleMainConfig)
+		os.Exit(0)
+	}
+
 }
 
 func run() {
 
-	ctx, cancelFun := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -131,38 +134,25 @@ func run() {
 		defer func() {
 			wg.Done()
 		}()
-		ruleDir := *flagRuleDir
-		if ruleDir == "" {
-			ruleDir = secChecker.RulesDir(secChecker.InstallDir)
-		}
-		c := checker.NewChecker(ruleDir)
+
+		c := checker.NewChecker(secChecker.Cfg.RuleDir)
 		c.Start(ctx)
 	}()
 
-	// NOTE:
-	// Actually, the datakit process been managed by system service, no matter on
-	// windows/UNIX, datakit should exit via `service-stop' operation, so the signal
-	// branch should not reached, but for daily debugging(ctrl-c), we kept the signal
-	// exit option.
 	signals := make(chan os.Signal, secChecker.CommonChanCap)
 	signal.Notify(signals, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
-	select {
-	case sig := <-signals:
-		if sig == syscall.SIGHUP {
-			// TODO: reload configures
-		} else {
-			l.Infof("get signal %v, wait & exit", sig)
-			cancelFun()
-			wg.Wait()
-			secChecker.Quit()
+
+	go func() {
+		select {
+		case sig := <-signals:
+			if sig == syscall.SIGHUP {
+				// reaload config
+			}
+			cancel()
 		}
+	}()
 
-	case <-secChecker.StopCh:
-		l.Infof("service stopping")
-		cancelFun()
-		wg.Wait()
-		secChecker.Quit()
-	}
+	wg.Wait()
 
-	l.Info("exit")
+	l.Info("quit")
 }
