@@ -1,71 +1,112 @@
 package funcs
 
 import (
-	"bytes"
-	"fmt"
-	"strings"
+	"time"
 
 	lua "github.com/yuin/gopher-lua"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 )
 
 type (
 	LuaFunc struct {
-		Name  string
-		Fn    lua.LGFunction
-		Title string
-		Desc  string
-		Test  []string
+		Name    string
+		Fn      lua.LGFunction
+		Title   string
+		Desc    string
+		Params  []string
+		Returns []string
+		Test    []string
 	}
 )
 
-var SupportFuncs = []LuaFunc{
-	{
-		Name:  `exist`,
-		Fn:    fileExist,
-		Title: `boolean exist(filepath)`,
-		Desc: `
-check file exist.`,
-		Test: []string{`
-file='demo.txt'
-if exist(file) then
-	print(file.." exists")
-else
-	print(file.." not exists")
-end
+var (
+	SupportFuncs = []LuaFunc{
+		{
+			Name:  `file_exist`,
+			Fn:    fileExist,
+			Title: `file_exist(filepath)`,
+			Params: []string{
+				`*filepath: file location to check.`,
+			},
+			Returns: []string{
+				`boolean: true if exists, otherwise is false`,
+			},
+			Desc: `
+check if a file exists.`,
+			Test: []string{`
+file='/your/file/path'
+exists=file_exist(file)
 `},
-	},
+		},
 
-	{
-		Name:  `file`,
-		Fn:    readFile,
-		Title: `string file(filepath)`,
-		Desc: `
-reads and return file content, it issues an error when read failed.`,
-		Test: []string{},
-	},
+		{
+			Name:  `read_file`,
+			Fn:    readFile,
+			Title: `read_file(filepath)`,
+			Params: []string{
+				`*filepath: the file to read.`,
+			},
+			Returns: []string{
+				`string: file content`,
+				`string: error detail if read failed`,
+			},
+			Desc: `reads the file content.`,
+			Test: []string{`
+file='/your/file/path'
+content, err=read_file(file)
+`},
+		},
+
+		{
+			Name:  `send_data`,
+			Fn:    sendLineData,
+			Title: `send_data(measurement, fields[, tags[, timestamp]])`,
+			Desc: `
+send data with the format of influxdb line protocol.`,
+			Params: []string{
+				`*measurename: The name of the measurement that you want to write your data to.`,
+				`*fields: The field(s) for your data point. Every data point requires at least one field in line protocol.`,
+				`tags: The tag set that you want to include with your data point.`,
+				`timestamp: second-precision Unix time, use current time if empty.`,
+			},
+			Returns: []string{
+				`string: empty if success, otherwise contains the error detail.`,
+			},
+			Test: []string{`
+measurename='weather'
+fields={
+	temperature=82,
+	humidity=71
+}
+tags={
+	location='us-midwest', 
+	season='summer',
+	age=1,
 }
 
-func DumpSupports(showDesc, showDemo bool) string {
+err=send_data(measurename, fields) --only fields
+if err ~= '' then error(err) end
 
-	s := bytes.NewBufferString("")
+err=send_data(measurename, fields, tags) --with tags
+if err ~= '' then error(err) end
 
-	for _, f := range SupportFuncs {
-		s.WriteString(fmt.Sprintf("%s", strings.TrimSpace(f.Title)))
-		s.WriteString("\n")
-		if showDesc {
-			s.WriteString(fmt.Sprintf("  %s", strings.TrimSpace(f.Desc)))
-			s.WriteString("\n\n")
-		}
+err=send_data(measurename, fields, os.time()) --with timestamp
+if err ~= '' then error(err) end
 
-		if showDemo {
-			for idx, t := range f.Test {
-				s.WriteString(fmt.Sprintf("  Demo %d:", idx+1))
-				s.WriteString(t)
-			}
-			s.WriteString("\n\n")
-		}
-
+err=send_data(measurename, fields, tags, os.time()) --with tags and timestamp
+if err ~= '' then error(err) end
+`},
+		},
 	}
-	fmt.Printf("%s\n", s.String())
-	return s.String()
+
+	moduleLogger = logger.DefaultSLogger("funcs")
+)
+
+func Init() {
+	moduleLogger = logger.SLogger("funcs")
+}
+
+func sendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
+	return nil
 }

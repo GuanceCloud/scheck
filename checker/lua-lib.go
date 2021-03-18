@@ -15,6 +15,7 @@ var (
 		{lua.StringLibName, lua.OpenString, nil},
 		{lua.MathLibName, lua.OpenMath, nil},
 		{lua.DebugLibName, lua.OpenDebug, nil},
+		{lua.OsLibName, lua.OpenOs, []string{"execute", "remove", "rename", "setenv", "setlocale"}},
 	}
 )
 

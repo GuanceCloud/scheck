@@ -1,28 +1,40 @@
 package funcs
 
 import (
-	"fmt"
-	"log"
+	"flag"
 	"testing"
 
 	lua "github.com/yuin/gopher-lua"
 )
 
+var (
+	flagFunName = flag.String("func", "", "lua function name to test")
+)
+
 func TestFun(t *testing.T) {
+
+	flag.Parse()
 
 	ls := lua.NewState()
 	defer ls.Close()
 	for _, f := range SupportFuncs {
+		if *flagFunName != "" {
+			if f.Name != *flagFunName {
+				continue
+			}
+		}
 		ls.Register(f.Name, f.Fn)
 		if len(f.Test) == 0 {
 			continue
 		}
-		log.Printf("Start testing '%s' ...", f.Name)
+		moduleLogger.Debugf("Start testing '%s' ...", f.Name)
 		for idx, t := range f.Test {
-			log.Printf("Demo %d", idx+1)
-			ls.DoString(t)
-			fmt.Println()
+			moduleLogger.Debugf("Demo %d:", idx+1)
+			if err := ls.DoString(t); err != nil {
+				moduleLogger.Errorf("test failed: %s", err)
+				return
+			}
 		}
-		log.Printf("End testing '%s'", f.Name)
+		moduleLogger.Debugf("End testing '%s'", f.Name)
 	}
 }

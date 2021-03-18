@@ -21,6 +21,7 @@ func DefaultConfig() *Config {
 }
 
 type Config struct {
+	Output    string `toml:output`
 	Log       string `toml:"log"`
 	LogLevel  string `toml:"log_level"`
 	LogRotate int    `toml:"log_rotate,omitempty"`
