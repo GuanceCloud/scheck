@@ -4,9 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
+	"sync"
 	"syscall"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
@@ -14,11 +17,18 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/io"
 )
 
 var (
 	flagVersion = flag.Bool("version", false, `show version info`)
-	flagDocker  = flag.Bool("docker", false, "run within docker")
+	flagFuncs   = flag.Bool("funcs", false, `show all support lua functions`)
+	flagCmd     = flag.Bool("cmd", false, "run as command")
+
+	flagRuleDir = flag.String("rule", ``, `directory which contains the lua script files`)
+
+	flagTestLuaStr  = flag.String("c", ``, `test a lua string`)
+	flagTestLuaFile = flag.String("f", ``, `test a lua file`)
 
 	l = logger.DefaultSLogger("main")
 )
@@ -26,25 +36,26 @@ var (
 func main() {
 
 	flag.Parse()
+
 	applyFlags()
 
-	if err := secChecker.LoadConfig(secChecker.MainConfPath); err != nil {
-		log.Fatalf("invalid config file, %s", err)
+	if err := secChecker.LoadConfig(secChecker.MainConfPath(secChecker.InstallDir)); err != nil {
+		log.Fatalf("fail to laod config file, %s", err)
 		return
 	}
 
 	mainCfg := secChecker.Cfg
 	if mainCfg.Log != "" {
-		// set global log root
-		l.Infof("set log to %s", mainCfg.Log)
 		logger.MaxSize = mainCfg.LogRotate
 		logger.SetGlobalRootLogger(mainCfg.Log, mainCfg.LogLevel, logger.OPT_DEFAULT)
 		l = logger.SLogger("main")
 	}
 
+	l.Infof("%s(%s-%s-%s)", secChecker.ServiceName, git.Branch, git.Version, git.BuildAt)
+
 	funcs.Init()
 
-	if *flagDocker {
+	if *flagCmd {
 		run()
 	} else {
 		secChecker.Entry = run
@@ -71,16 +82,61 @@ Golang Version: %s
 		os.Exit(0)
 	}
 
+	if *flagFuncs {
+		names := []string{``}
+		for _, f := range funcs.SupportFuncs {
+			names = append(names, f.Name)
+		}
+		log.Printf("%s", strings.Join(names, "\n"))
+		os.Exit(0)
+	}
+
+	if *flagTestLuaStr != "" {
+		err := checker.TestLuaScriptString(*flagTestLuaStr)
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		os.Exit(0)
+	}
+
+	if *flagTestLuaFile != "" {
+		data, err := ioutil.ReadFile(*flagTestLuaFile)
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		err = checker.TestLuaScriptString(string(data))
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		os.Exit(0)
+	}
+
 }
 
 func run() {
 
 	ctx, cancelFun := context.WithCancel(context.Background())
-	done := make(chan bool)
-	c := checker.NewChecker(secChecker.RulesDir)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
+		defer func() {
+			wg.Done()
+		}()
+		io.Start(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer func() {
+			wg.Done()
+		}()
+		ruleDir := *flagRuleDir
+		if ruleDir == "" {
+			ruleDir = secChecker.RulesDir(secChecker.InstallDir)
+		}
+		c := checker.NewChecker(ruleDir)
 		c.Start(ctx)
-		done <- true
 	}()
 
 	// NOTE:
@@ -97,14 +153,14 @@ func run() {
 		} else {
 			l.Infof("get signal %v, wait & exit", sig)
 			cancelFun()
-			<-done
+			wg.Wait()
 			secChecker.Quit()
 		}
 
 	case <-secChecker.StopCh:
 		l.Infof("service stopping")
 		cancelFun()
-		<-done
+		wg.Wait()
 		secChecker.Quit()
 	}
 

@@ -12,12 +12,15 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 )
 
 var (
 	CurDownloading = ""
 
 	DownloadOnly = false
+
+	l = logger.DefaultSLogger("installer")
 )
 
 type writeCounter struct {
@@ -42,14 +45,14 @@ func (wc *writeCounter) PrintProgress() {
 	}
 }
 
-func Download(from, to string) {
+func Download(from, to string) error {
 
 	// disable SSL verify for some bad client
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	resp, err := http.Get(from) //nolint:gosec
 	if err != nil {
-		l.Fatalf("failed to download %s: %s", from, err)
+		return fmt.Errorf("failed to download %s: %s", from, err)
 	}
 
 	defer resp.Body.Close()
@@ -61,10 +64,11 @@ func Download(from, to string) {
 		doDownload(io.TeeReader(resp.Body, cnt), to)
 	} else {
 		if err := doExtract(io.TeeReader(resp.Body, cnt), to); err != nil {
-			l.Fatalf("extract failed: %s, url:%s", err, from)
+			return fmt.Errorf("extract failed: %s, url:%s", err, from)
 		}
 	}
 	fmt.Printf("\n")
+	return nil
 }
 
 func doDownload(r io.Reader, to string) {

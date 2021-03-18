@@ -74,8 +74,6 @@ func Start(ctx context.Context) {
 		}
 	} else if strings.HasPrefix(outpath, "http://") || strings.HasPrefix(outpath, "https://") {
 		outputURL = outpath
-	} else {
-		l.Errorf("invalid output")
 	}
 
 	httpCli = &http.Client{
@@ -91,10 +89,10 @@ func Start(ctx context.Context) {
 			cacheData(d)
 
 		case <-tick.C:
-			flushAll()
+			flushAll(ctx)
 
 		case <-ctx.Done():
-			l.Info("io exit on exit")
+			l.Info("exit")
 			return
 		}
 	}
@@ -110,8 +108,8 @@ func cacheData(d *iodata) {
 	curCacheCnt++
 }
 
-func flushAll() {
-	flush()
+func flushAll(ctx context.Context) {
+	flush(ctx)
 
 	if curCacheCnt > 0 {
 		l.Warnf("post failed cache count: %d", curCacheCnt)
@@ -126,13 +124,20 @@ func flushAll() {
 	}
 }
 
-func flush() {
+func flush(ctx context.Context) {
 
 	if httpCli != nil {
 		defer httpCli.CloseIdleConnections()
 	}
 
 	for k, v := range cache {
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		if err := doFlush(v, k); err != nil {
 			l.Errorf("post %d to %s failed", len(v), k)
 		} else {

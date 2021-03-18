@@ -1,6 +1,7 @@
 package secChecker
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -39,16 +40,42 @@ var (
 	}
 
 	InstallDir = OptionalInstallDir[runtime.GOOS+"/"+runtime.GOARCH]
-
-	MainConfPath = filepath.Join(InstallDir, "cfg")
-
-	RulesDir = filepath.Join(InstallDir, "rules")
 )
 
-func InitDirs() {
-	for _, dir := range []string{RulesDir} {
+func GetServiceDefaltInstallDir(serviceDirName string) string {
+	d := OptionalInstallDir[runtime.GOOS+"/"+runtime.GOARCH]
+	if d != "" {
+		return filepath.Join(d, serviceDirName)
+	}
+
+	return ""
+}
+
+func MainConfPath(installDir string) string {
+	return filepath.Join(installDir, "cfg")
+}
+
+func RulesDir(installDir string) string {
+	return filepath.Join(installDir, "rules")
+}
+
+func createDefaultDirs(installDir string) error {
+	for _, dir := range []string{RulesDir(installDir)} {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			l.Fatalf("create %s failed: %s", dir, err)
+			return fmt.Errorf("create %s failed: %s", dir, err)
 		}
 	}
+	return nil
+}
+
+func PreInstall(installDir string) error {
+	err := createDefaultConfigFile(installDir)
+	if err != nil {
+		return err
+	}
+	return createDefaultDirs(installDir)
+}
+
+func PostInstall(installDir string) error {
+	return nil
 }

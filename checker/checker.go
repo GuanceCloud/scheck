@@ -78,7 +78,10 @@ func (c *Checker) loadFiles() error {
 
 func (c *Checker) newLuaState() *luaState {
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
-	loadLibs(ls)
+	if err := funcs.LoadLuaLibs(ls); err != nil {
+		l.Errorf("%s", err)
+		return nil
+	}
 	for _, fn := range funcs.SupportFuncs {
 		ls.Register(fn.Name, fn.Fn)
 	}
@@ -112,6 +115,13 @@ func (c *Checker) Start(ctx context.Context) {
 
 	l = logger.SLogger("checker")
 
+	defer func() {
+		if e := recover(); e != nil {
+			l.Errorf("panic: %s", e)
+		}
+		l.Debugf("exit")
+	}()
+
 	if err := c.loadFiles(); err != nil {
 		return
 	}
@@ -125,15 +135,27 @@ func (c *Checker) Start(ctx context.Context) {
 	for i := 0; i < MaxLuaStates; i++ {
 		wg.Add(1)
 		ls := c.newLuaState()
-		c.lStates = append(c.lStates, ls)
-		go func() {
-			defer wg.Done()
-			c.startState(ctx, ls)
-		}()
+		if ls != nil {
+			c.lStates = append(c.lStates, ls)
+			go func() {
+				defer wg.Done()
+				c.startState(ctx, ls)
+			}()
+		}
 	}
 
 	wg.Wait()
 
+}
+
+func TestLuaScriptString(script string) error {
+	ls := lua.NewState()
+	if err := funcs.LoadLuaLibs(ls); err != nil {
+		return err
+	}
+	defer ls.Close()
+
+	return ls.DoString(script)
 }
 
 // SleepContext sleeps until the context is closed or the duration is reached.
