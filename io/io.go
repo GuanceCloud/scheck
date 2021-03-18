@@ -49,14 +49,14 @@ func Start(ctx context.Context) {
 	l = logger.SLogger("io")
 
 	defer func() {
-		if e := recover(); e != nil {
-			l.Errorf("panic, %v", e)
-		}
-
-		if outputFile != nil {
+		if outputFile != nil && outputFile != os.Stdout {
 			if err := outputFile.Close(); err != nil {
 				l.Error(err)
 			}
+		}
+
+		if e := recover(); e != nil {
+			l.Errorf("panic, %v", e)
 		}
 	}()
 
@@ -92,7 +92,7 @@ func Start(ctx context.Context) {
 			flushAll(ctx)
 
 		case <-ctx.Done():
-			l.Info("exit")
+			l.Info("io exit")
 			return
 		}
 	}

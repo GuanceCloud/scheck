@@ -101,8 +101,13 @@ func (c *Checker) startState(ctx context.Context, ls *luaState) {
 					l.Errorf("run failed, %s", err)
 				}
 			} else {
-				//l.Debugf("wait")
 				SleepContext(ctx, time.Second*3)
+
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
 			}
 			c.ch <- r
 		case <-ctx.Done():
@@ -119,7 +124,7 @@ func (c *Checker) Start(ctx context.Context) {
 		if e := recover(); e != nil {
 			l.Errorf("panic: %s", e)
 		}
-		l.Infof("exit")
+		l.Infof("checker exit")
 	}()
 
 	if err := c.loadFiles(); err != nil {
@@ -137,9 +142,9 @@ func (c *Checker) Start(ctx context.Context) {
 
 	var wg sync.WaitGroup
 	for i := 0; i < MaxLuaStates; i++ {
-		wg.Add(1)
 		ls := c.newLuaState()
 		if ls != nil {
+			wg.Add(1)
 			c.lStates = append(c.lStates, ls)
 			go func() {
 				defer wg.Done()
@@ -149,7 +154,6 @@ func (c *Checker) Start(ctx context.Context) {
 	}
 
 	wg.Wait()
-
 }
 
 func TestLuaScriptString(script string) error {

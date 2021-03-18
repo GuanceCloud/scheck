@@ -57,10 +57,16 @@ func file_info(l *lua.LState) int {
 	info.RawSetString("gid", lua.LNumber(st.Gid))
 	info.RawSetString("device", lua.LNumber(st.Dev))
 	info.RawSetString("inode", lua.LNumber(st.Ino))
+	info.RawSetString("hard_links", lua.LNumber(st.Nlink))
+
 	//info.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
 	//info.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
 	//info.RawSetString("atime", lua.LNumber(st.Atim.Sec))
-	info.RawSetString("hard_links", lua.LNumber(st.Nlink))
+
+	//mac
+	info.RawSetString("ctime", lua.LNumber(st.Ctimespec.Sec))
+	info.RawSetString("mtime", lua.LNumber(st.Mtimespec.Sec))
+	info.RawSetString("atime", lua.LNumber(st.Atimespec.Sec))
 
 	l.Push(&info)
 	l.Push(lua.LString(""))
