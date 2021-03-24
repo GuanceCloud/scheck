@@ -207,6 +207,10 @@ func shadow(l *lua.LState) int {
 	return 1
 }
 
+func last(l *lua.LState) int {
+	return 1
+}
+
 func mounts(l *lua.LState) int {
 	parts, err := diskutil.Partitions(true)
 	if err != nil {

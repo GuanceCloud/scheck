@@ -27,6 +27,7 @@ func main() {
 
 	flag.Parse()
 	applyFlags()
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	if err := checker.LoadConfig(*flagConfig); err != nil {
 		log.Fatalf("%s", err)
