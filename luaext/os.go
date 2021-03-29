@@ -74,7 +74,12 @@ func kernelModules(l *lua.LState) int {
 		mods := strings.Split(string(data), "\n")
 		for _, mod := range mods {
 			mod = strings.TrimSpace(mod)
-			parts := strings.Split(mod, " ")
+			parts := strings.FieldsFunc(mod, func(r rune) bool {
+				if r == ' ' {
+					return true
+				}
+				return false
+			})
 			if len(parts) < 5 {
 				continue
 			}
