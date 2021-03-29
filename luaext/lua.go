@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	luajson "github.com/layeh/gopher-json"
+	//luajson "github.com/layeh/gopher-json"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -47,6 +47,7 @@ var (
 		{`time_zone`, zone},
 		{`kernel_info`, kernelInfo},
 		{`kernel_modules`, kernelModules},
+		{`ulimit_info`, ulimitInfo},
 		{`mounts`, mounts},
 		{`processes`, processes},
 		{`interface_addresses`, interfaceAddresses},
@@ -55,8 +56,10 @@ var (
 		{`process_open_sockets`, processOpenSockets},
 		{`listening_ports`, listeningPorts},
 		{`users`, users},
+		//{`logged_in_users`, loggedInUsers},
 		{`shadow`, shadow},
-		{`last`, last},
+		//{`last`, last},
+		{`shell_history`, shellHistory},
 		{`json_encode`, jsonEncode},
 		{`json_decode`, jsonDecode},
 	}
@@ -70,10 +73,10 @@ func NewLuaExt() *LuaExt {
 
 // Register extended lua funcs to lua machine
 func (l *LuaExt) Register(lstate *lua.LState) error {
+	//luajson.Preload(lstate) //for json parse
 	if err := loadLuaLibs(lstate); err != nil {
 		return err
 	}
-	luajson.Preload(lstate) //for json parse
 	for _, f := range luaExtendFuncs {
 		lstate.Register(f.Name, f.Fn)
 	}

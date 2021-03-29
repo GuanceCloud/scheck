@@ -2,11 +2,16 @@ package luaext
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
@@ -104,42 +109,29 @@ func kernelModules(l *lua.LState) int {
 
 func users(l *lua.LState) int {
 
-	file, err := os.Open("/etc/passwd")
+	us, err := getUserDetail("")
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
-	defer file.Close()
 
-	reader := bufio.NewReader(file)
 	var result lua.LTable
 
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				l.RaiseError("%s", err)
-				return lua.MultRet
-			}
-		}
-
-		parts := strings.Split(line, ":")
-		if len(parts) < 7 {
-			continue
-		}
-
+	for _, u := range us {
 		var ut lua.LTable
-		ut.RawSetString("username", lua.LString(parts[0]))
-		ut.RawSetString("uid", lua.LString(parts[2]))
-		ut.RawSetString("gid", lua.LString(parts[3]))
-		ut.RawSetString("home", lua.LString(parts[5]))
-		ut.RawSetString("shell", lua.LString(strings.TrimSpace(parts[6])))
+		ut.RawSetString("username", lua.LString(u.name))
+		ut.RawSetString("uid", lua.LString(u.uid))
+		ut.RawSetString("gid", lua.LString(u.gid))
+		ut.RawSetString("home", lua.LString(u.home))
+		ut.RawSetString("shell", lua.LString(u.shell))
 		result.Append(&ut)
 	}
 
 	l.Push(&result)
+	return 1
+}
+
+func loggedInUsers(l *lua.LState) int {
 	return 1
 }
 
@@ -212,7 +204,37 @@ func shadow(l *lua.LState) int {
 	return 1
 }
 
-func last(l *lua.LState) int {
+func ulimitInfo(l *lua.LState) int {
+
+	var result lua.LTable
+
+	limitsResourceMap := []struct {
+		name string
+		id   int
+	}{
+		{"cpu", syscall.RLIMIT_CPU},
+		{"fsize", syscall.RLIMIT_FSIZE},
+		{"data", syscall.RLIMIT_DATA},
+		{"stack", syscall.RLIMIT_STACK},
+		{"core", syscall.RLIMIT_CORE},
+		{"nofile", syscall.RLIMIT_NOFILE},
+		{"as", syscall.RLIMIT_AS},
+	}
+
+	for _, r := range limitsResourceMap {
+		var rLimit syscall.Rlimit
+		err := syscall.Getrlimit(r.id, &rLimit)
+		if err == nil {
+			var item lua.LTable
+			item.RawSetString("type", lua.LString(r.name))
+			item.RawSetString("soft_limit", lua.LNumber(rLimit.Cur))
+			item.RawSetString("hard_limit", lua.LNumber(rLimit.Max))
+			result.Append(&item)
+		} else {
+			log.Printf("[error] failt ot getrlimit, %s", err)
+		}
+	}
+	l.Push(&result)
 	return 1
 }
 
@@ -280,5 +302,126 @@ func processes(l *lua.LState) int {
 	}
 
 	l.Push(&result)
+	return 1
+}
+
+func shellHistory(l *lua.LState) int {
+
+	targetUser := ""
+	lv := l.Get(1)
+	if lv.Type() != lua.LTNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		} else {
+			targetUser = lv.String()
+		}
+	}
+
+	users, err := getUserDetail(targetUser)
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	} else {
+		if len(users) == 0 {
+			l.RaiseError("user '%s' not exists", targetUser)
+			return lua.MultRet
+		}
+	}
+
+	shellHistoryFiles := []string{
+		".bash_history",
+		".zsh_history",
+		".zhistory",
+		".history",
+		".sh_history",
+	}
+
+	var result lua.LTable
+	for _, u := range users {
+		if u.home == "" {
+			continue
+		}
+		if u.shell == "/bin/false" || strings.HasSuffix(u.shell, "/nologin") {
+			continue
+		}
+
+		for _, f := range shellHistoryFiles {
+
+			cmds, err := genShellHistoryFromFile(filepath.Join(u.home, f))
+			if err != nil {
+				l.RaiseError("%s", err)
+				return lua.MultRet
+			}
+
+			for _, cmd := range cmds {
+				var item lua.LTable
+				item.RawSetString("uid", lua.LString(u.uid))
+				item.RawSetString("history_file", lua.LString(filepath.Join(u.home, f)))
+				item.RawSetString("command", lua.LString(cmd.command))
+				item.RawSetString("time", lua.LNumber(cmd.time))
+				result.Append(&item)
+			}
+		}
+	}
+
+	l.Push(&result)
+	return 1
+}
+
+func last(l *lua.LState) int {
+
+	// targetUser := ""
+	// limit := -1
+	// lv := l.Get(1)
+	// if lv.Type() != lua.LTNil {
+	// 	if lv.Type() != lua.LTString {
+	// 		l.TypeError(1, lua.LTString)
+	// 		return lua.MultRet
+	// 	} else {
+	// 		targetUser = lv.String()
+	// 	}
+	// }
+
+	// lv = l.Get(2)
+	// if lv.Type() != lua.LTNil {
+	// 	if lv.Type() != lua.LTNumber {
+	// 		l.TypeError(2, lua.LTNumber)
+	// 		return lua.MultRet
+	// 	} else {
+	// 		limit = int(lv.(lua.LNumber))
+	// 	}
+	// }
+
+	buf := bytes.NewBufferString("")
+	cmd := exec.Command("last")
+	cmd.Stdout = buf
+	if err := cmd.Run(); err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+
+	reader := bufio.NewReader(buf)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+
+		fields := strings.FieldsFunc(line, func(r rune) bool {
+			if r == ' ' {
+				return true
+			}
+			return false
+		})
+
+		if len(fields) < 5 {
+			continue
+		}
+
+		log.Printf("%v", len(fields))
+
+	}
+
 	return 1
 }

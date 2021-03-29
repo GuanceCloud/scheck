@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
@@ -18,6 +18,8 @@ type (
 		rulesDir string
 		rules    []*Rule
 		lStates  []*luaState
+
+		cron *luaCron
 
 		outputer *outputer
 
@@ -36,6 +38,7 @@ func NewChecker(output, rulesDir string) *Checker {
 		outputer:   newOutputer(output),
 		rulesDir:   rulesDir,
 		luaExtends: luaext.NewLuaExt(),
+		cron:       newLuaCron(),
 	}
 	return c
 }
@@ -45,7 +48,11 @@ func (c *Checker) Start(ctx context.Context) {
 
 	defer func() {
 		if e := recover(); e != nil {
+			buf := make([]byte, 2048)
+			n := runtime.Stack(buf, false)
 			log.Printf("[panic] %s", e)
+			log.Printf("[panic] %s", string(buf[:n]))
+
 		}
 		c.outputer.close()
 		log.Printf("[info] checker exit")
@@ -62,26 +69,25 @@ func (c *Checker) Start(ctx context.Context) {
 		return
 	}
 
-	var wg sync.WaitGroup
+	c.cron.start()
+
 	for _, r := range c.rules {
 		ls := c.newLuaState(r)
 		if ls != nil {
-			wg.Add(1)
 			c.lStates = append(c.lStates, ls)
-			go func() {
-				defer wg.Done()
-				c.startState(ctx, ls)
-			}()
+			c.cron.addLuaScript(ls)
 		}
 	}
 
-	wg.Wait()
+	<-ctx.Done()
+	c.cron.stop()
 }
 
 func (c *Checker) loadFiles() error {
 
 	ls, err := ioutil.ReadDir(c.rulesDir)
 	if err != nil {
+		log.Printf("[error] %s", err)
 		return err
 	}
 
@@ -93,14 +99,12 @@ func (c *Checker) loadFiles() error {
 		path := filepath.Join(c.rulesDir, f.Name())
 
 		if !strings.HasSuffix(f.Name(), ".lua") {
-			log.Printf("[debug] ignore non-lua %s", path)
+			//log.Printf("[debug] ignore non-lua %s", path)
 			return nil
 		}
 
-		if r, err := NewRuleFromFile(filepath.Join(c.rulesDir, path)); err == nil {
+		if r, err := c.newRuleFromFile(path); err == nil {
 			c.rules = append(c.rules, r)
-		} else {
-			log.Printf("[error] load %s failed, %s", path, err)
 		}
 	}
 
@@ -116,23 +120,6 @@ func (c *Checker) newLuaState(r *Rule) *luaState {
 	return &luaState{
 		lState: ls,
 		rule:   r,
-	}
-}
-
-func (c *Checker) startState(ctx context.Context, ls *luaState) {
-	for {
-		select {
-		case <-ctx.Done():
-			break
-		}
-		if ls.rule.LastRun.IsZero() || time.Now().Sub(ls.rule.LastRun) >= ls.rule.Interval {
-			err := ls.rule.Run(ls.lState)
-			ls.rule.LastRun = time.Now()
-			if err != nil {
-				log.Printf("[error] run failed, %s", err)
-			}
-		}
-		sleepContext(ctx, ls.rule.Interval)
 	}
 }
 

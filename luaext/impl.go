@@ -1,12 +1,14 @@
 package luaext
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -57,6 +59,28 @@ type (
 		pid     int
 		name    string
 		cmdline string
+	}
+
+	historyItem struct {
+		time    int64
+		command string
+	}
+
+	userInfo struct {
+		name  string
+		uid   string
+		gid   string
+		home  string
+		shell string
+	}
+
+	lastItemInfo struct {
+		username string
+		pid      int
+		typ      int
+		tty      string
+		tm       int64
+		host     string
 	}
 )
 
@@ -457,4 +481,129 @@ func getProcessOpenSockets() ([]*socketInfo, error) {
 	}
 
 	return socketList, nil
+}
+
+func getUserDetail(username string) ([]*userInfo, error) {
+
+	file, err := os.Open("/etc/passwd")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var result []*userInfo
+
+	reader := bufio.NewReader(file)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+
+		fields := strings.Split(line, ":")
+		if len(fields) < 7 {
+			continue
+		}
+
+		if username != "" {
+			if fields[0] != username {
+				continue
+			}
+		}
+
+		u := &userInfo{
+			name:  fields[0],
+			uid:   fields[2],
+			gid:   fields[3],
+			home:  fields[5],
+			shell: strings.TrimSpace(fields[6]),
+		}
+		result = append(result, u)
+	}
+
+	return result, nil
+}
+
+func genShellHistoryFromFile(file string) ([]*historyItem, error) {
+	var err error
+
+	if _, err = os.Stat(file); err != nil && os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	bashTimestampRx, _ := regexp.Compile("^#([0-9]+)$")
+	zshTimestampRx, _ := regexp.Compile("^: {0,10}([0-9]{1,11}):[0-9]+;(.*)$")
+	_ = bashTimestampRx
+	_ = zshTimestampRx
+
+	prevBashTimestamp := ""
+
+	var cmds []*historyItem
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		var tm int64
+
+		if prevBashTimestamp == "" {
+			prevBashTimestamp = bashTimestampRx.FindString(line)
+		}
+
+		if prevBashTimestamp != "" {
+			if t, e := strconv.ParseInt(prevBashTimestamp[1:], 10, 64); e == nil {
+				tm = t
+			}
+			prevBashTimestamp = ""
+		}
+
+		cmds = append(cmds, &historyItem{
+			command: line,
+			time:    tm,
+		})
+	}
+
+	return cmds, err
+}
+
+func getLasts() ([]*lastItemInfo, error) {
+
+	// cstr := C.CString("")
+	// if nok, err := C.getlast_start(cstr); nok == 0 {
+	// 	log.Printf("[error] %s", err)
+	// 	return nil, err
+	// }
+
+	// var lasts []*lastItemInfo
+
+	// const USER_PROCESS = 7
+	// const DEAD_PROCESS = 8
+
+	// for {
+	// 	st := C.getlast()
+	// 	if st == nil {
+	// 		break
+	// 	}
+	// 	if st.ut_type == USER_PROCESS || st.ut_type == DEAD_PROCESS {
+	// 		//log.Printf("%s", C.GoString(&st.ut_user[0]))
+
+	// 		item := &lastItemInfo{
+	// 			username: C.GoString(&st.ut_user[0]),
+	// 			tty:      C.GoString(&st.ut_line[0]),
+	// 			pid:      int(st.ut_pid),
+	// 			typ:      int(st.ut_type),
+	// 			tm:       int64(&st.ut_time),
+	// 			host:     C.GoString(&st.ut_host[0]),
+	// 		}
+	// 		lasts = append(lasts, item)
+	// 	}
+	// }
+
+	// C.getlast_end()
+
+	return nil, nil
 }
