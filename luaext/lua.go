@@ -38,7 +38,7 @@ var (
 
 	luaExtendFuncs = []luaFunc{
 		{`file_exist`, fileExist},
-		{`file_info`, file_info},
+		{`file_info`, fileInfo},
 		{`read_file`, readFile},
 		{`file_hash`, fileHash},
 		{`send_data`, sendMetric},

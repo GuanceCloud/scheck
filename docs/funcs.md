@@ -1,6 +1,12 @@
 
 ### [file_exist](#file_exist)
+### [file_info](#file_info)
 ### [read_file](#read_file)
+### [file_hash](#file_hash)
+### [hostname](#hostname)
+### [uptime](#uptime)
+### [time_zone](#time_zone)
+### [kernel_info](#kernel_info)
 ### [send_data](#send_data)
 
 
@@ -15,7 +21,7 @@ check if a file exists.
 
 | Name | Type | Description | Required |
 | --- | ---- | ---- | ---- |
-| filepath | `string` | file location to check | true |
+| filepath | `string` | absolute file path  | true |
 
 
 *Return value(s):*  
@@ -24,7 +30,7 @@ check if a file exists.
 | --- | ---- |
 | `boolean` | `true` if exists, otherwise is `false` |
 
-*Examples:*  
+*Example:*  
 
 ``` lua
 file = '/your/file/path'
@@ -33,6 +39,53 @@ print(exists)
 ```
 
 ---
+
+## file_info
+
+`file_info(filepath)`
+
+read file attributes and metadata.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| filepath | `string` | absolute file path  | true |
+
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table` | contains details of file as followings |
+
+
+*file inattributes:*  
+| Name | Type | Description |
+| --- | ---- | ---- |
+| size | number | Size of file in bytes |
+| block_size | number | Block size of filesystem |
+| mode | number | Permission bits |
+| uid | number | Owning user ID |
+| gid | number | Owning group ID |
+| device | number | Device ID (optional) |
+| inode | number | Filesystem inode number |
+| hard_links | number | Number of hard links |
+| ctime | number | Last status change time |
+| mtime | number | Last modification time |
+| atime | number | Last access time |
+
+*Example:*  
+
+``` lua
+file = '/your/file/path'
+info = file_info(file)
+```
+
+---
+
 
 ## read_file
 
@@ -44,31 +97,134 @@ reads the file content.
 
 | Name | Type | Description | Required |
 | --- | ---- | ---- | ---- |
-| filepath | `string` | the file path to read | true |
+| filepath | `string` | absolute file path| true |
 
 
-*Return value(s):*  
+*Return value(s):*   
+
+it issues an error when fail to read.
 
 | Type | Description |
 | --- | ---- |
 | `string` | file content |
-| `string` | error detail if read failed |
 
 
 *Examples:*  
 
 ``` lua
 file='/your/file/path'
-content, err = read_file(file)
-if err ~= '' then
-    print("error: "..err)
-else
-    print(content)
-end
+content = read_file(file)
 ```
 
 ---
 
+
+## file_hash
+
+`file_hash(filepath)`
+
+calculate the md5 sum of file content.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| filepath | `string` | absolute file path| true |
+
+
+*Return value(s):*   
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `string` | md5 of file content |
+
+
+*Examples:*  
+
+``` lua
+file='/your/file/path'
+content = file_hash(file)
+```
+
+---
+
+## hostname
+
+`hostname()`
+
+get current hostname.
+
+
+*Return value(s):*   
+
+it issues an error when fail to get.
+
+| Type | Description |
+| --- | ---- |
+| `string` | hostname |
+
+
+---
+
+## uptime
+
+`uptime()`
+
+time passed since last boot.
+
+
+*Return value(s):*   
+
+| Type | Description |
+| --- | ---- |
+| `number` | Total uptime seconds |
+
+---
+
+## time_zone
+
+`time_zone()`
+
+current timezone in the system
+
+
+*Return value(s):*   
+
+| Type | Description |
+| --- | ---- |
+| `string` | current timezone in the system |
+
+---
+
+
+## kernel_info
+
+`kernel_info()`
+
+linux kernel modules both loaded and within the load search path
+
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table` | see following |
+
+
+*returned table:*  
+| Name | Type | Description |
+| --- | ---- | ---- |
+| version | string | Kernel version |
+| arguments | string | Kernel arguments |
+| path | string | Kernel path |
+| device | string | Kernel device identifier |
+
+
+---
 
 ## send_data
 

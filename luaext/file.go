@@ -3,7 +3,6 @@ package luaext
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -29,25 +28,22 @@ func fileExist(l *lua.LState) int {
 	return 1
 }
 
-func file_info(l *lua.LState) int {
+func fileInfo(l *lua.LState) int {
 
 	var info lua.LTable
 
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
-		errstr := fmt.Sprintf("bad argument 1 (%v expected, got %v)", lua.LTString.String(), lv.Type().String())
-		l.Push(lua.LNil)
-		l.Push(lua.LString(errstr))
-		return 2
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
 	}
 
 	path := string(lv.(lua.LString))
 	path = strings.TrimSpace(path)
 	stat, err := os.Stat(path)
 	if err != nil {
-		l.Push(lua.LNil)
-		l.Push(lua.LString(err.Error()))
-		return 2
+		l.RaiseError("%s", err)
+		return lua.MultRet
 	}
 
 	st := stat.Sys().(*syscall.Stat_t)
@@ -60,37 +56,32 @@ func file_info(l *lua.LState) int {
 	info.RawSetString("device", lua.LNumber(st.Dev))
 	info.RawSetString("inode", lua.LNumber(st.Ino))
 	info.RawSetString("hard_links", lua.LNumber(st.Nlink))
-
 	info.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
 	info.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
 	info.RawSetString("atime", lua.LNumber(st.Atim.Sec))
 
 	l.Push(&info)
-	l.Push(lua.LString(""))
-	return 2
+	return 1
 }
 
 func readFile(l *lua.LState) int {
 	content := ""
-	errstr := ""
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
-		errstr = fmt.Sprintf("bad argument 1 (%v expected, got %v)", lua.LTString.String(), lv.Type().String())
-		l.Push(lua.LString(content))
-		l.Push(lua.LString(errstr))
-		return 2
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
 	}
 
 	path := string(lv.(lua.LString))
 	path = strings.TrimSpace(path)
 	if data, err := ioutil.ReadFile(path); err != nil {
-		errstr = err.Error()
+		l.RaiseError("%s", err)
+		return lua.MultRet
 	} else {
 		content = string(data)
 	}
 	l.Push(lua.LString(content))
-	l.Push(lua.LString(errstr))
-	return 2
+	return 1
 }
 
 func fileHash(l *lua.LState) int {
