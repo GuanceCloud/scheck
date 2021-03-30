@@ -1,14 +1,13 @@
 
-[file_exist](#file_exist)
-[file_info](#file_info)
-[read_file](#read_file)
-[file_hash](#file_hash)
-[hostname](#hostname)
-[uptime](#uptime)
-[time_zone](#time_zone)
-[kernel_info](#kernel_info)
-[send_data](#send_data)
-
+[file_exist](#file_exist)  
+[file_info](#file_info)  
+[read_file](#read_file)  
+[file_hash](#file_hash)  
+[hostname](#hostname)  
+[uptime](#uptime)  
+[time_zone](#time_zone)  
+[kernel_info](#kernel_info)  
+[send_data](#send_data)  
 
 
 ## file_exist
