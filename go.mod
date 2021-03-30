@@ -9,6 +9,7 @@ require (
 	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil v3.21.2+incompatible
+	github.com/sirupsen/logrus v1.8.1
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da
 )

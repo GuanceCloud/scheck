@@ -3,19 +3,22 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io/ioutil"
-	"log"
+
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/luaext"
 )
 
 var (
-	flagFuncs = flag.Bool("funcs", false, `show all supported lua-extend functions`)
+	flagFuncs   = flag.Bool("funcs", false, `show all supported lua-extend functions`)
+	flagVersion = flag.Bool("version", false, `show version`)
 
 	flagConfig = flag.String("config", "", "configuration file to load")
 
@@ -23,20 +26,50 @@ var (
 	flagTestLuaFile = flag.String("f", ``, `test a lua file`)
 )
 
+var (
+	Version = ""
+)
+
 func main() {
 
 	flag.Parse()
 	applyFlags()
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	if err := checker.LoadConfig(*flagConfig); err != nil {
 		log.Fatalf("%s", err)
 	}
 
+	setupLogger()
+
 	run()
 }
 
+func setupLogger() {
+	if checker.Cfg.Log != "" {
+		lf, err := os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		log.SetOutput(lf)
+	}
+	switch checker.Cfg.LogLevel {
+	case "debug":
+		log.SetLevel(log.DebugLevel)
+	case "warn":
+		log.SetLevel(log.WarnLevel)
+	case "error":
+		log.SetLevel(log.ErrorLevel)
+	default:
+		log.SetLevel(log.InfoLevel)
+	}
+}
+
 func applyFlags() {
+
+	if *flagVersion {
+		fmt.Printf("security checker version %s\n", Version)
+		os.Exit(0)
+	}
 
 	if *flagFuncs {
 		luaext.DumpSupportLuaFuncs(os.Stdout)
@@ -85,7 +118,7 @@ func run() {
 		select {
 		case sig := <-signals:
 			if sig == syscall.SIGHUP {
-				// reaload config
+				log.Debugf("reload config")
 			}
 			cancel()
 		}

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 
 	diskutil "github.com/shirou/gopsutil/disk"
@@ -231,7 +231,7 @@ func ulimitInfo(l *lua.LState) int {
 			item.RawSetString("hard_limit", lua.LNumber(rLimit.Max))
 			result.Append(&item)
 		} else {
-			log.Printf("[error] failt ot getrlimit, %s", err)
+			log.Errorf("fail ot getrlimit, %s", err)
 		}
 	}
 	l.Push(&result)

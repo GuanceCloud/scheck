@@ -1,0 +1,17 @@
+#
+# systemd serivce setting
+#
+[Unit]
+Description=security checker with lua script
+After=network.target
+
+[Service]
+WorkingDirectory=/usr/local/security-checker
+ExecReload=/bin/kill -2 $MAINPID
+KillMode=process
+Restart=always
+RestartSec=3s
+ExecStart=/usr/local/security-checker/checker -config /usr/local/security-checker/checker.conf
+
+[Install]
+WantedBy=default.target

@@ -1,9 +1,8 @@
 package checker
 
 import (
-	"log"
-
 	cron "github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -25,9 +24,12 @@ func newLuaCron() *luaCron {
 
 func (c *luaCron) addLuaScript(ls *luaState) (err error) {
 	_, err = c.AddFunc(ls.rule.ruleCfg.Cron, func() {
+		log.Debugf("start run %s", ls.rule.File)
 		err := ls.rule.run(ls.lState)
 		if err != nil {
-			log.Printf("[error] run failed, %s", err)
+			log.Errorf("run %s failed, %s", ls.rule.File, err)
+		} else {
+			log.Debugf("run %s ok", ls.rule.File)
 		}
 	})
 	return

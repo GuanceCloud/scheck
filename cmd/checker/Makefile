@@ -1,7 +1,11 @@
-.PHONY: build
+.PHONY: build pub aaa
 
 BIN = "checker"
+SERVICE_NAME = "security-checker"
 BUILD_DIR = build
+PUB_DIR = pub
+
+INSTALL_DIR = "/usr/local/security-checker"
 
 VERSION := $(shell git describe --always --tags)
 DATE := $(shell date -u +'%Y-%m-%d %H:%M:%S')
@@ -27,15 +31,17 @@ export GIT_INFO
 
 
 define build
-	@echo $(pwd)
-	@echo "===== bilding $(BIN) ===="
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(BIN) -ldflags "-w -s" main.go
-	@tree -Csh -L 3 $(BUILD_DIR)
+	@echo "===== building $(BIN) for $(1)-$(2) ===="
+	@mkdir -p "$(BUILD_DIR)/$(1)-$(2)/pub"
+	@GOOS=$(1) GOARCH=$(2) go build -o $(BUILD_DIR)/$(1)-$(2)/$(BIN) -ldflags "-w -s -X main.Version=$(VERSION)" main.go
+	@tar -czf $(BUILD_DIR)/$(1)-$(2)/pub/$(SERVICE_NAME)-$(1)-$(2)-$(VERSION).tar.gz autostart -C build $(BIN) -C ../samples checker.conf.sample
+	@cp -f install.sh $(BUILD_DIR)/$(1)-$(2)/pub/install.sh
 endef
 
-
 build:
-	$(call build)
+	$(call build,linux,amd64)
+	@tree -Csh -L 3 $(BUILD_DIR)
+
+
 
 	

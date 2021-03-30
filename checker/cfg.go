@@ -11,16 +11,12 @@ var (
 )
 
 type Config struct {
-	Output  string `toml:output`
 	RuleDir string `toml:rule_dir`
-}
+	Output  string `toml:output`
 
-const (
-	SampleMainConfig = `
-output = ''
-rule_dir = ''
-`
-)
+	Log      string `toml:log`
+	LogLevel string `toml:log_level`
+}
 
 func LoadConfig(p string) error {
 	cfgdata, err := ioutil.ReadFile(p)

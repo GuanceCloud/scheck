@@ -3,12 +3,12 @@ package checker
 import (
 	"bufio"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
 
@@ -39,7 +39,7 @@ type RuleCfg struct {
 func (r *Rule) run(ls *lua.LState) error {
 	defer func() {
 		if e := recover(); e != nil {
-			log.Printf("[panic] %v", e)
+			log.Errorf("panic, %v", e)
 		}
 	}()
 	var err error
@@ -52,22 +52,22 @@ func (r *Rule) run(ls *lua.LState) error {
 
 func (c *Checker) newRuleFromFile(path string) (*Rule, error) {
 
-	manifestFile := strings.TrimRight(path, filepath.Ext(path)) + ".manifest"
+	manifestFile := strings.TrimRight(path, filepath.Ext(path)) + ".conf"
 
 	manifest, err := ioutil.ReadFile(manifestFile)
 	if err != nil {
-		log.Printf("[error] %s", err)
+		log.Errorf("%s", err)
 		return nil, err
 	}
 
 	var rc RuleCfg
 	if err := toml.Unmarshal(manifest, &rc); err != nil {
-		log.Printf("[error] %s", err)
+		log.Errorf("%s", err)
 		return nil, err
 	}
 
 	if _, err := specParser.Parse(rc.Cron); err != nil {
-		log.Printf("[error] invalid cron in: %s, %s", manifestFile, err)
+		log.Errorf("invalid cron in: %s, %s", manifestFile, err)
 		return nil, err
 	}
 
@@ -94,12 +94,12 @@ func compileLua(filePath string) (*lua.FunctionProto, error) {
 	reader := bufio.NewReader(file)
 	chunk, err := luaparse.Parse(reader, filePath)
 	if err != nil {
-		log.Printf("[error] fail to parse lua file '%s', err:%s", filePath, err)
+		log.Errorf("fail to parse lua file '%s', err: %s", filePath, err)
 		return nil, err
 	}
 	proto, err := lua.Compile(chunk, filePath)
 	if err != nil {
-		log.Printf("[error] fail to compile lua file '%s', err:%s", filePath, err)
+		log.Errorf("fail to compile lua file '%s', err: %s", filePath, err)
 		return nil, err
 	}
 	return proto, nil

@@ -3,12 +3,12 @@ package checker
 import (
 	"context"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/luaext"
 )
@@ -50,23 +50,22 @@ func (c *Checker) Start(ctx context.Context) {
 		if e := recover(); e != nil {
 			buf := make([]byte, 2048)
 			n := runtime.Stack(buf, false)
-			log.Printf("[panic] %s", e)
-			log.Printf("[panic] %s", string(buf[:n]))
+			log.Errorf("panic %s", e)
+			log.Errorf("%s", string(buf[:n]))
 
 		}
 		c.outputer.close()
-		log.Printf("[info] checker exit")
+		log.Info("checker exit")
 	}()
 
-	log.Printf("[debug] rule dir: %s", c.rulesDir)
+	log.Debugf("rule dir: %s", c.rulesDir)
 
 	if err := c.loadFiles(); err != nil {
 		return
 	}
 
 	if len(c.rules) == 0 {
-		log.Printf("[warn] no rule found")
-		return
+		log.Warnf("no rule found")
 	}
 
 	c.cron.start()
@@ -87,7 +86,7 @@ func (c *Checker) loadFiles() error {
 
 	ls, err := ioutil.ReadDir(c.rulesDir)
 	if err != nil {
-		log.Printf("[error] %s", err)
+		log.Errorf("%s", err)
 		return err
 	}
 
@@ -99,8 +98,7 @@ func (c *Checker) loadFiles() error {
 		path := filepath.Join(c.rulesDir, f.Name())
 
 		if !strings.HasSuffix(f.Name(), ".lua") {
-			//log.Printf("[debug] ignore non-lua %s", path)
-			return nil
+			continue
 		}
 
 		if r, err := c.newRuleFromFile(path); err == nil {

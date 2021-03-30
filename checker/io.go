@@ -6,13 +6,14 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"net/http"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	ifxcli "github.com/influxdata/influxdb1-client/v2"
 )
@@ -37,7 +38,7 @@ func newOutputer(output string) *outputer {
 		path := strings.TrimPrefix(o.outputPath, "file://")
 		f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
-			log.Printf("[error] %s", err)
+			log.Errorf("%s", err)
 		} else {
 			o.outputFile = f
 		}
@@ -46,7 +47,7 @@ func newOutputer(output string) *outputer {
 			Timeout: 30 * time.Second,
 		}
 	} else {
-		log.Printf("[warn] invalid output: %s", output)
+		log.Warnf("invalid output: %s", output)
 	}
 
 	return o
@@ -55,7 +56,7 @@ func newOutputer(output string) *outputer {
 func (o *outputer) close() {
 	if o.outputFile != nil && o.outputFile != os.Stdout {
 		if err := o.outputFile.Close(); err != nil {
-			log.Printf("[error] %s", err)
+			log.Errorf("%s", err)
 		}
 	}
 }
@@ -73,7 +74,7 @@ func (c *outputer) sendMetric(ctx context.Context, measurement string, tags map[
 func buildBody(data []byte) (body []byte, gzon bool, err error) {
 	if len(data) > 1024 { // should not gzip on file output
 		if body, err = gzipCompress(data); err != nil {
-			log.Printf("[error] %s", err.Error())
+			log.Errorf("%s", err.Error())
 			return
 		}
 		gzon = true
@@ -95,7 +96,7 @@ func (o *outputer) sendData(data []byte) error {
 
 	if o.outputFile != nil {
 		if _, err := o.outputFile.Write(append(body, '\n')); err != nil {
-			log.Printf("%s", err)
+			log.Errorf("%s", err)
 			return err
 		}
 		return nil
@@ -132,16 +133,16 @@ func (o *outputer) sendData(data []byte) error {
 
 	switch resp.StatusCode / 100 {
 	case 2:
-		log.Printf("[debug] post %d to %s ok(gz: %v), cost %v, response: %s",
+		log.Debugf("post %d to %s ok(gz: %v), cost %v, response: %s",
 			len(body), o.outputPath, gz, time.Since(postbeg), string(respbody))
 		return nil
 
 	case 4:
-		log.Printf("[error] post %d to %s failed(HTTP: %d): %s, cost %v, data dropped", len(body), o.outputPath, resp.StatusCode, string(respbody), time.Since(postbeg))
+		log.Errorf("post %d to %s failed(HTTP: %d): %s, cost %v, data dropped", len(body), o.outputPath, resp.StatusCode, string(respbody), time.Since(postbeg))
 		return fmt.Errorf("4xx error")
 
 	case 5:
-		log.Printf("[error] post %d to %s failed(HTTP: %s): %s, cost %v",
+		log.Errorf("post %d to %s failed(HTTP: %s): %s, cost %v",
 			len(body), o.outputPath, resp.Status, string(respbody), time.Since(postbeg))
 		return fmt.Errorf("5xx error")
 	}
