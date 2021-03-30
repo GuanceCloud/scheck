@@ -6,9 +6,17 @@
 
 >Security Checker 仅支持 Linux
 
-### 安装
+### 安装/更新
 
+*安装*：  
+``` bash
+bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)"
+```
 
+*更新*：  
+``` bash
+bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh) --upgrade"
+```
 
 ### 使用
 
@@ -71,5 +79,5 @@ os - 其中以下函数被禁用："execute", "remove", "rename", "setenv", "set
 
 编写完脚本及其配置文件后，放入主配置文件中指定的rule_dir目录中，重启服务，Security Checker 会在指定时间或指定间隔执行检测脚本并以日志形式发送检测结果。  
 
-### 扩展函数
+### lua 函数
 见 [函数](./docs/funcs.md)

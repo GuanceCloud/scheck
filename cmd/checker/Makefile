@@ -32,14 +32,16 @@ export GIT_INFO
 
 define build
 	@echo "===== building $(BIN) for $(1)-$(2) ===="
-	@mkdir -p "$(BUILD_DIR)/$(1)-$(2)/pub"
+	@mkdir -p "$(BUILD_DIR)/$(1)-$(2)" "$(BUILD_DIR)/pub"
 	@GOOS=$(1) GOARCH=$(2) go build -o $(BUILD_DIR)/$(1)-$(2)/$(BIN) -ldflags "-w -s -X main.Version=$(VERSION)" main.go
-	@tar -czf $(BUILD_DIR)/$(1)-$(2)/pub/$(SERVICE_NAME)-$(1)-$(2)-$(VERSION).tar.gz autostart -C build $(BIN) -C ../samples checker.conf.sample
-	@cp -f install.sh $(BUILD_DIR)/$(1)-$(2)/pub/install.sh
+	@tar -czf $(BUILD_DIR)/pub/$(SERVICE_NAME)-$(1)-$(2)-$(VERSION).tar.gz autostart -C "$(BUILD_DIR)/$(1)-$(2)" $(BIN) -C ../../samples checker.conf.sample
+	@cp -f install.sh $(BUILD_DIR)/pub/install.sh
 endef
 
 build:
+	@rm -f "$(BUILD_DIR)/pub"/*
 	$(call build,linux,amd64)
+	$(call build,linux,386)
 	@tree -Csh -L 3 $(BUILD_DIR)
 
 

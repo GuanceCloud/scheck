@@ -1,6 +1,20 @@
 #! /bin/bash
 
-download_url="https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/security-checker-ff19f2b.tar.gz"
+download_url="https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/security-checker-"
+
+goos="$(uname -s)"
+goarch="$(uname -m)"
+
+if [ "${goos}" == "Linux" ] || [ "${goos}" == "linux" ]  ;then
+    goos="linux"
+fi
+
+if [ "${goarch}" == "x86_64" ] ;then
+    goarch="amd64"
+fi
+
+download_url="${download_url}${goos}-${goarch}.tar.gz"
+
 
 service_name="security-checker"
 bin_name="checker"
