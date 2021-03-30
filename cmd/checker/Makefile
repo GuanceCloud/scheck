@@ -45,5 +45,6 @@ build:
 	@tree -Csh -L 3 $(BUILD_DIR)
 
 
-
-	
+local:
+	$(call build,linux,amd64)
+	@cp build/linux-amd64/$(BIN) /usr/local/security-checker/

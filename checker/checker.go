@@ -11,6 +11,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/luaext"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
+)
+
+var (
+	checker *Checker
 )
 
 type (
@@ -21,8 +26,6 @@ type (
 
 		cron *luaCron
 
-		outputer *outputer
-
 		luaExtends *luaext.LuaExt
 	}
 
@@ -32,20 +35,7 @@ type (
 	}
 )
 
-// NewChecker
-func NewChecker(output, rulesDir string) *Checker {
-	c := &Checker{
-		outputer:   newOutputer(output),
-		rulesDir:   rulesDir,
-		luaExtends: luaext.NewLuaExt(),
-		cron:       newLuaCron(),
-	}
-	return c
-}
-
-// Start
-func (c *Checker) Start(ctx context.Context) {
-
+func (c *Checker) start(ctx context.Context) {
 	defer func() {
 		if e := recover(); e != nil {
 			buf := make([]byte, 2048)
@@ -54,7 +44,7 @@ func (c *Checker) Start(ctx context.Context) {
 			log.Errorf("%s", string(buf[:n]))
 
 		}
-		c.outputer.close()
+		output.Outputer.Close()
 		log.Info("checker exit")
 	}()
 
@@ -80,6 +70,21 @@ func (c *Checker) Start(ctx context.Context) {
 
 	<-ctx.Done()
 	c.cron.stop()
+}
+
+// Start
+func Start(ctx context.Context, rulesDir, outputpath string) {
+
+	checker = &Checker{
+		rulesDir:   rulesDir,
+		luaExtends: luaext.NewLuaExt(),
+		cron:       newLuaCron(),
+	}
+
+	log.Debugf("output: %s", outputpath)
+
+	output.NewOutputer(outputpath)
+	checker.start(ctx)
 }
 
 func (c *Checker) loadFiles() error {

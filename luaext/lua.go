@@ -41,7 +41,7 @@ var (
 		{`file_info`, file_info},
 		{`read_file`, readFile},
 		{`file_hash`, fileHash},
-		{`send_metric`, sendMetric},
+		{`send_data`, sendMetric},
 		{`hostname`, hostname},
 		{`uptime`, uptime},
 		{`time_zone`, zone},

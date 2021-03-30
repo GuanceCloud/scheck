@@ -107,8 +107,7 @@ func run() {
 			wg.Done()
 		}()
 
-		c := checker.NewChecker(checker.Cfg.Output, checker.Cfg.RuleDir)
-		c.Start(ctx)
+		checker.Start(ctx, checker.Cfg.RuleDir, checker.Cfg.Output)
 	}()
 
 	signals := make(chan os.Signal, 1)

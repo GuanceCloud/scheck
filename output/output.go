@@ -1,9 +1,8 @@
-package checker
+package output
 
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -19,7 +18,7 @@ import (
 )
 
 type (
-	outputer struct {
+	DataOutputer struct {
 		outputPath string
 
 		httpCli    *http.Client
@@ -27,8 +26,12 @@ type (
 	}
 )
 
-func newOutputer(output string) *outputer {
-	o := &outputer{
+var (
+	Outputer *DataOutputer
+)
+
+func NewOutputer(output string) *DataOutputer {
+	o := &DataOutputer{
 		outputPath: output,
 	}
 
@@ -50,10 +53,12 @@ func newOutputer(output string) *outputer {
 		log.Warnf("invalid output: %s", output)
 	}
 
+	Outputer = o
+
 	return o
 }
 
-func (o *outputer) close() {
+func (o *DataOutputer) Close() {
 	if o.outputFile != nil && o.outputFile != os.Stdout {
 		if err := o.outputFile.Close(); err != nil {
 			log.Errorf("%s", err)
@@ -61,7 +66,7 @@ func (o *outputer) close() {
 	}
 }
 
-func (c *outputer) sendMetric(ctx context.Context, measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
+func (c *DataOutputer) SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
 
 	data, err := makeMetric(measurement, tags, fields, t...)
 	if err != nil {
@@ -78,24 +83,22 @@ func buildBody(data []byte) (body []byte, gzon bool, err error) {
 			return
 		}
 		gzon = true
+	} else {
+		body = data
+		gzon = false
 	}
 
 	return
 }
 
-func (o *outputer) sendData(data []byte) error {
+func (o *DataOutputer) sendData(data []byte) error {
 
 	if len(data) == 0 {
 		return nil
 	}
 
-	body, gz, err := buildBody(data)
-	if err != nil {
-		return err
-	}
-
 	if o.outputFile != nil {
-		if _, err := o.outputFile.Write(append(body, '\n')); err != nil {
+		if _, err := o.outputFile.Write(append(data, '\n')); err != nil {
 			log.Errorf("%s", err)
 			return err
 		}
@@ -105,6 +108,13 @@ func (o *outputer) sendData(data []byte) error {
 	if o.httpCli == nil {
 		return nil
 	}
+
+	body, gz, err := buildBody(data)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("body:  %s", string(body))
 
 	req, err := http.NewRequest("POST", o.outputPath, bytes.NewBuffer(body))
 	if err != nil {

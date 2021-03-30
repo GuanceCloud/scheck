@@ -5,6 +5,7 @@ import (
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
 
 func sendMetric(l *lua.LState) int {
@@ -79,10 +80,7 @@ func sendMetric(l *lua.LState) int {
 		goto End
 	}
 
-	_ = tags
-	_ = measurement
-	_ = tm
-	err = nil //sendMetric(measurement, tags, fields, tm)
+	err = output.Outputer.SendMetric(measurement, tags, fields, tm)
 
 End:
 	if err != nil {

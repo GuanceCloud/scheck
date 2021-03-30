@@ -8,6 +8,7 @@ a.out
 dist/
 build/
 old/
+examples/
 *.tar.gz
 git/git.go
 *.log
