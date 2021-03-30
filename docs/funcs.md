@@ -61,7 +61,8 @@ it issues an error when fail to read.
 | `table` | contains details of file as followings |
 
 
-*file inattributes:*  
+*file attributes:*   
+
 | Name | Type | Description |
 | --- | ---- | ---- |
 | size | number | Size of file in bytes |
