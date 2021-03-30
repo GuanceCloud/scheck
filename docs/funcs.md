@@ -58,10 +58,8 @@ it issues an error when fail to read.
 
 | Type | Description |
 | --- | ---- |
-| `table` | contains details of file as followings |
+| `table` | contains details of file as below |
 
-
-*file attributes:*   
 
 | Name | Type | Description |
 | --- | ---- | ---- |
@@ -212,10 +210,9 @@ it issues an error when fail to read.
 
 | Type | Description |
 | --- | ---- |
-| `table` | see following |
+| `table` | details as below |
 
-
-*returned table:*  
+ 
 | Name | Type | Description |
 | --- | ---- | ---- |
 | version | string | Kernel version |
