@@ -26,7 +26,7 @@ bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com
 rule_dir='/usr/local/security-checker/checker.conf'
 
 # ##(必选) 配置输入以收集脚本产生的检测日志，支持本地文件或http(s)链接
-# ##file: file:///your/file/path
+# ##本地文件时需要使用前缀 file://， 例: file:///your/file/path
 # ##remote:  http(s)://your.url
 output=''
 

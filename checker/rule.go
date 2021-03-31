@@ -36,6 +36,17 @@ type RuleCfg struct {
 	Author   string `toml:"author,omitempty"`
 }
 
+func (c *RuleCfg) toLuaTable() *lua.LTable {
+	var t lua.LTable
+	t.RawSetString("id", lua.LString(c.RuleID))
+	t.RawSetString("category", lua.LString(c.Category))
+	t.RawSetString("level", lua.LString(c.Level))
+	t.RawSetString("title", lua.LString(c.Title))
+	t.RawSetString("desc", lua.LString(c.Desc))
+	t.RawSetString("author", lua.LString(c.Author))
+	return &t
+}
+
 func (r *Rule) run(ls *lua.LState) error {
 	defer func() {
 		if e := recover(); e != nil {

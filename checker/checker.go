@@ -116,6 +116,7 @@ func (c *Checker) loadFiles() error {
 
 func (c *Checker) newLuaState(r *Rule) *luaState {
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
+	ls.SetGlobal("__this_configuration", r.ruleCfg.toLuaTable())
 	if err := c.luaExtends.Register(ls); err != nil {
 		log.Printf("[error] %s", err)
 		return nil

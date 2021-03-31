@@ -3,6 +3,7 @@ package luaext
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -120,9 +121,17 @@ func users(l *lua.LState) int {
 	for _, u := range us {
 		var ut lua.LTable
 		ut.RawSetString("username", lua.LString(u.name))
-		ut.RawSetString("uid", lua.LString(u.uid))
-		ut.RawSetString("gid", lua.LString(u.gid))
-		ut.RawSetString("home", lua.LString(u.home))
+		uid := -1
+		gid := -1
+		if n, err := strconv.Atoi(u.uid); err == nil {
+			uid = n
+		}
+		if n, err := strconv.Atoi(u.gid); err == nil {
+			uid = n
+		}
+		ut.RawSetString("uid", lua.LNumber(uid))
+		ut.RawSetString("gid", lua.LNumber(gid))
+		ut.RawSetString("directory", lua.LString(u.home))
 		ut.RawSetString("shell", lua.LString(u.shell))
 		result.Append(&ut)
 	}
@@ -227,8 +236,20 @@ func ulimitInfo(l *lua.LState) int {
 		if err == nil {
 			var item lua.LTable
 			item.RawSetString("type", lua.LString(r.name))
-			item.RawSetString("soft_limit", lua.LNumber(rLimit.Cur))
-			item.RawSetString("hard_limit", lua.LNumber(rLimit.Max))
+			v := ""
+			if int(rLimit.Cur) == syscall.RLIM_INFINITY {
+				v = "unlimited"
+			} else {
+				v = fmt.Sprintf("%v", rLimit.Cur)
+			}
+			item.RawSetString("soft_limit", lua.LString(v))
+
+			if int(rLimit.Max) == syscall.RLIM_INFINITY {
+				v = "unlimited"
+			} else {
+				v = fmt.Sprintf("%v", rLimit.Max)
+			}
+			item.RawSetString("hard_limit", lua.LString(v))
 			result.Append(&item)
 		} else {
 			log.Errorf("fail ot getrlimit, %s", err)
@@ -356,7 +377,11 @@ func shellHistory(l *lua.LState) int {
 
 			for _, cmd := range cmds {
 				var item lua.LTable
-				item.RawSetString("uid", lua.LString(u.uid))
+				uid := -1
+				if n, err := strconv.Atoi(u.uid); err == nil {
+					uid = n
+				}
+				item.RawSetString("uid", lua.LNumber(uid))
 				item.RawSetString("history_file", lua.LString(filepath.Join(u.home, f)))
 				item.RawSetString("command", lua.LString(cmd.command))
 				item.RawSetString("time", lua.LNumber(cmd.time))

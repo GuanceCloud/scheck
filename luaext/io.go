@@ -80,6 +80,17 @@ func sendMetric(l *lua.LState) int {
 		goto End
 	}
 
+	lv = l.GetGlobal("__this_configuration")
+	if lv.Type() == lua.LTTable {
+		if tags == nil {
+			tags = map[string]string{}
+		}
+		t := lv.(*lua.LTable)
+		t.ForEach(func(k lua.LValue, v lua.LValue) {
+			tags[k.String()] = v.String()
+		})
+	}
+
 	err = output.Outputer.SendMetric(measurement, tags, fields, tm)
 
 End:
