@@ -7,7 +7,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/usr/local/security-checker
-ExecReload=/bin/kill -2 $MAINPID
+ExecReload=/bin/kill -1 $MAINPID
 KillMode=process
 Restart=always
 RestartSec=3s
