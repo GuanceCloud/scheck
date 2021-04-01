@@ -6,6 +6,20 @@ import (
 	"github.com/influxdata/toml"
 )
 
+const (
+	MainConfigSample = `# ##(required) directory contains script
+rule_dir='/usr/local/security-checker/rules.d'
+
+# ##(required) output of the check result, support local file or remote http server
+# ##localfile: file:///your/file/path
+# ##remote:  http(s)://your.url
+output='file:///var/log/security-checker/check.log'
+
+log='/usr/local/security-checker/log'
+log_level='info'	
+`
+)
+
 var (
 	Cfg *Config
 )

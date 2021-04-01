@@ -19,7 +19,7 @@ download_url="${download_url}${goos}-${goarch}.tar.gz"
 service_name="security-checker"
 bin_name="checker"
 install_dir="/usr/local/${service_name}"
-upgrade=${1}
+upgrade=0
 
 if ! mkdir -p "${install_dir}" ;then
     exit -1
@@ -58,9 +58,6 @@ fi
 
 init() {
     mkdir -p "${install_dir}/rules.d"
-    if [ ! -f "${install_dir}/checker.conf" ] ;then
-        mv "${install_dir}/checker.conf.sample"  "${install_dir}/checker.conf"
-    fi
 }
 
 registerService() {

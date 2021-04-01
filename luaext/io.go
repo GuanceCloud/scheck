@@ -1,181 +1,147 @@
 package luaext
 
 import (
-	"fmt"
-	"time"
+	"sync"
 
 	lua "github.com/yuin/gopher-lua"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
 
-func sendMetric(l *lua.LState) int {
+const OneFileGlobalConfKey = "__this_configuration"
 
-	var err error
+func setCache(l *lua.LState) int {
 
-	var measurement string
-	var fields map[string]interface{}
-	var tags map[string]string
-	var tm time.Time
-
-	lv := l.Get(1)
-	if v, ok := lv.(lua.LString); !ok {
-		err = fmt.Errorf("bad argument 1 (%v expected, got %v)", lua.LTString.String(), lv.Type().String())
-	} else {
-		measurement = string(v)
-		if measurement == "" {
-			err = fmt.Errorf("measurement cannot be empty")
+	filename := ""
+	lv := l.GetGlobal(OneFileGlobalConfKey)
+	if lv.Type() == lua.LTTable {
+		t := lv.(*lua.LTable)
+		rulefile := t.RawGetString("rulefile")
+		if rulefile != lua.LNil && rulefile.Type() == lua.LTString {
+			filename = string(rulefile.(lua.LString))
 		}
 	}
 
-	if err != nil {
-		goto End
+	if filename == "" {
+		return 0
 	}
+
+	var key string
+
+	lv = l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return 0
+	}
+	key = string(lv.(lua.LString))
 
 	lv = l.Get(2)
-	if v, ok := lv.(*lua.LTable); !ok {
-		err = fmt.Errorf("bad argument 2 (%v expected, got %v)", lua.LTTable.String(), lv.Type().String())
-	} else {
-		fields, err = table2fields(v)
-		if err == nil {
-			if len(fields) == 0 {
-				err = fmt.Errorf("fields requires at least one key-value")
-			}
-		}
+	if lv == lua.LNil {
+		setKey(filename, key, nil)
+		return 0
 	}
-
-	if err != nil {
-		goto End
-	}
-
-	lv = l.Get(3)
 	switch lv.Type() {
-	case lua.LTNil:
-	case lua.LTTable:
-		tags, err = table2tags(lv.(*lua.LTable))
+	case lua.LTBool:
 	case lua.LTNumber:
-		num := lv.(lua.LNumber)
-		if int64(num) > 0 {
-			tm = time.Unix(int64(num), 0)
-		}
+	case lua.LTString:
 	default:
-		err = fmt.Errorf("bad argument 3 ( %v(tags) or %v(timestamp) expected, got %v )", lua.LTTable.String(), lua.LTNumber.String(), lv.Type().String())
+		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number'", lv.Type().String())
+		return 0
 	}
 
-	if err != nil {
-		goto End
-	}
+	val := &luaCacheValue{}
+	val.fromLuaVal(lv)
 
-	if l.GetTop() >= 4 {
-		lv = l.Get(4)
-		if v, ok := lv.(lua.LNumber); !ok {
-			err = fmt.Errorf("bad argument 4 (%v expected, got %v)", lua.LTNumber.String(), lv.Type().String())
-		} else {
-			if int64(v) > 0 {
-				tm = time.Unix(int64(v), 0)
-			}
-		}
-	}
+	setKey(filename, key, val)
+	return 0
+}
 
-	if err != nil {
-		goto End
-	}
+func getCache(l *lua.LState) int {
 
-	lv = l.GetGlobal("__this_configuration")
+	filename := ""
+	lv := l.GetGlobal(OneFileGlobalConfKey)
 	if lv.Type() == lua.LTTable {
-		if tags == nil {
-			tags = map[string]string{}
-		}
 		t := lv.(*lua.LTable)
-		t.ForEach(func(k lua.LValue, v lua.LValue) {
-			tags[k.String()] = v.String()
-		})
+		lvfilename := t.RawGetString("rulefile")
+		if lvfilename != lua.LNil && lvfilename.Type() == lua.LTString {
+			filename = string(lvfilename.(lua.LString))
+		}
 	}
 
-	err = output.Outputer.SendMetric(measurement, tags, fields, tm)
+	if filename == "" {
+		l.Push(lua.LNil)
+		return 1
+	}
 
-End:
-	if err != nil {
-		l.Push(lua.LString(err.Error()))
+	var key string
+
+	lv = l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return 0
+	}
+	key = string(lv.(lua.LString))
+
+	val := getKey(filename, key)
+	if val == nil {
+		l.Push(lua.LNil)
 	} else {
-		l.Push(lua.LString(""))
+		l.Push(val.toLuaVal())
 	}
 	return 1
 }
 
-func table2tags(tbl *lua.LTable) (map[string]string, error) {
-	tags := map[string]string{}
-	var err error
+type luaKVCache map[string]*luaCacheValue
 
-	cb := func(k lua.LValue, v lua.LValue) {
-		if err != nil {
-			return
-		}
-
-		switch v.Type() {
-		case lua.LTBool:
-		case lua.LTNumber:
-		case lua.LTString:
-		default:
-			err = fmt.Errorf("invalid value of tags key: '%s'. tags value only support 'boolean', 'string' and 'number'", k.String())
-		}
-		if err == nil {
-			tags[k.String()] = v.String()
-		}
-	}
-
-	tbl.ForEach(cb)
-
-	if err != nil {
-		return nil, err
-	}
-	return tags, nil
+type luaCacheValue struct {
+	typ lua.LValueType
+	val interface{}
 }
 
-func table2fields(tbl *lua.LTable) (map[string]interface{}, error) {
-	fields := map[string]interface{}{}
-
-	var err error
-
-	cb := func(k lua.LValue, v lua.LValue) {
-		if err != nil {
-			return
-		}
-
-		switch v.Type() {
-		case lua.LTBool:
-		case lua.LTNumber:
-		case lua.LTString:
-		default:
-			err = fmt.Errorf("invalid value of fields key: '%s'. fields value only support 'boolean', 'string' and 'number'", k.String())
-		}
-		if err == nil {
-			var val interface{}
-			if v.Type() == lua.LTNumber {
-				num := v.(lua.LNumber)
-				if float64(num) == float64(int64(num)) {
-					val = int64(num)
-				} else {
-					val = float64(num)
-				}
-			} else {
-				val = v.String()
-			}
-			fields[k.String()] = val
-		}
+func (c *luaCacheValue) fromLuaVal(lv lua.LValue) {
+	c.typ = lv.Type()
+	switch c.typ {
+	case lua.LTBool:
+		c.val = lv.(lua.LBool)
+	case lua.LTNumber:
+		c.val = float64(lv.(lua.LNumber))
+	case lua.LTString:
+		c.val = lv.String()
 	}
-
-	tbl.ForEach(cb)
-
-	if err != nil {
-		return nil, err
-	}
-	return fields, nil
 }
 
-type cache struct {
-	store map[string]string
+func (c *luaCacheValue) toLuaVal() lua.LValue {
+	switch c.typ {
+	case lua.LTBool:
+		return lua.LBool(c.val.(bool))
+	case lua.LTNumber:
+		return lua.LNumber(c.val.(float64))
+	case lua.LTString:
+		return lua.LString(c.val.(string))
+	}
+	return lua.LNil
 }
 
-func (c *cache) set(k string, v string) {
+var (
+	cacheDB  map[string]luaKVCache = map[string]luaKVCache{}
+	cacheMux sync.Mutex
+)
 
+func setKey(filename string, key string, val *luaCacheValue) {
+	cacheMux.Lock()
+	defer cacheMux.Unlock()
+	c := cacheDB[filename]
+	if c == nil {
+		cacheDB[filename] = make(luaKVCache)
+		c = cacheDB[filename]
+	}
+	c[key] = val
+}
+
+func getKey(filename string, key string) *luaCacheValue {
+	cacheMux.Lock()
+	defer cacheMux.Unlock()
+	c := cacheDB[filename]
+	if c == nil {
+		return nil
+	}
+	return c[key]
 }

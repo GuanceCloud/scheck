@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"path/filepath"
 
 	"os"
 	"os/signal"
@@ -20,10 +20,12 @@ var (
 	flagFuncs   = flag.Bool("funcs", false, `show all supported lua-extend functions`)
 	flagVersion = flag.Bool("version", false, `show version`)
 
+	flagCfgSample = flag.Bool("config-sample", false, `show config sample`)
+
 	flagConfig = flag.String("config", "", "configuration file to load")
 
-	flagTestLuaStr  = flag.String("c", ``, `test a lua string`)
-	flagTestLuaFile = flag.String("f", ``, `test a lua file`)
+	//flagTestLuaStr  = flag.String("c", ``, `test a lua string`)
+	//flagTestLuaFile = flag.String("f", ``, `test a lua file`)
 )
 
 var (
@@ -48,7 +50,11 @@ func setupLogger() {
 	if checker.Cfg.Log != "" {
 		lf, err := os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 		if err != nil {
-			log.Fatalf("%s", err)
+			os.MkdirAll(filepath.Dir(checker.Cfg.Log), 0775)
+			lf, err = os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+			if err != nil {
+				log.Fatalf("%s", err)
+			}
 		}
 		log.SetOutput(lf)
 	}
@@ -71,28 +77,13 @@ func applyFlags() {
 		os.Exit(0)
 	}
 
+	if *flagCfgSample {
+		os.Stdout.WriteString(checker.MainConfigSample)
+		os.Exit(0)
+	}
+
 	if *flagFuncs {
 		luaext.DumpSupportLuaFuncs(os.Stdout)
-		os.Exit(0)
-	}
-
-	if *flagTestLuaStr != "" {
-		err := luaext.RunLuaScriptString(*flagTestLuaStr)
-		if err != nil {
-			log.Fatalf("[error] %s", err)
-		}
-		os.Exit(0)
-	}
-
-	if *flagTestLuaFile != "" {
-		data, err := ioutil.ReadFile(*flagTestLuaFile)
-		if err != nil {
-			log.Fatalf("[error] %s", err)
-		}
-		err = luaext.RunLuaScriptString(string(data))
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
 		os.Exit(0)
 	}
 }

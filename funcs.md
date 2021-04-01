@@ -18,7 +18,7 @@
 [users](#users)  
 [shadow](#shadow)  
 [shell_history](#shell_history)  
-[send_data](#send_data)  
+[trig](#trig)  
 
 
 ## file_exist
@@ -525,20 +525,17 @@ it issues an error when fail to read.
 
 ---
 
-## send_data
+## trig
 
-`send_data(measurement, fields[, tags[, timestamp]])`
+`trig([template_vals])`
 
-send data with the format of influxdb line protocol.
+trig an event and send it to target with line protocol.
 
 *Parameters:*  
 
 | Name | Type | Description | Required |
 | --- | ---- | ---- | ---- |
-| measurename | `string` | The name of the measurement that you want to write your data to | true |
-| fields | `table` | The field set for your data point. Every data point requires at least one field in line protocol | true |
-| tags | `table` | The tag set that you want to include with your data point | false |
-| timestamp | `number` | second-precision Unix time, use current time if empty | false |
+| template_vals | `table` | if you use template in manifest, the values of this table will replace the template variables | false |
 
 
 *Return value(s):*  
@@ -546,31 +543,3 @@ send data with the format of influxdb line protocol.
 | Type | Description |
 | --- | ---- |
 | `string` | empty if success, otherwise contains the error detail |
-
-
-*Examples:*  
-
-``` lua
-measurename='weather'
-fields={
-	temperature=82,
-	humidity=71
-}
-tags={
-	location='us-midwest', 
-	season='summer',
-	age=1,
-}
-
-err=send_data(measurename, fields) --only fields
-if err ~= '' then error(err) end
-
-err=send_data(measurename, fields, tags) --with tags
-if err ~= '' then error(err) end
-
-err=send_data(measurename, fields, os.time()) --with timestamp
-if err ~= '' then error(err) end
-
-err=send_data(measurename, fields, tags, os.time()) --with tags and timestamp
-if err ~= '' then error(err) end
-```

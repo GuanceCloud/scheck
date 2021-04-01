@@ -16,7 +16,7 @@ type (
 		disabledMethods []string
 	}
 
-	luaFunc struct {
+	LuaFunc struct {
 		Name string
 		Fn   lua.LGFunction
 	}
@@ -28,6 +28,7 @@ type (
 
 var (
 	supportLuaLibs = []luaLib{
+		{lua.LoadLibName, lua.OpenPackage, nil},
 		{lua.BaseLibName, lua.OpenBase, nil},
 		{lua.TabLibName, lua.OpenTable, nil},
 		{lua.StringLibName, lua.OpenString, nil},
@@ -36,12 +37,11 @@ var (
 		{lua.OsLibName, lua.OpenOs, []string{"execute", "remove", "rename", "setenv", "setlocale"}},
 	}
 
-	luaExtendFuncs = []luaFunc{
+	LuaExtendFuncs = []LuaFunc{
 		{`file_exist`, fileExist},
 		{`file_info`, fileInfo},
 		{`read_file`, readFile},
 		{`file_hash`, fileHash},
-		{`send_data`, sendMetric},
 		{`hostname`, hostname},
 		{`uptime`, uptime},
 		{`time_zone`, zone},
@@ -62,6 +62,8 @@ var (
 		{`shell_history`, shellHistory},
 		{`json_encode`, jsonEncode},
 		{`json_decode`, jsonDecode},
+		{`get_cache`, getCache},
+		{`set_cache`, setCache},
 	}
 )
 
@@ -71,17 +73,17 @@ func NewLuaExt() *LuaExt {
 	return l
 }
 
-// Register extended lua funcs to lua machine
-func (l *LuaExt) Register(lstate *lua.LState) error {
-	//luajson.Preload(lstate) //for json parse
-	if err := loadLuaLibs(lstate); err != nil {
-		return err
-	}
-	for _, f := range luaExtendFuncs {
-		lstate.Register(f.Name, f.Fn)
-	}
-	return nil
-}
+// // Register extended lua funcs to lua machine
+// func (l *LuaExt) Register(lstate *lua.LState) error {
+// 	//luajson.Preload(lstate) //for json parse
+// 	if err := loadLuaLibs(lstate); err != nil {
+// 		return err
+// 	}
+// 	for _, f := range luaExtendFuncs {
+// 		lstate.Register(f.Name, f.Fn)
+// 	}
+// 	return nil
+// }
 
 func unsupportFn(ls *lua.LState) int {
 	lv := ls.Get(lua.UpvalueIndex(1))
@@ -89,7 +91,7 @@ func unsupportFn(ls *lua.LState) int {
 	return 0
 }
 
-func loadLuaLibs(ls *lua.LState) error {
+func LoadLuaLibs(ls *lua.LState) error {
 
 	for _, lib := range supportLuaLibs {
 
@@ -115,20 +117,10 @@ func loadLuaLibs(ls *lua.LState) error {
 
 func DumpSupportLuaFuncs(w io.Writer) {
 	names := []string{}
-	for idx, f := range luaExtendFuncs {
+	for idx, f := range LuaExtendFuncs {
 		names = append(names, fmt.Sprintf("  %d. %s", idx+1, f.Name))
 	}
 	s := strings.Join(names, "\n")
 	s += "\n"
 	w.Write([]byte(s))
-}
-
-func RunLuaScriptString(script string) error {
-	ls := lua.NewState()
-	defer ls.Close()
-	le := NewLuaExt()
-	if err := le.Register(ls); err != nil {
-		return err
-	}
-	return ls.DoString(script)
 }

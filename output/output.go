@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -41,7 +42,11 @@ func NewOutputer(output string) *DataOutputer {
 		path := strings.TrimPrefix(o.outputPath, "file://")
 		f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
-			log.Errorf("%s", err)
+			os.MkdirAll(filepath.Dir(path), 0775)
+			f, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+			if err != nil {
+				log.Errorf("%s", err)
+			}
 		} else {
 			o.outputFile = f
 		}

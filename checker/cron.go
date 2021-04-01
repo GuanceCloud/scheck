@@ -23,7 +23,7 @@ func newLuaCron() *luaCron {
 }
 
 func (c *luaCron) addLuaScript(ls *luaState) (err error) {
-	_, err = c.AddFunc(ls.rule.ruleCfg.Cron, func() {
+	_, err = c.AddFunc(ls.rule.cron, func() {
 		log.Debugf("start run %s", ls.rule.File)
 		err := ls.rule.run(ls.lState)
 		if err != nil {
