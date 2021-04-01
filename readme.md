@@ -17,7 +17,7 @@ bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com
 bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh) --upgrade"
 ```
 
-安装完成后即以服务的方式运行，可以使用 `service`，`systemctl` 等服务管理工具来控制程序的启动、停止。 
+安装完成后即以服务的方式运行，服务名为`security-checker`，可以使用 `service`，`systemctl` 等服务管理工具来控制程序的启动、停止。 
 
 >Security Checker 目前仅支持 Linux
 
@@ -51,7 +51,7 @@ log_level='info'
 Security Checker 会定时周期性(由清单文件的 `cron` 指定)地执行检测脚本，lua脚本代码每次执行时检测相关安全事件(比如文件被改动、有新用户登录等)是否触发，如果触发了，则使用 [trig]() 函数将事件(以行协议格式)发送到由配置文件中 `output` 指定的目标中。   
 
 Security Checker 定义了若干 lua 扩展函数，并且为确保安全，禁用了一些lua包或函数，仅支持以下 lua 内置包/函数：  
-``` lua
+```
 内置基础函数，如print
 table
 math
@@ -80,7 +80,7 @@ title=''
 # ##(必选)当前事件的内容（支持模板，详情见下）
 desc=''
 
-# ##配置事件的执行周期（使用 linux crontab 的语法规则）
+# ##(必选)配置事件的执行周期（使用 linux crontab 的语法规则）
 cron=''
 ```
 
@@ -103,7 +103,7 @@ trig(tmpl_vals)
 ---
 
 ## 示例
-假设需要每10秒检查文件 `/etc/passwd` 的变动，检测到发生变动后，将事件记录到文件 `/var/log/security-checker/event.log` 中，可以进行如下操作：  
+假设需要每10秒检查文件 `/etc/passwd` 的变动，检测到变动后，将事件记录到文件 `/var/log/security-checker/event.log` 中，可以进行如下操作：  
 1. 进入安装目录，编辑配置文件 `checker.conf` 的 `output` 字段：  
 ```toml
 rule_dir='/usr/local/security-checker/rules.d'
@@ -127,19 +127,18 @@ cron='*/10 * * * *' #表示每10秒执行该lua脚本
 3. 在清单文件同级目录下新建脚本文件 `demo.lua`，编辑如下：
 ```lua
 function detectFileChange(file)
-    --file_hash为 Security Checker 提供的函数，用于计算文件的 MD5 哈希值
+    -- file_hash 为 Security Checker 提供的函数，用于计算文件的 MD5 哈希值
 	hashval = file_hash(file)
-
 	cachekey=file
 
-	oldval = get_cache(cachekey)
+	oldval = get_cache(cachekey) -- get_cache 为 Security Checker 提供的函数
 	if not oldval then
-		set_cache(cachekey, hashval)
+		set_cache(cachekey, hashval) -- set_cache 为 Security Checker 提供的函数
 		return
 	end
 
 	if oldval ~= hashval then
-		err = trig({File=file})
+		err = trig({File=file}) -- 检测到变动，发送事件
 		if err == "" then
 			set_cache(cachekey, hashval)
 		else

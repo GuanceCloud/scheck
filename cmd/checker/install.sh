@@ -58,6 +58,9 @@ fi
 
 init() {
     mkdir -p "${install_dir}/rules.d"
+    if [ ${upgrade} -eq 0 ] ;then
+        ${install_dir}/checker -config-sample > ${install_dir}/checker.conf
+    fi
 }
 
 registerService() {
