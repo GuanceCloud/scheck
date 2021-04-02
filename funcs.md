@@ -19,6 +19,8 @@
 [shadow](#shadow)  
 [shell_history](#shell_history)  
 [trig](#trig)  
+[get_cache](#get_cache)
+[set_cache](#set_cache)
 
 
 ## file_exist
@@ -543,3 +545,47 @@ trig an event and send it to target with line protocol.
 | Type | Description |
 | --- | ---- |
 | `string` | empty if success, otherwise contains the error detail |
+
+---
+
+## get_cache
+
+`get_cache(key)`
+
+get value for cache key.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string`/`boolean`/`number` | cache value |
+
+---
+
+## set_cache
+
+`set_cache(key, value)`
+
+set a cache key-value pair.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+| value | `string`/`boolean`/`number` |  cache value by key | true |
+
+
+*Return value(s):*  
+
+
+| Type | Description |
+| --- | ---- |
+| `string` | error detail if failed |

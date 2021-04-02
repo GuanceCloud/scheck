@@ -27,7 +27,7 @@ bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com
 
 ```toml
 # ##(必选) 存放检测脚本的目录
-rule_dir='/usr/local/security-checker/checker.conf'
+rule_dir='/usr/local/security-checker/rules.d'
 
 # ##(必选) 将检测结果采集到哪里，支持本地文件或http(s)链接
 # ##本地文件时需要使用前缀 file://， 例：file:///your/file/path
