@@ -8,9 +8,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	luajson "github.com/layeh/gopher-json"
+	cron "github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/luaext"
@@ -24,30 +27,88 @@ var (
 type (
 	Checker struct {
 		rulesDir string
-		rules    []*Rule
-		lStates  []*luaState
+		rules    map[string]*Rule
+		//lStates  []*luaState
 
 		cron *luaCron
 
 		luaExtends *luaext.LuaExt
-	}
 
-	luaState struct {
-		lState *lua.LState
-		rule   *Rule
+		mux sync.Mutex
+
+		loading int32
 	}
 )
+
+func newChecker(rulesDir string) *Checker {
+	c := &Checker{
+		rules:      map[string]*Rule{},
+		rulesDir:   rulesDir,
+		luaExtends: luaext.NewLuaExt(),
+		cron:       newLuaCron(),
+	}
+	return c
+}
 
 func (c *Checker) findRule(rulefile string) *Rule {
 	if rulefile == "" {
 		return nil
 	}
-	for _, r := range c.rules {
-		if r.File == rulefile {
-			return r
-		}
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	if r, ok := c.rules[rulefile]; ok {
+		return r
 	}
 	return nil
+}
+func (c *Checker) addRule(r *Rule) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	if err := c.getLuaState(r); err == nil {
+		if id, err := c.cron.addLuaScript(r); err != nil {
+			log.Errorf("%s", err)
+			r.lState.Close()
+		} else {
+			r.cronID = id
+			c.rules[r.File] = r
+		}
+	} else {
+		log.Errorf("%s", err)
+	}
+}
+
+func (c *Checker) delRules() {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	for _, r := range c.rules {
+		if atomic.LoadInt32(&r.markAsDelete) == 0 {
+			continue
+		}
+		log.Debugf("removing %s", r.File)
+		if atomic.LoadInt32(&r.running) > 0 {
+			select {
+			case <-r.stopch:
+				c.doDelRule(r)
+			case <-time.After(time.Second * 10):
+				log.Warnf("remove rule failed, timeout")
+			}
+		} else {
+			c.doDelRule(r)
+		}
+
+	}
+}
+
+func (c *Checker) doDelRule(r *Rule) {
+	c.cron.Cron.Remove(cron.EntryID(r.cronID))
+	if r.lState != nil {
+		if !r.lState.IsClosed() {
+			r.lState.Close()
+		}
+	}
+	delete(c.rules, r.File)
 }
 
 func (c *Checker) start(ctx context.Context) {
@@ -65,23 +126,36 @@ func (c *Checker) start(ctx context.Context) {
 
 	log.Debugf("rule dir: %s", c.rulesDir)
 
-	if err := c.loadFiles(); err != nil {
+	c.cron.start()
+
+	if err := c.loadRules(ctx, c.rulesDir); err != nil {
 		return
 	}
 
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	if len(c.rules) == 0 {
-		log.Warnf("no rule found")
+		log.Warnf("no rule loaded")
 	}
 
-	c.cron.start()
+	go func() {
+		for {
+			sleepContext(ctx, time.Second*10)
+			log.Debugf("reload rules")
 
-	for _, r := range c.rules {
-		ls := c.newLuaState(r)
-		if ls != nil {
-			c.lStates = append(c.lStates, ls)
-			c.cron.addLuaScript(ls)
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			c.loadRules(ctx, c.rulesDir)
 		}
-	}
+	}()
 
 	<-ctx.Done()
 	c.cron.stop()
@@ -90,11 +164,7 @@ func (c *Checker) start(ctx context.Context) {
 // Start
 func Start(ctx context.Context, rulesDir, outputpath string) {
 
-	checker = &Checker{
-		rulesDir:   rulesDir,
-		luaExtends: luaext.NewLuaExt(),
-		cron:       newLuaCron(),
-	}
+	checker = newChecker(rulesDir)
 
 	log.Debugf("output: %s", outputpath)
 
@@ -102,12 +172,21 @@ func Start(ctx context.Context, rulesDir, outputpath string) {
 	checker.start(ctx)
 }
 
-func (c *Checker) loadFiles() error {
+func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 
-	ls, err := ioutil.ReadDir(c.rulesDir)
+	if atomic.LoadInt32(&c.loading) > 0 {
+		return nil
+	}
+	atomic.AddInt32(&c.loading, 1)
+	defer atomic.AddInt32(&c.loading, -1)
+	ls, err := ioutil.ReadDir(ruleDir)
 	if err != nil {
 		log.Errorf("%s", err)
 		return err
+	}
+
+	for _, r := range c.rules {
+		atomic.AddInt32(&r.markAsDelete, 1)
 	}
 
 	for _, f := range ls {
@@ -115,30 +194,44 @@ func (c *Checker) loadFiles() error {
 			continue
 		}
 
-		path := filepath.Join(c.rulesDir, f.Name())
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		path := filepath.Join(ruleDir, f.Name())
 
 		if !strings.HasSuffix(f.Name(), ".lua") {
 			continue
 		}
 
-		if r, err := c.newRuleFromFile(path); err == nil {
-			c.rules = append(c.rules, r)
+		if exist, ok := c.rules[path]; ok {
+			exist.reload()
+			atomic.AddInt32(&exist.markAsDelete, -1)
+			continue
+		}
+
+		rulename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+
+		if r, err := c.newRuleFromFile(rulename, ruleDir); err == nil {
+			c.addRule(r)
 		}
 	}
+
+	c.delRules()
 
 	return nil
 }
 
-func (c *Checker) newLuaState(r *Rule) *luaState {
+func (c *Checker) getLuaState(r *Rule) error {
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
 	ls.SetGlobal(luaext.OneFileGlobalConfKey, r.toLuaTable())
 	if err := c.registerLua(ls); err != nil {
-		return nil
+		return err
 	}
-	return &luaState{
-		lState: ls,
-		rule:   r,
-	}
+	r.lState = ls
+	return nil
 }
 
 func (c *Checker) registerLua(lstate *lua.LState) error {
@@ -223,18 +316,17 @@ func (c *Checker) trig(l *lua.LState) int {
 		})
 	}
 
-	var manifest *RuleManifest
-	if manifestFileName == "" {
-		if len(rule.Manifests) == 0 {
-			l.Push(lua.LString("manifest not found"))
-			return 1
+	var mpath string
+	if manifestFileName != "" {
+		if !strings.HasPrefix(manifestFileName, ".manifest") {
+			manifestFileName += ".manifest"
 		}
-		manifest = rule.Manifests[0]
-	} else {
-		if manifest, err = c.loadManifest(manifestFileName, rule); err != nil {
-			l.Push(lua.LString(fmt.Sprintf("manifest of '%s' not found", manifestFileName)))
-			return 1
-		}
+		mpath = filepath.Join(c.rulesDir, manifestFileName)
+	}
+	manifest := rule.findManifest(mpath)
+	if manifest == nil {
+		l.Push(lua.LString(fmt.Sprintf("manifest of '%s' not found", manifestFileName)))
+		return 1
 	}
 
 	fields := map[string]interface{}{}
@@ -269,4 +361,32 @@ func (c *Checker) trig(l *lua.LState) int {
 
 	l.Push(lua.LString(""))
 	return 1
+}
+
+func TestRule(rulename string) {
+	rulepath, err := filepath.Abs(rulename)
+	log.Debugf("abs: %s", rulepath)
+	if err != nil {
+		log.Errorf("%s", rulepath)
+		return
+	}
+	ruledir := filepath.Dir(rulepath)
+
+	c := newChecker(ruledir)
+	output.NewOutputer("")
+
+	r, err := c.newRuleFromFile(rulename, ruledir)
+	if err != nil {
+		return
+	}
+	c.rules[r.File] = r
+	if err := c.getLuaState(r); err != nil {
+		return
+	} else {
+		if err := r.run(); err != nil {
+			log.Errorf("%s", err)
+		}
+	}
+
+	return
 }

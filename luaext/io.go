@@ -42,6 +42,8 @@ func setCache(l *lua.LState) int {
 	case lua.LTBool:
 	case lua.LTNumber:
 	case lua.LTString:
+	case lua.LTTable:
+
 	default:
 		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number'", lv.Type().String())
 		return 0
@@ -105,6 +107,13 @@ func (c *luaCacheValue) fromLuaVal(lv lua.LValue) {
 		c.val = float64(lv.(lua.LNumber))
 	case lua.LTString:
 		c.val = lv.String()
+	case lua.LTTable:
+		var newt lua.LTable
+		t := lv.(*lua.LTable)
+		t.ForEach(func(k lua.LValue, v lua.LValue) {
+			newt.RawSet(k, v)
+		})
+		c.val = &newt
 	}
 }
 
@@ -116,6 +125,13 @@ func (c *luaCacheValue) toLuaVal() lua.LValue {
 		return lua.LNumber(c.val.(float64))
 	case lua.LTString:
 		return lua.LString(c.val.(string))
+	case lua.LTTable:
+		var newt lua.LTable
+		t := c.val.(*lua.LTable)
+		t.ForEach(func(k lua.LValue, v lua.LValue) {
+			newt.RawSet(k, v)
+		})
+		return &newt
 	}
 	return lua.LNil
 }

@@ -24,8 +24,7 @@ var (
 
 	flagConfig = flag.String("config", "", "configuration file to load")
 
-	//flagTestLuaStr  = flag.String("c", ``, `test a lua string`)
-	//flagTestLuaFile = flag.String("f", ``, `test a lua file`)
+	flagTestRule = flag.String("test", ``, `the name of a rule, without file extension`)
 )
 
 var (
@@ -84,6 +83,12 @@ func applyFlags() {
 
 	if *flagFuncs {
 		luaext.DumpSupportLuaFuncs(os.Stdout)
+		os.Exit(0)
+	}
+
+	if *flagTestRule != "" {
+		log.SetLevel(log.DebugLevel)
+		checker.TestRule(*flagTestRule)
 		os.Exit(0)
 	}
 }
