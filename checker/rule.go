@@ -25,7 +25,6 @@ type Rule struct {
 	File  string
 	Proto *lua.FunctionProto
 
-	Hash       string
 	LastModify int64
 
 	Manifests []*RuleManifest
@@ -60,7 +59,6 @@ type RuleManifest struct {
 
 	disabled bool
 
-	Hash       string
 	LastModify int64
 }
 
@@ -105,6 +103,8 @@ func (r *Rule) reload() {
 			continue
 		} else {
 			*m = *nm
+			r.disabled = nm.disabled
+			r.cron = nm.Cron
 		}
 		m.LastModify = fi.ModTime().Unix()
 	}
@@ -201,6 +201,13 @@ func ensureFieldBool(k string, v interface{}, b *bool) error {
 }
 
 func (rm *RuleManifest) parse() error {
+
+	defer func() {
+		if e := recover(); e != nil {
+			log.Errorf("parse panic, %v", e)
+		}
+	}()
+
 	contents, err := ioutil.ReadFile(rm.path)
 	if err != nil {
 		return err
@@ -212,7 +219,7 @@ func (rm *RuleManifest) parse() error {
 		return err
 	}
 
-	defKeys := map[string]bool{
+	mustKeys := map[string]bool{
 		"id":       false,
 		"category": false,
 		"level":    false,
@@ -221,7 +228,7 @@ func (rm *RuleManifest) parse() error {
 		"cron":     false,
 	}
 
-	for k := range defKeys {
+	for k := range mustKeys {
 		v := tbl.Fields[k]
 		if v == nil {
 			continue
@@ -245,12 +252,12 @@ func (rm *RuleManifest) parse() error {
 				rm.Cron = str
 			}
 			if str != "" {
-				defKeys[k] = true
+				mustKeys[k] = true
 			}
 		}
 	}
 
-	for k, bset := range defKeys {
+	for k, bset := range mustKeys {
 		if !bset {
 			return fmt.Errorf("%s must not be empty", k)
 		}
@@ -266,7 +273,7 @@ func (rm *RuleManifest) parse() error {
 
 	rm.Tags = map[string]string{}
 	for k, v := range tbl.Fields {
-		if _, ok := defKeys[k]; ok {
+		if _, ok := mustKeys[k]; ok {
 			continue
 		}
 
@@ -280,6 +287,7 @@ func (rm *RuleManifest) parse() error {
 				return err
 			}
 			rm.disabled = bval
+			continue
 		}
 
 		str := ""
@@ -326,6 +334,7 @@ func (c *Checker) newRuleFromFile(rulename, dir string) (*Rule, error) {
 	}
 
 	r.cron = rm.Cron
+	r.disabled = rm.disabled
 
 	return r, nil
 }

@@ -363,13 +363,9 @@ func (c *Checker) trig(l *lua.LState) int {
 	return 1
 }
 
-func TestRule(rulename string) {
-	rulepath, err := filepath.Abs(rulename)
-	log.Debugf("abs: %s", rulepath)
-	if err != nil {
-		log.Errorf("%s", rulepath)
-		return
-	}
+func TestRule(rulepath string) {
+
+	rulename := filepath.Base(rulepath)
 	ruledir := filepath.Dir(rulepath)
 
 	c := newChecker(ruledir)

@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"path/filepath"
 	"sync/atomic"
 
 	cron "github.com/robfig/cron/v3"
@@ -44,12 +45,12 @@ func (c *luaCron) addLuaScript(r *Rule) (int, error) {
 		if r.disabled {
 			return
 		}
-		log.Debugf("start run %s", r.File)
+		log.Debugf("start run %s", filepath.Base(r.File))
 		err := r.run()
 		if err != nil {
-			log.Errorf("run %s failed, %s", r.File, err)
+			log.Errorf("run %s failed, %s", filepath.Base(r.File), err)
 		} else {
-			log.Debugf("run %s ok", r.File)
+			log.Debugf("run %s ok", filepath.Base(r.File))
 		}
 	})
 	return int(id), err

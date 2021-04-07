@@ -5,13 +5,14 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -175,7 +176,7 @@ func procDecodePortFromHex(encodedPort string) uint16 {
 	var port uint16
 	if len(encodedPort) == 4 {
 		if _, err := fmt.Sscanf(encodedPort, "%X", &port); err != nil {
-			log.Printf("[error] fail to convert port %s, error: %s", encodedPort, err)
+			log.Errorf("fail to convert port %s, error: %s", encodedPort, err)
 		}
 	}
 	return port
@@ -274,7 +275,7 @@ func procGetSocketListInet(family int, protocol int, ns int64, path string, cont
 			return false
 		})
 		if len(fields) < 10 {
-			log.Printf("[warn] invalid socket descriptor found for %s, line: %s", path, line)
+			log.Warnf("invalid socket descriptor found for %s, line: %s", path, line)
 			continue
 		}
 
@@ -282,7 +283,7 @@ func procGetSocketListInet(family int, protocol int, ns int64, path string, cont
 		remotes := strings.Split(fields[2], ":")
 
 		if len(locals) != 2 || len(remotes) != 2 {
-			log.Printf("[warn] invalid socket address found for %s, local=%s, remote=%s", path, fields[1], fields[2])
+			log.Warnf("invalid socket address found for %s, local=%s, remote=%s", path, fields[1], fields[2])
 			continue
 		}
 
@@ -341,7 +342,7 @@ func procGetSocketListUnix(ns int64, path, content string) ([]*socketInfo, error
 			return false
 		})
 		if len(fields) < 7 {
-			log.Printf("[warn] invalid socket descriptor found for %s, line: %s", path, line)
+			log.Warnf("invalid socket descriptor found for %s, line: %s", path, line)
 			continue
 		}
 
@@ -390,6 +391,10 @@ func procGetSocketList(family int, protocol int, ns int64, pid int) ([]*socketIn
 		return nil, fmt.Errorf("Invalid family %d", family)
 	}
 
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil, nil
+	}
+
 	var content string
 	if data, err := ioutil.ReadFile(path); err != nil {
 		return nil, err
@@ -425,7 +430,7 @@ func getProcessOpenSockets() ([]*socketInfo, error) {
 
 		err = procGetSocketInodeToProcessInfoMap(pid, inodeProcMap)
 		if err != nil {
-			log.Printf("[error] %s", err)
+			log.Errorf("%s", err)
 		}
 
 		var ns int64
@@ -437,26 +442,30 @@ func getProcessOpenSockets() ([]*socketInfo, error) {
 		if _, ok := netnsList[ns]; !ok {
 			netnsList[ns] = true
 
-			log.Printf("xxxx - %d", pid)
-
 			for k := range linuxProtocolNames {
-				if list, err := procGetSocketList(syscall.AF_INET, k, ns, pid); err != nil {
-					log.Printf("[error] %s", err)
-				} else {
+				if list, err := procGetSocketList(syscall.AF_INET, k, ns, pid); err == nil && len(list) > 0 {
 					socketList = append(socketList, list...)
+				} else {
+					if err != nil {
+						log.Errorf("%s", err)
+					}
 				}
 
-				if list, err := procGetSocketList(syscall.AF_INET6, k, ns, pid); err != nil {
-					log.Printf("[error] %s", err)
-				} else {
+				if list, err := procGetSocketList(syscall.AF_INET6, k, ns, pid); err == nil && len(list) > 0 {
 					socketList = append(socketList, list...)
+				} else {
+					if err != nil {
+						log.Errorf("%s", err)
+					}
 				}
 			}
 
-			if list, err := procGetSocketList(syscall.AF_UNIX, syscall.IPPROTO_IP, ns, pid); err != nil {
-				log.Printf("[error] %s", err)
-			} else {
+			if list, err := procGetSocketList(syscall.AF_UNIX, syscall.IPPROTO_IP, ns, pid); err == nil && len(list) > 0 {
 				socketList = append(socketList, list...)
+			} else {
+				if err != nil {
+					log.Errorf("%s", err)
+				}
 			}
 		}
 	}
