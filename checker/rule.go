@@ -272,6 +272,8 @@ func (rm *RuleManifest) parse() error {
 	}
 
 	rm.Tags = map[string]string{}
+	omithost := false
+	hostname := ""
 	for k, v := range tbl.Fields {
 		if _, ok := mustKeys[k]; ok {
 			continue
@@ -288,6 +290,20 @@ func (rm *RuleManifest) parse() error {
 			}
 			rm.disabled = bval
 			continue
+		} else if k == "omit_hostname" {
+			bval := false
+			if err := ensureFieldBool(k, v, &bval); err != nil {
+				return err
+			}
+			omithost = bval
+			continue
+		} else if k == "hostname" {
+			str := ""
+			err = ensureFieldString(k, v, &str)
+			if err != nil {
+				return err
+			}
+			hostname = str
 		}
 
 		str := ""
@@ -298,6 +314,15 @@ func (rm *RuleManifest) parse() error {
 		if str != "" {
 			rm.Tags[k] = str
 		}
+	}
+
+	if !omithost {
+		if hostname == "" {
+			if h, err := os.Hostname(); err == nil {
+				hostname = h
+			}
+		}
+		rm.Tags["hostname"] = hostname
 	}
 	return nil
 }
