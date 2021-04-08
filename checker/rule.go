@@ -343,7 +343,7 @@ func compileLua(filePath string) (*lua.FunctionProto, error) {
 	file, err := os.Open(filePath)
 	defer file.Close()
 	if err != nil {
-		log.Errorf("%s", err)
+		log.Errorf("fail to open %s, error:%s", filePath, err)
 		return nil, err
 	}
 	reader := bufio.NewReader(file)

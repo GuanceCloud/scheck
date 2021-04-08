@@ -97,7 +97,6 @@ func (c *Checker) delRules() {
 		} else {
 			c.doDelRule(r)
 		}
-
 	}
 }
 
@@ -123,8 +122,6 @@ func (c *Checker) start(ctx context.Context) {
 		output.Outputer.Close()
 		log.Info("checker exit")
 	}()
-
-	log.Debugf("rule dir: %s", c.rulesDir)
 
 	c.cron.start()
 
@@ -164,10 +161,10 @@ func (c *Checker) start(ctx context.Context) {
 // Start
 func Start(ctx context.Context, rulesDir, outputpath string) {
 
-	checker = newChecker(rulesDir)
-
 	log.Debugf("output: %s", outputpath)
+	log.Debugf("rule dir: %s", rulesDir)
 
+	checker = newChecker(rulesDir)
 	output.NewOutputer(outputpath)
 	checker.start(ctx)
 }

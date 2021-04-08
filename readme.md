@@ -17,13 +17,16 @@ bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com
 bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh) --upgrade"
 ```
 
-安装完成后即以服务的方式运行，服务名为`security-checker`，可以使用 `service`，`systemctl` 等服务管理工具来控制程序的启动、停止。 
+安装完成后即以服务的方式运行，服务名为`security-checker`，使用服务管理工具来控制程序的启动/停止：  
+`systemctl start/stop/restart security-checker`  
+或 `service security-checker start/stop/restart`  
+
 
 >Security Checker 目前仅支持 Linux
 
 ## 配置
 
-进入默认安装目录 `/usr/local/security-checker`，生成配置文件(如果没有) `./security-checker -config-sample > checker.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
+进入默认安装目录 `/usr/local/security-checker`，打开配置文件 `checker.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
 
 ```toml
 # ##(必选) 存放检测脚本的目录
@@ -39,7 +42,7 @@ log='/usr/local/security-checker/log'
 log_level='info'
 ```
 
->配置文件的修改需要重启才生效，例如：`systemctl restart security-checker` 或 `service security-checker restart`
+>配置文件的修改需要重启服务才生效
 
 
 ## 检测规则
@@ -60,7 +63,7 @@ debug
 os - 其中以下函数被禁用："execute", "remove", "rename", "setenv", "setlocale"
 ```
 
->目前每次添加一项检测规则都需要重启
+>添加/修改规则不需要重启服务，Security Checker 会每隔 10 秒扫描规则目录。
 
 ### 清单文件 
 清单文件是对当前规则所检测内容的一个描述，比如检测文件变化，端口启停等。最终的行协议数据中只会包含清单文件中的字段。详细内容如下：    
@@ -82,10 +85,18 @@ desc=''
 
 # ##(必选)配置事件的执行周期（使用 linux crontab 的语法规则）
 cron=''
+
+# ##(可选)禁用当前规则
+disabled=false
+
+
+# ##支持添加自定义key-value，比如：
+#instanceID=''
+
 ```
 
 #### 模板支持
-清单文件中 `desc` 的字符串中支持设置模板变量，语法为 `{{.<Variable>}}`，比如 `文件{{.FileName}}被修改，改动内容为: {{.Content}}` 表示 FileName 和 Diff 是模板变量，将会被替换(包括前面的点号`.`)。变量的替换发生在调用 `trig` 函数时，该函数可传入一个 `table` 变量，其中包含了模板变量的替换值，假设传入如下参数：  
+清单文件中 `desc` 的字符串中支持设置模板变量，语法为 `{{.<Variable>}}`，比如 `文件{{.FileName}}被修改，改动后的内容为: {{.Content}}` 表示 FileName 和 Diff 是模板变量，将会被替换(包括前面的点号`.`)。变量的替换发生在调用 `trig` 函数时，该函数可传入一个 `table` 变量，其中包含了模板变量的替换值，假设传入如下参数：  
 ```lua
 tmpl_vals={
     FileName="/etc/passwd",
@@ -96,6 +107,13 @@ trig(tmpl_vals)
 则最终的 `desc` 值为：`文件/etc/passwd被修改，改动内容为: delete user demo`
 
 
+## 测试规则
+在编写规则代码的时候，可以使用 Security Checker 来测试代码是否正确：  
+```
+checker --test  /ruledir/demo
+```
+
+
 ## lua 函数
 见 [函数](./funcs.md)
 
@@ -103,7 +121,9 @@ trig(tmpl_vals)
 ---
 
 ## 示例
-假设需要每10秒检查文件 `/etc/passwd` 的变动，检测到变动后，将事件记录到文件 `/var/log/security-checker/event.log` 中，可以进行如下操作：  
+
+### 一. 检查敏感文件的变动，将事件记录到文件 `/var/log/security-checker/event.log` 中。    
+
 1. 进入安装目录，编辑配置文件 `checker.conf` 的 `output` 字段：  
 ```toml
 rule_dir='/usr/local/security-checker/rules.d'
@@ -114,9 +134,9 @@ log='/usr/local/security-checker/log'
 log_level='info'
 ```
 
-2. 在目录`/usr/local/security-checker/rules.d`(即以上配置文件中的`rule_dir`)下新建清单文件 `demo.manifest`，编辑如下：  
+2. 在目录`/usr/local/security-checker/rules.d`(即以上配置文件中的`rule_dir`)下新建清单文件 `files.manifest`，编辑如下：  
 ```toml
-id='check-file-01'
+id='check-file'
 category='security'
 level='warn'
 title='监视文件变动'
@@ -124,35 +144,179 @@ desc='文件 {{.File}} 发生了变化'
 cron='*/10 * * * *' #表示每10秒执行该lua脚本
 ```
 
-3. 在清单文件同级目录下新建脚本文件 `demo.lua`，编辑如下：
+3. 在清单文件同级目录下新建脚本文件 `files.lua`，编辑如下：
 ```lua
-function detectFileChange(file)
-    -- file_hash 为 Security Checker 提供的函数，用于计算文件的 MD5 哈希值
-	hashval = file_hash(file)
-	cachekey=file
+local files={
+	'/etc/passwd',
+	'/etc/group'
+}
+local function check(file)
+	local cache_key=file
+	local hashval = file_hash(file)
 
-	oldval = get_cache(cachekey) -- get_cache 为 Security Checker 提供的函数
-	if not oldval then
-		set_cache(cachekey, hashval) -- set_cache 为 Security Checker 提供的函数
+	local old = get_cache(cache_key)
+	if not old then
+		set_cache(cache_key, hashval)
 		return
 	end
 
-	if oldval ~= hashval then
-		err = trig({File=file}) -- 检测到变动，发送事件
+	if old ~= hashval then
+		err = trig({File=file})
 		if err == "" then
-			set_cache(cachekey, hashval)
+			set_cache(cache_key, hashval)
 		else
 			print("error: "..err)
 		end
 	end
 end
 
-detectFileChange('/etc/passwd')
+for i,v in ipairs(files) do
+	check(v)
+end
 ```
 
-4. 重启服务
-
-5. 文件 `/etc/passwd'` 被改动后，下一个10秒会检测到并触发 trig 函数，从而将事件发送到文件 `/var/log/security-checker/event.log` 中，添加一行数据：  
+4. 当有敏感文件被改动后，下一个10秒会检测到并触发 trig 函数，从而将事件发送到文件 `/var/log/security-checker/event.log` 中，添加一行数据，例：  
 ```
 check-file-01,category=security,level=warn,title=监视文件变动 message="文件 /etc/passwd 发生了变化" 1617262230001916515
+```
+
+---
+
+### 二. 监控系统用户的变化。    
+省略其它步骤，只显示规则代码和清单文件。  
+
+`users.manifest`：  
+
+```toml
+id='users-checker'
+category='security'
+level='warn'
+title='监视系统用户变动'
+desc='{{.Content}}'
+cron='*/10 * * * *'
+
+instanceId='id-xxx'
+```
+
+`users.lua`：  
+
+```lua
+local function check()
+    local cache_key="current_users"
+    local currents=users()
+
+    local old=get_cache(cache_key)
+    if not old then
+        set_cache(cache_key, currents)
+        return
+    end
+
+    local adds={}
+    for i,v in ipairs(currents) do
+        local exist=false
+        for ii,vv in ipairs(old) do
+            if vv["username"] == v["username"] then
+                exist = true
+                break
+            end
+        end
+        if not exist then
+            table.insert(adds, v["username"])
+        end
+    end
+
+    local dels={}
+    for i,v in ipairs(old) do
+        local exist=false
+        for ii,vv in ipairs(currents) do
+            if vv["username"] == v["username"] then
+                exist = true
+                break
+            end
+        end
+        if not exist then
+            table.insert(dels, v["username"])
+        end
+    end
+
+    local content=''
+    if #adds > 0 then
+        content=content..'新用户: '..table.concat(adds, ',')
+    end
+    if #dels > 0 then
+        if content ~= '' then content=content..'; ' end
+        content=content..'删除的用户: '..table.concat(dels, ',')
+    end
+    if content ~= '' then
+        local err=trig({Content=content})
+        if err == ''  then
+            set_cache(cache_key, currents)
+        end
+    end
+end
+
+check()
+```
+
+---
+
+### 三. 监控是否有新的端口开启，将事件发送到 DataKit 中。    
+
+1. 将配置文件 `checker.conf` 的 `output` 设置为 DataKit 的server地址：  
+```toml
+rule_dir='/usr/local/security-checker/rules.d'
+
+output='http://datakit-ip:9529/v1/write/log'
+
+log='/usr/local/security-checker/log'
+log_level='info'
+```
+
+2. 在目录`/usr/local/security-checker/rules.d`(即以上配置文件中的`rule_dir`)下新建清单文件 `ports.manifest`，编辑如下：  
+```toml
+id='check-listening-ports'
+category='security'
+level='warn'
+title='监视新端口'
+desc='{{.Content}}'
+cron='*/10 * * * *'
+```
+
+3. 在清单文件同级目录下新建脚本文件 `ports.lua`，编辑如下：
+```lua
+ocal function check()
+    local cache_key='check_ports'
+    local ports = listening_ports()
+    local old=get_cache(cache_key)
+    if not old then
+        set_cache(cache_key, ports)
+        return
+    end
+
+    local content=''
+    for i,v in ipairs(ports) do
+        if v["family"] == 'AF_INET' then
+            local exist=false
+            for ii,vv in ipairs(old) do
+                if vv["port"] == v["port"] and vv["address"] == v["address"]  then
+                    exist = true
+                    break
+                end
+            end
+            if not exist then
+                if content ~= '' then content=content.."; " end
+                content = content..string.format("%d(%s)", v["port"], v["protocol"])
+            end
+        end
+    end
+
+    if content ~= '' then
+        local err=trig({Content="发现新端口: "..content})
+        if err == ''  then
+            set_cache(cache_key, ports)
+        end
+    end
+end
+
+check()
 ```

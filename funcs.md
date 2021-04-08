@@ -1,4 +1,5 @@
 
+[ls](#ls)   
 [file_exist](#file_exist)  
 [file_info](#file_info)  
 [read_file](#read_file)  
@@ -22,6 +23,47 @@
 [get_cache](#get_cache)
 [set_cache](#set_cache)
 
+
+
+## ls
+
+`ls(dir[, rescue])`
+
+list files in specified directory.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| dir | `string` | path of dir  | true |
+| rescue | `boolean` | if recursively traverse the dir, default is false  | false |
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| path | string | file's full path |
+| filename | string | name of file |
+| size | number | Size of file in bytes |
+| block_size | number | Block size of filesystem |
+| mode | string | Permission bits |
+| uid | number | Owning user ID |
+| gid | number | Owning group ID |
+| device | number | Device ID (optional) |
+| inode | number | Filesystem inode number |
+| hard_links | number | Number of hard links |
+| ctime | number | Last status change time |
+| mtime | number | Last modification time |
+| atime | number | Last access time |
+
+---
 
 ## file_exist
 
@@ -78,7 +120,7 @@ it issues an error when fail to read.
 | --- | ---- | ---- |
 | size | number | Size of file in bytes |
 | block_size | number | Block size of filesystem |
-| mode | number | Permission bits |
+| mode | string | Permission bits |
 | uid | number | Owning user ID |
 | gid | number | Owning group ID |
 | device | number | Device ID (optional) |

@@ -38,6 +38,7 @@ var (
 	}
 
 	LuaExtendFuncs = []LuaFunc{
+		{`ls`, ls},
 		{`file_exist`, fileExist},
 		{`file_info`, fileInfo},
 		{`read_file`, readFile},

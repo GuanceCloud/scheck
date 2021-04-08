@@ -5,11 +5,85 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 
 	lua "github.com/yuin/gopher-lua"
 )
+
+func fileInfo2Table(fi os.FileInfo) *lua.LTable {
+	st := fi.Sys().(*syscall.Stat_t)
+
+	var file lua.LTable
+	file.RawSetString("filename", lua.LString(fi.Name()))
+	file.RawSetString("size", lua.LNumber(fi.Size()))
+	file.RawSetString("block_size", lua.LNumber(st.Blksize))
+	file.RawSetString("mode", lua.LString(fi.Mode().String()))
+	file.RawSetString("uid", lua.LNumber(st.Uid))
+	file.RawSetString("gid", lua.LNumber(st.Gid))
+	file.RawSetString("device", lua.LNumber(st.Dev))
+	file.RawSetString("inode", lua.LNumber(st.Ino))
+	file.RawSetString("hard_links", lua.LNumber(st.Nlink))
+	file.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
+	file.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
+	file.RawSetString("atime", lua.LNumber(st.Atim.Sec))
+
+	return &file
+}
+
+func ls(l *lua.LState) int {
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
+	}
+
+	dir := string(lv.(lua.LString))
+	dir = strings.TrimSpace(dir)
+
+	rescue := false
+	lv = l.Get(2)
+	if lv != lua.LNil {
+		if lv.Type() != lua.LTBool {
+			l.TypeError(1, lua.LTBool)
+			return lua.MultRet
+		}
+		rescue = bool(lv.(lua.LBool))
+	}
+
+	var files lua.LTable
+	if !rescue {
+		list, err := ioutil.ReadDir(dir)
+		if err != nil {
+			l.RaiseError("%s", err)
+			return lua.MultRet
+		}
+		for _, f := range list {
+			if f == nil {
+				continue
+			}
+			file := fileInfo2Table(f)
+			file.RawSetString("path", lua.LString(filepath.Join(dir, f.Name())))
+			files.Append(file)
+		}
+	} else {
+		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+
+			}
+			if info != nil {
+				file := fileInfo2Table(info)
+				file.RawSetString("path", lua.LString(path))
+				files.Append(file)
+			}
+			return nil
+		})
+	}
+
+	l.Push(&files)
+	return 1
+}
 
 func fileExist(l *lua.LState) int {
 	lv := l.Get(1)
@@ -30,8 +104,6 @@ func fileExist(l *lua.LState) int {
 
 func fileInfo(l *lua.LState) int {
 
-	var info lua.LTable
-
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -45,22 +117,8 @@ func fileInfo(l *lua.LState) int {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
-
-	st := stat.Sys().(*syscall.Stat_t)
-
-	info.RawSetString("size", lua.LNumber(stat.Size()))
-	info.RawSetString("block_size", lua.LNumber(st.Blksize))
-	info.RawSetString("mode", lua.LNumber(st.Mode))
-	info.RawSetString("uid", lua.LNumber(st.Uid))
-	info.RawSetString("gid", lua.LNumber(st.Gid))
-	info.RawSetString("device", lua.LNumber(st.Dev))
-	info.RawSetString("inode", lua.LNumber(st.Ino))
-	info.RawSetString("hard_links", lua.LNumber(st.Nlink))
-	info.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
-	info.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
-	info.RawSetString("atime", lua.LNumber(st.Atim.Sec))
-
-	l.Push(&info)
+	info := fileInfo2Table(stat)
+	l.Push(info)
 	return 1
 }
 
