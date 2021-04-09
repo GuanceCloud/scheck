@@ -1,4 +1,4 @@
-package luaext
+package system
 
 import (
 	"bufio"
@@ -16,19 +16,30 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
 
 	diskutil "github.com/shirou/gopsutil/disk"
 	hostutil "github.com/shirou/gopsutil/host"
 	processutil "github.com/shirou/gopsutil/process"
 )
 
-func zone(l *lua.LState) int {
+func (p *provider) hostname(l *lua.LState) int {
+	name, err := os.Hostname()
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+	l.Push(lua.LString(name))
+	return 1
+}
+
+func (p *provider) zone(l *lua.LState) int {
 	z, _ := time.Now().Zone()
 	l.Push(lua.LString(z))
 	return 1
 }
 
-func uptime(l *lua.LState) int {
+func (p *provider) uptime(l *lua.LState) int {
 	info, err := hostutil.Info()
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -38,7 +49,7 @@ func uptime(l *lua.LState) int {
 	return 1
 }
 
-func kernelInfo(l *lua.LState) int {
+func (p *provider) kernelInfo(l *lua.LState) int {
 	var kernel lua.LTable
 
 	if data, err := ioutil.ReadFile(`/proc/cmdline`); err == nil {
@@ -72,7 +83,7 @@ func kernelInfo(l *lua.LState) int {
 	return 1
 }
 
-func kernelModules(l *lua.LState) int {
+func (p *provider) kernelModules(l *lua.LState) int {
 
 	var result lua.LTable
 
@@ -108,9 +119,9 @@ func kernelModules(l *lua.LState) int {
 	return 1
 }
 
-func users(l *lua.LState) int {
+func (p *provider) users(l *lua.LState) int {
 
-	us, err := getUserDetail("")
+	us, err := impl.GetUserDetail("")
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
@@ -120,19 +131,19 @@ func users(l *lua.LState) int {
 
 	for _, u := range us {
 		var ut lua.LTable
-		ut.RawSetString("username", lua.LString(u.name))
+		ut.RawSetString("username", lua.LString(u.Name))
 		uid := -1
 		gid := -1
-		if n, err := strconv.Atoi(u.uid); err == nil {
+		if n, err := strconv.Atoi(u.UID); err == nil {
 			uid = n
 		}
-		if n, err := strconv.Atoi(u.gid); err == nil {
+		if n, err := strconv.Atoi(u.GID); err == nil {
 			uid = n
 		}
 		ut.RawSetString("uid", lua.LNumber(uid))
 		ut.RawSetString("gid", lua.LNumber(gid))
-		ut.RawSetString("directory", lua.LString(u.home))
-		ut.RawSetString("shell", lua.LString(u.shell))
+		ut.RawSetString("directory", lua.LString(u.Home))
+		ut.RawSetString("shell", lua.LString(u.Shell))
 		result.Append(&ut)
 	}
 
@@ -144,7 +155,7 @@ func loggedInUsers(l *lua.LState) int {
 	return 1
 }
 
-func shadow(l *lua.LState) int {
+func (p *provider) shadow(l *lua.LState) int {
 
 	type shadowInfo struct {
 		status     string
@@ -213,7 +224,7 @@ func shadow(l *lua.LState) int {
 	return 1
 }
 
-func ulimitInfo(l *lua.LState) int {
+func (p *provider) ulimitInfo(l *lua.LState) int {
 
 	var result lua.LTable
 
@@ -259,7 +270,7 @@ func ulimitInfo(l *lua.LState) int {
 	return 1
 }
 
-func mounts(l *lua.LState) int {
+func (p *provider) mounts(l *lua.LState) int {
 	parts, err := diskutil.Partitions(true)
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -280,7 +291,7 @@ func mounts(l *lua.LState) int {
 	return 1
 }
 
-func processes(l *lua.LState) int {
+func (p *provider) processes(l *lua.LState) int {
 
 	pslist, err := processutil.Processes()
 	if err != nil {
@@ -326,7 +337,7 @@ func processes(l *lua.LState) int {
 	return 1
 }
 
-func shellHistory(l *lua.LState) int {
+func (p *provider) shellHistory(l *lua.LState) int {
 
 	targetUser := ""
 	lv := l.Get(1)
@@ -339,7 +350,7 @@ func shellHistory(l *lua.LState) int {
 		}
 	}
 
-	users, err := getUserDetail(targetUser)
+	users, err := impl.GetUserDetail(targetUser)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
@@ -360,16 +371,16 @@ func shellHistory(l *lua.LState) int {
 
 	var result lua.LTable
 	for _, u := range users {
-		if u.home == "" {
+		if u.Home == "" {
 			continue
 		}
-		if u.shell == "/bin/false" || strings.HasSuffix(u.shell, "/nologin") {
+		if u.Shell == "/bin/false" || strings.HasSuffix(u.Shell, "/nologin") {
 			continue
 		}
 
 		for _, f := range shellHistoryFiles {
 
-			cmds, err := genShellHistoryFromFile(filepath.Join(u.home, f))
+			cmds, err := impl.GenShellHistoryFromFile(filepath.Join(u.Home, f))
 			if err != nil {
 				l.RaiseError("%s", err)
 				return lua.MultRet
@@ -378,13 +389,13 @@ func shellHistory(l *lua.LState) int {
 			for _, cmd := range cmds {
 				var item lua.LTable
 				uid := -1
-				if n, err := strconv.Atoi(u.uid); err == nil {
+				if n, err := strconv.Atoi(u.UID); err == nil {
 					uid = n
 				}
 				item.RawSetString("uid", lua.LNumber(uid))
-				item.RawSetString("history_file", lua.LString(filepath.Join(u.home, f)))
-				item.RawSetString("command", lua.LString(cmd.command))
-				item.RawSetString("time", lua.LNumber(cmd.time))
+				item.RawSetString("history_file", lua.LString(filepath.Join(u.Home, f)))
+				item.RawSetString("command", lua.LString(cmd.Command))
+				item.RawSetString("time", lua.LNumber(cmd.Time))
 				result.Append(&item)
 			}
 		}
@@ -394,7 +405,7 @@ func shellHistory(l *lua.LState) int {
 	return 1
 }
 
-func last(l *lua.LState) int {
+func (p *provider) last(l *lua.LState) int {
 
 	// targetUser := ""
 	// limit := -1

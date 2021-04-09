@@ -12,8 +12,8 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
+	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/luaext"
 )
 
 var (
@@ -46,6 +46,7 @@ func main() {
 }
 
 func setupLogger() {
+	log.SetReportCaller(true)
 	if checker.Cfg.Log != "" {
 		lf, err := os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 		if err != nil {
@@ -67,6 +68,7 @@ func setupLogger() {
 	default:
 		log.SetLevel(log.InfoLevel)
 	}
+
 }
 
 func applyFlags() {
@@ -82,7 +84,7 @@ func applyFlags() {
 	}
 
 	if *flagFuncs {
-		luaext.DumpSupportLuaFuncs(os.Stdout)
+		securityChecker.DumpSupportLuaFuncs(os.Stdout)
 		os.Exit(0)
 	}
 

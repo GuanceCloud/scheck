@@ -1,11 +1,7 @@
 package checker
 
 import (
-	"path/filepath"
-	"sync/atomic"
-
 	cron "github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -25,33 +21,11 @@ func newLuaCron() *luaCron {
 	}
 }
 
-func (c *luaCron) addLuaScript(r *Rule) (int, error) {
+func (c *luaCron) addRule(r *Rule) (int, error) {
 	var id cron.EntryID
 	var err error
 	id, err = c.AddFunc(r.cron, func() {
-
-		if atomic.LoadInt32(&r.running) > 0 {
-			return
-		}
-		defer func() {
-			if e := recover(); e != nil {
-				log.Errorf("panic, %v", e)
-			}
-			atomic.AddInt32(&r.running, -1)
-			close(r.stopch)
-		}()
-		atomic.AddInt32(&r.running, 1)
-		r.stopch = make(chan bool)
-		if r.disabled {
-			return
-		}
-		log.Debugf("start run %s", filepath.Base(r.File))
-		err := r.run()
-		if err != nil {
-			log.Errorf("run %s failed, %s", filepath.Base(r.File), err)
-		} else {
-			log.Debugf("run %s ok", filepath.Base(r.File))
-		}
+		r.run()
 	})
 	return int(id), err
 }

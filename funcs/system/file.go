@@ -1,4 +1,4 @@
-package luaext
+package system
 
 import (
 	"crypto/md5"
@@ -12,27 +12,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func fileInfo2Table(fi os.FileInfo) *lua.LTable {
-	st := fi.Sys().(*syscall.Stat_t)
-
-	var file lua.LTable
-	file.RawSetString("filename", lua.LString(fi.Name()))
-	file.RawSetString("size", lua.LNumber(fi.Size()))
-	file.RawSetString("block_size", lua.LNumber(st.Blksize))
-	file.RawSetString("mode", lua.LString(fi.Mode().String()))
-	file.RawSetString("uid", lua.LNumber(st.Uid))
-	file.RawSetString("gid", lua.LNumber(st.Gid))
-	file.RawSetString("device", lua.LNumber(st.Dev))
-	file.RawSetString("inode", lua.LNumber(st.Ino))
-	file.RawSetString("hard_links", lua.LNumber(st.Nlink))
-	file.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
-	file.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
-	file.RawSetString("atime", lua.LNumber(st.Atim.Sec))
-
-	return &file
-}
-
-func ls(l *lua.LState) int {
+func (p *provider) ls(l *lua.LState) int {
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -85,7 +65,7 @@ func ls(l *lua.LState) int {
 	return 1
 }
 
-func fileExist(l *lua.LState) int {
+func (p *provider) fileExist(l *lua.LState) int {
 	lv := l.Get(1)
 	exist := false
 	if lv.Type() == lua.LTString {
@@ -102,7 +82,7 @@ func fileExist(l *lua.LState) int {
 	return 1
 }
 
-func fileInfo(l *lua.LState) int {
+func (p *provider) fileInfo(l *lua.LState) int {
 
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
@@ -122,7 +102,7 @@ func fileInfo(l *lua.LState) int {
 	return 1
 }
 
-func readFile(l *lua.LState) int {
+func (p *provider) readFile(l *lua.LState) int {
 	content := ""
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
@@ -142,7 +122,7 @@ func readFile(l *lua.LState) int {
 	return 1
 }
 
-func fileHash(l *lua.LState) int {
+func (p *provider) fileHash(l *lua.LState) int {
 
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
@@ -164,4 +144,24 @@ func fileHash(l *lua.LState) int {
 
 	l.Push(lua.LString(result))
 	return 1
+}
+
+func fileInfo2Table(fi os.FileInfo) *lua.LTable {
+	st := fi.Sys().(*syscall.Stat_t)
+
+	var file lua.LTable
+	file.RawSetString("filename", lua.LString(fi.Name()))
+	file.RawSetString("size", lua.LNumber(fi.Size()))
+	file.RawSetString("block_size", lua.LNumber(st.Blksize))
+	file.RawSetString("mode", lua.LString(fi.Mode().String()))
+	file.RawSetString("uid", lua.LNumber(st.Uid))
+	file.RawSetString("gid", lua.LNumber(st.Gid))
+	file.RawSetString("device", lua.LNumber(st.Dev))
+	file.RawSetString("inode", lua.LNumber(st.Ino))
+	file.RawSetString("hard_links", lua.LNumber(st.Nlink))
+	file.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
+	file.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
+	file.RawSetString("atime", lua.LNumber(st.Atim.Sec))
+
+	return &file
 }

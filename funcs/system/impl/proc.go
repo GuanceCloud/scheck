@@ -1,4 +1,4 @@
-package luaext
+package impl
 
 import (
 	"bufio"
@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	linuxProtocolNames = map[int]string{
+	LinuxProtocolNames = map[int]string{
 		syscall.IPPROTO_ICMP:    "icmp",
 		syscall.IPPROTO_TCP:     "tcp",
 		syscall.IPPROTO_UDP:     "udp",
@@ -62,17 +62,17 @@ type (
 		cmdline string
 	}
 
-	historyItem struct {
-		time    int64
-		command string
+	HistoryItem struct {
+		Time    int64
+		Command string
 	}
 
-	userInfo struct {
-		name  string
-		uid   string
-		gid   string
-		home  string
-		shell string
+	UserInfo struct {
+		Name  string
+		UID   string
+		GID   string
+		Home  string
+		Shell string
 	}
 
 	lastItemInfo struct {
@@ -82,6 +82,27 @@ type (
 		tty      string
 		tm       int64
 		host     string
+	}
+
+	SocketInfo struct {
+		Socket    string
+		Family    int
+		Protocol  int
+		Namespace int64
+
+		LocalAddress  string
+		LocalPort     uint16
+		RemoteAddress string
+		RemotePort    uint16
+
+		UnixSocketPath string
+
+		State string
+
+		PID            int
+		ProcessName    string
+		ProcessCmdline string
+		Fd             string
 	}
 )
 
@@ -250,10 +271,10 @@ func procGetNamespaceInode(namespaceName, processNamespaceRoot string) (int64, e
 	return 0, nil
 }
 
-func procGetSocketListInet(family int, protocol int, ns int64, path string, content string) ([]*socketInfo, error) {
+func procGetSocketListInet(family int, protocol int, ns int64, path string, content string) ([]*SocketInfo, error) {
 	lines := strings.Split(content, "\n")
 	header := true
-	var infolist []*socketInfo
+	var infolist []*SocketInfo
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if header {
@@ -293,20 +314,20 @@ func procGetSocketListInet(family int, protocol int, ns int64, path string, cont
 		// 	log.Printf("### %d, fields: %v", len(fields), fields)
 		// }
 
-		var info socketInfo
-		info.socket = fields[9]
-		info.ns = ns
-		info.family = family
-		info.protocol = protocol
-		info.localAddress = procDecodeAddressFromHex(locals[0], family)
-		info.localPort = procDecodePortFromHex(locals[1])
-		info.remoteAddress = procDecodeAddressFromHex(remotes[0], family)
-		info.remotePort = procDecodePortFromHex(remotes[1])
+		var info SocketInfo
+		info.Socket = fields[9]
+		info.Namespace = ns
+		info.Family = family
+		info.Protocol = protocol
+		info.LocalAddress = procDecodeAddressFromHex(locals[0], family)
+		info.LocalPort = procDecodePortFromHex(locals[1])
+		info.RemoteAddress = procDecodeAddressFromHex(remotes[0], family)
+		info.RemotePort = procDecodePortFromHex(remotes[1])
 		if protocol == syscall.IPPROTO_TCP {
-			info.state = "UNKNOWN"
+			info.State = "UNKNOWN"
 			if n, err := strconv.ParseUint(fields[3], 16, 64); err == nil {
 				if n >= 0 && n < uint64(len(tcpStates)) {
-					info.state = tcpStates[int(n)]
+					info.State = tcpStates[int(n)]
 				}
 			}
 		}
@@ -317,8 +338,8 @@ func procGetSocketListInet(family int, protocol int, ns int64, path string, cont
 	return infolist, nil
 }
 
-func procGetSocketListUnix(ns int64, path, content string) ([]*socketInfo, error) {
-	var infolist []*socketInfo
+func procGetSocketListUnix(ns int64, path, content string) ([]*SocketInfo, error) {
+	var infolist []*SocketInfo
 	lines := strings.Split(content, "\n")
 	header := true
 	for _, line := range lines {
@@ -346,15 +367,15 @@ func procGetSocketListUnix(ns int64, path, content string) ([]*socketInfo, error
 			continue
 		}
 
-		var info socketInfo
-		info.socket = fields[6]
-		info.ns = ns
-		info.family = syscall.AF_UNIX
+		var info SocketInfo
+		info.Socket = fields[6]
+		info.Namespace = ns
+		info.Family = syscall.AF_UNIX
 		if p, err := strconv.Atoi(fields[2]); err == nil {
-			info.protocol = p
+			info.Protocol = p
 		}
 		if len(fields) >= 8 {
-			info.unixSocketPath = fields[7]
+			info.UnixSocketPath = fields[7]
 		}
 		infolist = append(infolist, &info)
 	}
@@ -362,19 +383,19 @@ func procGetSocketListUnix(ns int64, path, content string) ([]*socketInfo, error
 	return infolist, nil
 }
 
-func procGetSocketList(family int, protocol int, ns int64, pid int) ([]*socketInfo, error) {
+func procGetSocketList(family int, protocol int, ns int64, pid int) ([]*SocketInfo, error) {
 	path := fmt.Sprintf("/proc/%d/net/", pid)
 
 	switch family {
 	case syscall.AF_INET:
-		if name, ok := linuxProtocolNames[protocol]; ok {
+		if name, ok := LinuxProtocolNames[protocol]; ok {
 			path += name
 		} else {
 			return nil, fmt.Errorf("Invalid protocol %d for AF_INET family", protocol)
 		}
 
 	case syscall.AF_INET6:
-		if name, ok := linuxProtocolNames[protocol]; ok {
+		if name, ok := LinuxProtocolNames[protocol]; ok {
 			path += name + "6"
 		} else {
 			return nil, fmt.Errorf("Invalid protocol %d for AF_INET6 family", protocol)
@@ -410,7 +431,7 @@ func procGetSocketList(family int, protocol int, ns int64, pid int) ([]*socketIn
 	}
 }
 
-func getProcessOpenSockets() ([]*socketInfo, error) {
+func GetProcessOpenSockets() ([]*SocketInfo, error) {
 
 	var pis []*processInfo
 	var err error
@@ -422,7 +443,7 @@ func getProcessOpenSockets() ([]*socketInfo, error) {
 
 	netnsList := map[int64]bool{}
 	inodeProcMap := map[string]pidFdPair{}
-	var socketList []*socketInfo
+	var socketList []*SocketInfo
 
 	for _, pi := range pis {
 
@@ -442,7 +463,7 @@ func getProcessOpenSockets() ([]*socketInfo, error) {
 		if _, ok := netnsList[ns]; !ok {
 			netnsList[ns] = true
 
-			for k := range linuxProtocolNames {
+			for k := range LinuxProtocolNames {
 				if list, err := procGetSocketList(syscall.AF_INET, k, ns, pid); err == nil && len(list) > 0 {
 					socketList = append(socketList, list...)
 				} else {
@@ -471,28 +492,28 @@ func getProcessOpenSockets() ([]*socketInfo, error) {
 	}
 
 	for _, info := range socketList {
-		if it, ok := inodeProcMap[info.socket]; ok {
-			info.pid = it.pid
-			info.fd = it.fd
+		if it, ok := inodeProcMap[info.Socket]; ok {
+			info.PID = it.pid
+			info.Fd = it.fd
 
 			for _, pi := range pis {
-				if pi.pid == info.pid {
-					info.pname = pi.name
-					info.pcmdline = pi.cmdline
+				if pi.pid == info.PID {
+					info.ProcessName = pi.name
+					info.ProcessCmdline = pi.cmdline
 					break
 				}
 			}
 
 		} else {
-			info.pid = -1
-			info.fd = "-1"
+			info.PID = -1
+			info.Fd = "-1"
 		}
 	}
 
 	return socketList, nil
 }
 
-func getUserDetail(username string) ([]*userInfo, error) {
+func GetUserDetail(username string) ([]*UserInfo, error) {
 
 	file, err := os.Open("/etc/passwd")
 	if err != nil {
@@ -500,7 +521,7 @@ func getUserDetail(username string) ([]*userInfo, error) {
 	}
 	defer file.Close()
 
-	var result []*userInfo
+	var result []*UserInfo
 
 	reader := bufio.NewReader(file)
 	for {
@@ -520,12 +541,12 @@ func getUserDetail(username string) ([]*userInfo, error) {
 			}
 		}
 
-		u := &userInfo{
-			name:  fields[0],
-			uid:   fields[2],
-			gid:   fields[3],
-			home:  fields[5],
-			shell: strings.TrimSpace(fields[6]),
+		u := &UserInfo{
+			Name:  fields[0],
+			UID:   fields[2],
+			GID:   fields[3],
+			Home:  fields[5],
+			Shell: strings.TrimSpace(fields[6]),
 		}
 		result = append(result, u)
 	}
@@ -533,7 +554,7 @@ func getUserDetail(username string) ([]*userInfo, error) {
 	return result, nil
 }
 
-func genShellHistoryFromFile(file string) ([]*historyItem, error) {
+func GenShellHistoryFromFile(file string) ([]*HistoryItem, error) {
 	var err error
 
 	if _, err = os.Stat(file); err != nil && os.IsNotExist(err) {
@@ -552,7 +573,7 @@ func genShellHistoryFromFile(file string) ([]*historyItem, error) {
 
 	prevBashTimestamp := ""
 
-	var cmds []*historyItem
+	var cmds []*HistoryItem
 	lines := strings.Split(string(content), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -570,9 +591,9 @@ func genShellHistoryFromFile(file string) ([]*historyItem, error) {
 			prevBashTimestamp = ""
 		}
 
-		cmds = append(cmds, &historyItem{
-			command: line,
-			time:    tm,
+		cmds = append(cmds, &HistoryItem{
+			Command: line,
+			Time:    tm,
 		})
 	}
 

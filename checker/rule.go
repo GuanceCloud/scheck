@@ -1,20 +1,20 @@
 package checker
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"text/template"
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	lua "github.com/yuin/gopher-lua"
-	luaparse "github.com/yuin/gopher-lua/parse"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
@@ -22,12 +22,10 @@ import (
 
 // Rule corresponding to a lua script file
 type Rule struct {
-	File  string
-	Proto *lua.FunctionProto
+	File string
 
-	LastModify int64
-
-	Manifests []*RuleManifest
+	byteCode   *funcs.ByteCode
+	lastModify int64
 
 	cron string //多个manifest的cron应当一样
 
@@ -39,7 +37,7 @@ type Rule struct {
 	stopch       chan bool
 	running      int32
 
-	lState *lua.LState
+	rt     *funcs.ScriptRunTime
 	cronID int
 }
 
@@ -51,7 +49,7 @@ type RuleManifest struct {
 	Desc     string `toml:"desc"`
 	Cron     string `toml:"cron"`
 
-	Tags map[string]string
+	tags map[string]string
 
 	path string
 
@@ -59,10 +57,16 @@ type RuleManifest struct {
 
 	disabled bool
 
-	LastModify int64
+	lastModify int64
 }
 
-func (r *Rule) reload() {
+func newRule(path string) *Rule {
+	return &Rule{
+		File: path,
+	}
+}
+
+func (r *Rule) load() error {
 
 	r.mux.Lock()
 	defer r.mux.Unlock()
@@ -70,156 +74,139 @@ func (r *Rule) reload() {
 	fi, err := os.Stat(r.File)
 	if err != nil {
 		log.Errorf("%s", err)
-		return
-	} else {
-		if fi.ModTime().Unix() > int64(r.LastModify) {
-			log.Debugf("%s changed, reload it", r.File)
-
-			proto, err := compileLua(r.File)
-			if err != nil {
-				return
-			}
-			r.Proto = proto
-			r.LastModify = fi.ModTime().Unix()
-		}
+		return err
 	}
 
-	for _, m := range r.Manifests {
+	if fi.ModTime().Unix() > r.lastModify {
+		if r.lastModify > 0 {
+			log.Debugf("%s changed, reload it", r.File)
+		}
 
-		fi, err = os.Stat(m.path)
+		bcode, err := funcs.CompilesScript(r.File)
 		if err != nil {
 			log.Errorf("%s", err)
-			continue
-		} else {
-			if fi.ModTime().Unix() <= m.LastModify {
-				continue
-			}
+			return err
 		}
-
-		log.Debugf("%s changed, reload it", m.path)
-
-		if nm, err := loadManifest(m.path); err != nil {
-			log.Errorf("%s", err)
-			continue
-		} else {
-			*m = *nm
-			r.disabled = nm.disabled
-			r.cron = nm.Cron
-		}
-		m.LastModify = fi.ModTime().Unix()
+		r.byteCode = bcode
+		r.lastModify = fi.ModTime().Unix()
 	}
-}
 
-func (r *Rule) findManifest(path string) *RuleManifest {
-	r.mux.Lock()
-	defer r.mux.Unlock()
+	//load default manifest for cron info
+	ruledir := filepath.Dir(r.File)
+	rulename := strings.TrimSuffix(filepath.Base(r.File), filepath.Ext(r.File))
+	manifestPath := filepath.Join(ruledir, rulename+".manifest")
 
-	if path == "" {
-		if len(r.Manifests) > 0 {
-			return r.Manifests[0]
-		}
-	} else {
-		for _, m := range r.Manifests {
-			if m.path == path {
-				return m
-			}
-		}
-		if nm, err := loadManifest(path); err != nil {
-			log.Errorf("%s", err)
-			return nil
-		} else {
-			r.Manifests = append(r.Manifests, nm)
-			return nm
-		}
+	manifest := checker.manifests[manifestPath]
+	if manifest == nil {
+		manifest = newManifest(manifestPath)
+		checker.addManifest(manifest)
 	}
+
+	if err = manifest.load(); err != nil {
+		err = fmt.Errorf("fail to load %s, %s", manifestPath, err)
+		log.Errorf("%s", err)
+		return err
+	}
+	r.cron = manifest.Cron
+	r.disabled = manifest.disabled
+
 	return nil
 }
 
-func (r *Rule) toLuaTable() *lua.LTable {
-	var t lua.LTable
-	t.RawSetString("rulefile", lua.LString(r.File))
-	return &t
-}
-
-func (r *Rule) run() error {
-	if r.lState == nil {
-		return nil
+func (r *Rule) run() {
+	if atomic.LoadInt32(&r.running) > 0 {
+		return
 	}
-	var err error
-	r.mux.Lock()
-	lfunc := r.lState.NewFunctionFromProto(r.Proto)
-	r.mux.Unlock()
-	r.lState.Push(lfunc)
-	err = r.lState.PCall(0, lua.MultRet, nil)
-	r.lState.Pop(r.lState.GetTop())
-	return err
-}
-
-func loadManifest(path string) (*RuleManifest, error) {
-
-	var rm RuleManifest
-	rm.path = path
-	err := rm.parse()
-	if err != nil {
-		log.Errorf("%s", err)
-		return nil, err
+	if r.disabled {
+		return
 	}
-	rm.LastModify = time.Now().Unix()
-
-	return &rm, nil
-}
-
-func ensureFieldString(k string, v interface{}, s *string) error {
-	if kv, ok := v.(*ast.KeyValue); ok {
-		if str, ok := kv.Value.(*ast.String); ok {
-			*s = str.Value
-			return nil
-		}
-	}
-	return fmt.Errorf("unknown value for field '%s', expecting string", k)
-}
-
-func ensureFieldBool(k string, v interface{}, b *bool) error {
-	var err error
-	if kv, ok := v.(*ast.KeyValue); ok {
-		switch t := kv.Value.(type) {
-		case *ast.Boolean:
-			*b, err = t.Boolean()
-			if err != nil {
-				return fmt.Errorf("unknown boolean value type %q, expecting boolean", kv.Value)
-			}
-			return nil
-		case *ast.String:
-			*b, err = strconv.ParseBool(t.Value)
-			if err != nil {
-				return fmt.Errorf("unknown boolean value type %q, expecting boolean", kv.Value)
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("unknown value for field '%s', expecting boolean", k)
-}
-
-func (rm *RuleManifest) parse() error {
 
 	defer func() {
 		if e := recover(); e != nil {
-			log.Errorf("parse panic, %v", e)
+			log.Errorf("panic, %v", e)
+		}
+		atomic.AddInt32(&r.running, -1)
+		close(r.stopch)
+	}()
+	atomic.AddInt32(&r.running, 1)
+	r.stopch = make(chan bool)
+
+	var err error
+	if r.rt == nil {
+		if r.rt, err = funcs.GetScriptRuntime(&funcs.ScriptGlobalCfg{
+			RulePath: r.File,
+		}); err != nil {
+			log.Errorf("%s", err)
+			return
+		}
+	}
+
+	log.Debugf("start run %s", filepath.Base(r.File))
+	r.mux.Lock()
+	err = r.rt.PCall(r.byteCode)
+	r.mux.Unlock()
+	if err != nil {
+		log.Errorf("run %s failed, %s", filepath.Base(r.File), err)
+	} else {
+		log.Debugf("run %s ok", filepath.Base(r.File))
+	}
+}
+
+func newManifest(path string) *RuleManifest {
+	return &RuleManifest{
+		path: path,
+	}
+}
+
+func (m *RuleManifest) load() error {
+
+	fi, err := os.Stat(m.path)
+	if err != nil {
+		log.Errorf("%s", err)
+		return err
+	}
+
+	if fi.ModTime().Unix() > m.lastModify {
+		if m.lastModify > 0 {
+			log.Debugf("%s changed, reload it", m.path)
+		} else {
+			log.Debugf("load manifest: %s", m.path)
+		}
+		err := m.parse()
+		if err != nil {
+			log.Errorf("%s", err)
+			return err
+		}
+		m.lastModify = time.Now().Unix()
+	}
+
+	return nil
+}
+
+func (m *RuleManifest) parse() (err error) {
+
+	defer func() {
+		if e := recover(); e != nil {
+			err = fmt.Errorf("parse panic, %v", e)
+			log.Errorf("%s", err)
 		}
 	}()
 
-	contents, err := ioutil.ReadFile(rm.path)
-	if err != nil {
-		return err
-	}
+	rm := *m
 
+	var contents []byte
+	var tbl *ast.Table
+	contents, err = ioutil.ReadFile(rm.path)
+	if err != nil {
+		return
+	}
 	contents = bytes.TrimPrefix(contents, []byte("\xef\xbb\xbf"))
-	tbl, err := toml.Parse(contents)
+	tbl, err = toml.Parse(contents)
 	if err != nil {
-		return err
+		return
 	}
 
-	mustKeys := map[string]bool{
+	requireKeys := map[string]bool{
 		"id":       false,
 		"category": false,
 		"level":    false,
@@ -228,7 +215,7 @@ func (rm *RuleManifest) parse() error {
 		"cron":     false,
 	}
 
-	for k := range mustKeys {
+	for k := range requireKeys {
 		v := tbl.Fields[k]
 		if v == nil {
 			continue
@@ -252,12 +239,12 @@ func (rm *RuleManifest) parse() error {
 				rm.Cron = str
 			}
 			if str != "" {
-				mustKeys[k] = true
+				requireKeys[k] = true
 			}
 		}
 	}
 
-	for k, bset := range mustKeys {
+	for k, bset := range requireKeys {
 		if !bset {
 			return fmt.Errorf("%s must not be empty", k)
 		}
@@ -271,11 +258,11 @@ func (rm *RuleManifest) parse() error {
 		return fmt.Errorf("invalid cron: %s, %s", rm.Cron, err)
 	}
 
-	rm.Tags = map[string]string{}
+	rm.tags = map[string]string{}
 	omithost := false
 	hostname := ""
 	for k, v := range tbl.Fields {
-		if _, ok := mustKeys[k]; ok {
+		if _, ok := requireKeys[k]; ok {
 			continue
 		}
 
@@ -312,7 +299,7 @@ func (rm *RuleManifest) parse() error {
 			return err
 		}
 		if str != "" {
-			rm.Tags[k] = str
+			rm.tags[k] = str
 		}
 	}
 
@@ -322,65 +309,40 @@ func (rm *RuleManifest) parse() error {
 				hostname = h
 			}
 		}
-		rm.Tags["hostname"] = hostname
+		rm.tags["hostname"] = hostname
 	}
+
+	*m = rm
 	return nil
 }
 
-func (c *Checker) newRuleFromFile(rulename, dir string) (*Rule, error) {
-
-	luapath := filepath.Join(dir, rulename+".lua")
-	manifestPath := filepath.Join(dir, rulename+".manifest")
-
-	proto, err := compileLua(luapath)
-	if err != nil {
-		return nil, err
+func ensureFieldString(k string, v interface{}, s *string) error {
+	if kv, ok := v.(*ast.KeyValue); ok {
+		if str, ok := kv.Value.(*ast.String); ok {
+			*s = str.Value
+			return nil
+		}
 	}
-
-	r := &Rule{
-		File:   luapath,
-		Proto:  proto,
-		stopch: make(chan bool),
-	}
-
-	rm, err := loadManifest(manifestPath)
-	if err != nil {
-		return nil, err
-	}
-	r.Manifests = append(r.Manifests, rm)
-
-	fi, err := os.Stat(luapath)
-	if err == nil {
-		r.LastModify = fi.ModTime().Unix()
-	}
-	fi, err = os.Stat(manifestPath)
-	if err == nil {
-		rm.LastModify = fi.ModTime().Unix()
-	}
-
-	r.cron = rm.Cron
-	r.disabled = rm.disabled
-
-	return r, nil
+	return fmt.Errorf("unknown value for field '%s', expecting string", k)
 }
 
-func compileLua(filePath string) (*lua.FunctionProto, error) {
-	file, err := os.Open(filePath)
-	defer file.Close()
-	if err != nil {
-		log.Errorf("fail to open %s, error:%s", filePath, err)
-		return nil, err
+func ensureFieldBool(k string, v interface{}, b *bool) error {
+	var err error
+	if kv, ok := v.(*ast.KeyValue); ok {
+		switch t := kv.Value.(type) {
+		case *ast.Boolean:
+			*b, err = t.Boolean()
+			if err != nil {
+				return fmt.Errorf("unknown boolean value type %q, expecting boolean", kv.Value)
+			}
+			return nil
+		case *ast.String:
+			*b, err = strconv.ParseBool(t.Value)
+			if err != nil {
+				return fmt.Errorf("unknown boolean value type %q, expecting boolean", kv.Value)
+			}
+			return nil
+		}
 	}
-	reader := bufio.NewReader(file)
-	chunk, err := luaparse.Parse(reader, filePath)
-	if err != nil {
-		log.Errorf("fail to parse lua file '%s', err: %s", filePath, err)
-		return nil, err
-	}
-	proto, err := lua.Compile(chunk, filePath)
-	if err != nil {
-		log.Errorf("fail to compile lua file '%s', err: %s", filePath, err)
-		return nil, err
-	}
-	return proto, nil
+	return fmt.Errorf("unknown value for field '%s', expecting boolean", k)
 }
