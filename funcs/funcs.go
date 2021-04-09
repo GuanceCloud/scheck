@@ -35,51 +35,9 @@ var (
 		{lua.StringLibName, lua.OpenString, nil},
 		{lua.MathLibName, lua.OpenMath, nil},
 		{lua.DebugLibName, lua.OpenDebug, nil},
-		{lua.OsLibName, lua.OpenOs, []string{"execute", "remove", "rename", "setenv", "setlocale"}},
+		{lua.OsLibName, lua.OpenOs, []string{"exit", "execute", "remove", "rename", "setenv", "setlocale"}},
 	}
-
-	//LuaExtendFuncs = []LuaFunc{
-	// {`ls`, ls},
-	// {`file_exist`, fileExist},
-	// {`file_info`, fileInfo},
-	// {`read_file`, readFile},
-	// {`file_hash`, fileHash},
-	// {`hostname`, hostname},
-	// {`uptime`, uptime},
-	// {`time_zone`, zone},
-	// {`kernel_info`, kernelInfo},
-	// {`kernel_modules`, kernelModules},
-	// {`ulimit_info`, ulimitInfo},
-	// {`mounts`, mounts},
-	// {`processes`, processes},
-	// {`interface_addresses`, interfaceAddresses},
-	// {`interface_details`, interfaceDetails},
-	// {`iptables`, ipTables},
-	// {`process_open_sockets`, processOpenSockets},
-	// {`listening_ports`, listeningPorts},
-	// {`users`, users},
-	// //{`logged_in_users`, loggedInUsers},
-	// {`shadow`, shadow},
-	// //{`last`, last},
-	// {`shell_history`, shellHistory},
-	// {`json_encode`, jsonEncode},
-	// {`json_decode`, jsonDecode},
-	// {`get_cache`, getCache},
-	// {`set_cache`, setCache},
-	//}
 )
-
-// // Register extended lua funcs to lua machine
-// func (l *LuaExt) Register(lstate *lua.LState) error {
-// 	//luajson.Preload(lstate) //for json parse
-// 	if err := loadLuaLibs(lstate); err != nil {
-// 		return err
-// 	}
-// 	for _, f := range luaExtendFuncs {
-// 		lstate.Register(f.Name, f.Fn)
-// 	}
-// 	return nil
-// }
 
 func (r *ScriptRunTime) Close() {
 	if r.ls != nil {

@@ -19,8 +19,8 @@
 [users](#users)  
 [shadow](#shadow)  
 [shell_history](#shell_history)  
-[trig](#trig)  
-[get_cache](#get_cache)
+[trigger](#trigger)  
+[get_cache](#get_cache)  
 [set_cache](#set_cache)
 
 
@@ -569,11 +569,11 @@ it issues an error when fail to read.
 
 ---
 
-## trig
+## trigger
 
-`trig([template_vals])`
+`trigger([template_vals])`
 
-trig an event and send it to target with line protocol.
+trigger an event and send it to target with line protocol.
 
 *Parameters:*  
 
@@ -584,9 +584,7 @@ trig an event and send it to target with line protocol.
 
 *Return value(s):*  
 
-| Type | Description |
-| --- | ---- |
-| `string` | empty if success, otherwise contains the error detail |
+it issues an error when failed.
 
 ---
 
