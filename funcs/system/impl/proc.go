@@ -1,5 +1,8 @@
 package impl
 
+// #include <impl.hpp>
+import "C"
+
 import (
 	"bufio"
 	"encoding/binary"
@@ -11,11 +14,17 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
+
+	hostutil "github.com/shirou/gopsutil/host"
 )
 
 var (
+	kCLKTCK      = int(C.sysconf(C._SC_CLK_TCK))
+	kMSIn1CLKTCK = int(1000 / C.sysconf(C._SC_CLK_TCK))
+
 	LinuxProtocolNames = map[int]string{
 		syscall.IPPROTO_ICMP:    "icmp",
 		syscall.IPPROTO_TCP:     "tcp",
@@ -56,10 +65,35 @@ type (
 		fd  string
 	}
 
-	processInfo struct {
-		pid     int
-		name    string
-		cmdline string
+	ProcessInfo struct {
+		Pid     int
+		Parent  int
+		Name    string
+		Path    string
+		PGroup  string
+		State   string
+		Nice    string
+		Threads int
+		Cmdline string
+		Cwd     string
+		Root    string
+		UID     string
+		EUID    string
+		SUID    string
+		GID     string
+		EGID    string
+		SGID    string
+		OnDisk  int
+		//WriteSize    int64
+		ResidentSize int64
+		TotalSize    int64
+
+		UserTime   int64
+		SystemTime int64
+		StartTime  int64
+
+		DiskBytesRead    int64
+		DiskBytesWritten int64
 	}
 
 	HistoryItem struct {
@@ -104,38 +138,197 @@ type (
 		ProcessCmdline string
 		Fd             string
 	}
+
+	SimpleProcStat struct {
+		Name         string
+		RealUID      string
+		RealGID      string
+		EffectiveUID string
+		EffectiveGID string
+		SavedUID     string
+		SavedGID     string
+		ResidentSize string
+		TotalSize    string
+		State        string
+		Parent       string
+		Group        string
+		Nice         string
+		Threads      string
+		UserTime     string
+		SystemTime   string
+		StartTime    string
+	}
+
+	SimpleProcIo struct {
+		ReadBytes           int64
+		WriteBytes          int64
+		CancelledWriteBytes int64
+	}
 )
 
-func procGetProcessInfo(pi *processInfo) {
-
-	path := fmt.Sprintf("/proc/%d/status", pi.pid)
-	data, err := ioutil.ReadFile(path)
-	if err == nil {
-		content := string(data)
-		lines := strings.Split(content, "\n")
-		for _, line := range lines {
-			if strings.Index(line, "Name:") != 0 {
-				continue
-			}
-			fields := strings.Split(line, ":")
-			if len(fields) > 1 {
-				pi.name = strings.TrimSpace(fields[1])
-			}
-			break
-		}
-	}
-
-	path = fmt.Sprintf("/proc/%d/cmdline", pi.pid)
-	data, err = ioutil.ReadFile(path)
-	if err == nil {
-		pi.cmdline = strings.TrimSpace(string(data))
-	}
+func getProcAttrFilePath(pid int, attr string) string {
+	return fmt.Sprintf("/proc/%d/%s", pid, attr)
 }
 
-func procEnumerateProcesses(detail bool) ([]*processInfo, error) {
-	var ps []*processInfo
+func getSimpleProcStat(pid int) (*SimpleProcStat, error) {
+	path := getProcAttrFilePath(pid, "stat")
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Errorf("%s", err)
+		return nil, err
+	}
+	content := string(data)
+	start := strings.LastIndex(content, ")")
+	if start == -1 || len(content) <= start+2 {
+		err = fmt.Errorf("Invalid /proc/stat header")
+		log.Errorf("%s", err)
+		return nil, err
+	}
+
+	details := strings.Split(content[start+2:], " ")
+	if len(details) <= 19 {
+		err = fmt.Errorf("Invalid /proc/stat content")
+		log.Errorf("%s", err)
+		return nil, err
+	}
+
+	stat := &SimpleProcStat{}
+	stat.State = details[0]
+	stat.Parent = details[1]
+	stat.Group = details[2]
+	stat.UserTime = details[11]
+	stat.SystemTime = details[12]
+	stat.Nice = details[16]
+	stat.Threads = details[17]
+	stat.StartTime = details[19]
+
+	path = getProcAttrFilePath(pid, "status")
+	data, err = ioutil.ReadFile(path)
+	if err == nil {
+		content = string(data)
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			detail := strings.Split(line, ":")
+			if len(detail) != 2 {
+				continue
+			}
+			k := detail[0]
+			v := strings.TrimSpace(detail[1])
+			switch k {
+			case "Name":
+				stat.Name = v
+			case "VmRSS":
+				if len(v) > 3 {
+					v = v[0 : len(v)-3]
+				}
+				stat.ResidentSize = v + "000"
+			case "VmSize":
+				if len(v) > 3 {
+					v = v[0 : len(v)-3]
+				}
+				stat.TotalSize = v + "000"
+			case "Gid":
+				gidDetail := strings.Split(v, "\t")
+				if len(gidDetail) == 4 {
+					stat.RealGID = gidDetail[0]
+					stat.EffectiveGID = gidDetail[1]
+					stat.SavedGID = gidDetail[2]
+				}
+			case "Uid":
+				gidDetail := strings.Split(v, "\t")
+				if len(gidDetail) == 4 {
+					stat.RealUID = gidDetail[0]
+					stat.EffectiveUID = gidDetail[1]
+					stat.SavedUID = gidDetail[2]
+				}
+			}
+		}
+	} else {
+		log.Warnf("Cannot read /proc/status, %s", err)
+	}
+
+	return stat, nil
+}
+
+func getSimpleProcIo(pid int) (*SimpleProcIo, error) {
+	path := getProcAttrFilePath(pid, "io")
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Warnf("%s", err)
+		return nil, err
+	}
+	info := &SimpleProcIo{}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		detail := strings.Split(line, ":")
+		if len(detail) != 2 {
+			continue
+		}
+		k := detail[0]
+		v := strings.TrimSpace(detail[1])
+		switch k {
+		case "read_bytes":
+			if n, e := strconv.ParseInt(v, 10, 64); e == nil {
+				info.ReadBytes = n
+			}
+		case "write_bytes":
+			if n, e := strconv.ParseInt(v, 10, 64); e == nil {
+				info.WriteBytes = n
+			}
+		case "cancelled_write_bytes":
+			if n, e := strconv.ParseInt(v, 10, 64); e == nil {
+				info.CancelledWriteBytes = n
+			}
+		}
+	}
+	return info, nil
+}
+
+func readProcLink(pid int, attr string) string {
+	path := getProcAttrFilePath(pid, attr)
+	l, err := os.Readlink(path)
+	if err != nil {
+		log.Warnf("%s", err)
+		return ""
+	}
+	return l
+}
+
+func readProcCMDLine(pid int) string {
+	path := getProcAttrFilePath(pid, "cmdline")
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Warnf("%s", err)
+		return ""
+	}
+	for i, b := range data {
+		if b == 0 {
+			data[i] = ' '
+		}
+	}
+	return strings.TrimSpace(string(data))
+}
+
+func getOnDisk(pid int, path string) (string, int) {
+	if path == "" {
+		return path, -1
+	}
+
+	if !strings.HasSuffix(path, "deleted") {
+		if _, err := os.Stat(path); err == nil {
+			return path, 1
+		} else {
+			return path, 0
+		}
+	}
+	return strings.TrimSuffix(path, "deleted"), 0
+}
+
+func procEnumerateProcesses() ([]int, error) {
+	var pids []int
 	dir, err := ioutil.ReadDir("/proc")
 	if err != nil {
+		log.Errorf("%s", err)
 		return nil, err
 	}
 	for _, fi := range dir {
@@ -144,16 +337,102 @@ func procEnumerateProcesses(detail bool) ([]*processInfo, error) {
 		}
 
 		if n, err := strconv.Atoi(fi.Name()); err == nil && n > 0 {
-			pi := &processInfo{
-				pid: n,
-			}
-			if detail {
-				procGetProcessInfo(pi)
-			}
-			ps = append(ps, pi)
+			pids = append(pids, n)
 		}
 	}
-	return ps, nil
+	return pids, nil
+}
+
+func GetProcessInfo(pid int, systemBootTime int64) (*ProcessInfo, error) {
+
+	procStat, err := getSimpleProcStat(pid)
+	if err != nil {
+		return nil, err
+	}
+
+	procIO, _ := getSimpleProcIo(pid)
+
+	info := &ProcessInfo{}
+	info.Pid = pid
+	if n, err := strconv.Atoi(procStat.Parent); err == nil {
+		info.Parent = n
+	} else {
+		info.Parent = -1
+	}
+	info.Name = procStat.Name
+	info.Path = readProcLink(pid, "exe")
+	info.PGroup = procStat.Group
+	info.State = procStat.State
+	info.Nice = procStat.Nice
+	if n, err := strconv.Atoi(procStat.Threads); err == nil {
+		info.Threads = n
+	}
+	info.Cmdline = readProcCMDLine(pid)
+	info.Cwd = readProcLink(pid, "cwd")
+	info.Root = readProcLink(pid, "root")
+	info.UID = procStat.RealUID
+	info.EUID = procStat.EffectiveUID
+	info.SUID = procStat.SavedUID
+	info.GID = procStat.RealGID
+	info.EGID = procStat.EffectiveGID
+	info.SGID = procStat.SavedGID
+
+	info.Path, info.OnDisk = getOnDisk(pid, info.Path)
+
+	if n, err := strconv.ParseInt(procStat.ResidentSize, 10, 64); err == nil {
+		info.ResidentSize = n
+	}
+
+	if n, err := strconv.ParseInt(procStat.TotalSize, 10, 64); err == nil {
+		info.TotalSize = n
+	}
+
+	if n, err := strconv.ParseInt(procStat.UserTime, 10, 64); err == nil {
+		info.UserTime = n * int64(kMSIn1CLKTCK)
+	}
+
+	if n, err := strconv.ParseInt(procStat.SystemTime, 10, 64); err == nil {
+		info.SystemTime = n * int64(kMSIn1CLKTCK)
+	}
+
+	if n, err := strconv.ParseInt(procStat.StartTime, 10, 64); err == nil {
+		if systemBootTime > 0 {
+			info.StartTime = systemBootTime + n/int64(kCLKTCK)
+		}
+	} else {
+		info.StartTime = -1
+	}
+
+	if procIO != nil {
+		info.DiskBytesRead = procIO.ReadBytes
+		info.DiskBytesWritten = procIO.WriteBytes - procIO.CancelledWriteBytes
+	}
+
+	return info, err
+}
+
+func GetProcesses() ([]*ProcessInfo, error) {
+
+	var systemBoot uint64
+	if info, err := hostutil.Info(); err == nil {
+		systemBoot = info.Uptime
+		if systemBoot > 0 {
+			systemBoot = uint64(time.Now().Unix()) - systemBoot
+		}
+	}
+
+	pids, err := procEnumerateProcesses()
+	if err != nil {
+		return nil, err
+	}
+
+	var processes []*ProcessInfo
+	for _, pid := range pids {
+		if p, err := GetProcessInfo(pid, int64(systemBoot)); err == nil {
+			processes = append(processes, p)
+		}
+	}
+	return processes, nil
 }
 
 func procReadDescriptor(pid int, descriptor string) (string, error) {
@@ -433,84 +712,85 @@ func procGetSocketList(family int, protocol int, ns int64, pid int) ([]*SocketIn
 
 func GetProcessOpenSockets() ([]*SocketInfo, error) {
 
-	var pis []*processInfo
-	var err error
+	// var pis []*processInfo
+	// var err error
 
-	pis, err = procEnumerateProcesses(true)
-	if err != nil {
-		return nil, err
-	}
+	// pis, err = procEnumerateProcesses(true)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	netnsList := map[int64]bool{}
-	inodeProcMap := map[string]pidFdPair{}
-	var socketList []*SocketInfo
+	// netnsList := map[int64]bool{}
+	// inodeProcMap := map[string]pidFdPair{}
+	// var socketList []*SocketInfo
 
-	for _, pi := range pis {
+	// for _, pi := range pis {
 
-		pid := pi.pid
+	// 	pid := pi.pid
 
-		err = procGetSocketInodeToProcessInfoMap(pid, inodeProcMap)
-		if err != nil {
-			log.Errorf("%s", err)
-		}
+	// 	err = procGetSocketInodeToProcessInfoMap(pid, inodeProcMap)
+	// 	if err != nil {
+	// 		log.Errorf("%s", err)
+	// 	}
 
-		var ns int64
-		namespaces := procGetProcessNamespaces(pid, []string{"net"})
-		if len(namespaces) > 0 {
-			ns = namespaces["net"]
-		}
+	// 	var ns int64
+	// 	namespaces := procGetProcessNamespaces(pid, []string{"net"})
+	// 	if len(namespaces) > 0 {
+	// 		ns = namespaces["net"]
+	// 	}
 
-		if _, ok := netnsList[ns]; !ok {
-			netnsList[ns] = true
+	// 	if _, ok := netnsList[ns]; !ok {
+	// 		netnsList[ns] = true
 
-			for k := range LinuxProtocolNames {
-				if list, err := procGetSocketList(syscall.AF_INET, k, ns, pid); err == nil && len(list) > 0 {
-					socketList = append(socketList, list...)
-				} else {
-					if err != nil {
-						log.Errorf("%s", err)
-					}
-				}
+	// 		for k := range LinuxProtocolNames {
+	// 			if list, err := procGetSocketList(syscall.AF_INET, k, ns, pid); err == nil && len(list) > 0 {
+	// 				socketList = append(socketList, list...)
+	// 			} else {
+	// 				if err != nil {
+	// 					log.Errorf("%s", err)
+	// 				}
+	// 			}
 
-				if list, err := procGetSocketList(syscall.AF_INET6, k, ns, pid); err == nil && len(list) > 0 {
-					socketList = append(socketList, list...)
-				} else {
-					if err != nil {
-						log.Errorf("%s", err)
-					}
-				}
-			}
+	// 			if list, err := procGetSocketList(syscall.AF_INET6, k, ns, pid); err == nil && len(list) > 0 {
+	// 				socketList = append(socketList, list...)
+	// 			} else {
+	// 				if err != nil {
+	// 					log.Errorf("%s", err)
+	// 				}
+	// 			}
+	// 		}
 
-			if list, err := procGetSocketList(syscall.AF_UNIX, syscall.IPPROTO_IP, ns, pid); err == nil && len(list) > 0 {
-				socketList = append(socketList, list...)
-			} else {
-				if err != nil {
-					log.Errorf("%s", err)
-				}
-			}
-		}
-	}
+	// 		if list, err := procGetSocketList(syscall.AF_UNIX, syscall.IPPROTO_IP, ns, pid); err == nil && len(list) > 0 {
+	// 			socketList = append(socketList, list...)
+	// 		} else {
+	// 			if err != nil {
+	// 				log.Errorf("%s", err)
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	for _, info := range socketList {
-		if it, ok := inodeProcMap[info.Socket]; ok {
-			info.PID = it.pid
-			info.Fd = it.fd
+	// for _, info := range socketList {
+	// 	if it, ok := inodeProcMap[info.Socket]; ok {
+	// 		info.PID = it.pid
+	// 		info.Fd = it.fd
 
-			for _, pi := range pis {
-				if pi.pid == info.PID {
-					info.ProcessName = pi.name
-					info.ProcessCmdline = pi.cmdline
-					break
-				}
-			}
+	// 		for _, pi := range pis {
+	// 			if pi.pid == info.PID {
+	// 				info.ProcessName = pi.name
+	// 				info.ProcessCmdline = pi.cmdline
+	// 				break
+	// 			}
+	// 		}
 
-		} else {
-			info.PID = -1
-			info.Fd = "-1"
-		}
-	}
+	// 	} else {
+	// 		info.PID = -1
+	// 		info.Fd = "-1"
+	// 	}
+	// }
 
-	return socketList, nil
+	// return socketList, nil
+	return nil, nil
 }
 
 func GetUserDetail(username string) ([]*UserInfo, error) {

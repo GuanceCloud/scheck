@@ -2,6 +2,7 @@
 #define _impl_header_h
 
 #include <stdint.h>
+#include <unistd.h>
 
 struct LastItem {
     int ut_type;

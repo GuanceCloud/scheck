@@ -370,17 +370,29 @@ it issues an error when fail to read.
 | --- | ---- | ---- |
 | pid | number | Process (or thread) ID |
 | name | string | The process path or shorthand argv[0] |
-| cmdline | string | Complete argv |
-| percent_processor_time | number | Returns elapsed time that all of the threads of this process used the processor to execute instructions in 100 nanoseconds ticks. |
 | path | string | Path to executed binary |
+| cmdline | string | Complete argv |
+| state | string | Process state |
+| cwd | string | Process current working directory |
+| root | string | Process virtual root directory |
 | uid | number | Unsigned user ID |
 | gid | number | Unsigned group ID |
+| euid | number | Unsigned effective user ID |
+| egid | number | Unsigned effective group ID |
+| suid | number | Unsigned saved user ID |
+| sgid | number | Unsigned saved group ID |
+| on_disk | number | The process path exists yes=1, no=0, unknown=-1 |
+| resident_size | number | Bytes of private memory used by process |
+| total_size | number | Total virtual memory size |
 | system_time | number | CPU time in milliseconds spent in kernel space |
 | user_time | number | CPU time in milliseconds spent in user space |
-| nice | number | Process nice level (-20 to 20, default 0) |
+| disk_bytes_read | number | Bytes read from disk |
+| disk_bytes_written | number | Bytes written to disk |
 | start_time | number | Process start time in seconds since Epoch, in case of error -1 |
+| parent | number | Process parent's PID |
+| pgroup | number | Process group |
 | threads | number | Number of threads used by process |
-| state | string | Process state|
+| nice | number | Process nice level (-20 to 20, default 0) |
 
 ---
 

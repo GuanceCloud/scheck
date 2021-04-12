@@ -20,7 +20,6 @@ import (
 
 	diskutil "github.com/shirou/gopsutil/disk"
 	hostutil "github.com/shirou/gopsutil/host"
-	processutil "github.com/shirou/gopsutil/process"
 )
 
 func (p *provider) hostname(l *lua.LState) int {
@@ -293,43 +292,40 @@ func (p *provider) mounts(l *lua.LState) int {
 
 func (p *provider) processes(l *lua.LState) int {
 
-	pslist, err := processutil.Processes()
+	pslist, err := impl.GetProcesses()
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
 	var result lua.LTable
 	for _, p := range pslist {
-		name, _ := p.Name()
-		cmdline, _ := p.Cmdline()
-		cpu, _ := p.CPUPercent()
-		exe, _ := p.Exe()
-		uids, _ := p.Uids()
-		gids, _ := p.Gids()
-		times, _ := p.Times()
-		starttime, _ := p.CreateTime()
-		threads, _ := p.Threads()
-		status, _ := p.Status()
 		var pt lua.LTable
 		pt.RawSetString("pid", lua.LNumber(p.Pid))
-		pt.RawSetString("name", lua.LString(name))
-		pt.RawSetString("cmdline", lua.LString(cmdline))
-		pt.RawSetString("percent_processor_time", lua.LNumber(cpu))
-		pt.RawSetString("path", lua.LString(exe))
-		if len(uids) > 0 {
-			pt.RawSetString("uid", lua.LNumber(uids[0]))
-		}
-		if len(gids) > 0 {
-			pt.RawSetString("gid", lua.LNumber(gids[0]))
-		}
-		if times != nil {
-			pt.RawSetString("system_time", lua.LNumber(times.System))
-			pt.RawSetString("user_time", lua.LNumber(times.User))
-			pt.RawSetString("nice", lua.LNumber(times.Nice))
-		}
-		pt.RawSetString("start_time", lua.LNumber(starttime/1000))
-		pt.RawSetString("threads", lua.LNumber(len(threads)))
-		pt.RawSetString("state", lua.LString(status))
+		pt.RawSetString("parent", lua.LNumber(p.Parent))
+		pt.RawSetString("path", lua.LString(p.Path))
+		pt.RawSetString("name", lua.LString(p.Name))
+		pt.RawSetString("pgroup", lua.LString(p.PGroup))
+		pt.RawSetString("state", lua.LString(p.State))
+		pt.RawSetString("nice", lua.LString(p.Nice))
+		pt.RawSetString("threads", lua.LNumber(p.Threads))
+		pt.RawSetString("cmdline", lua.LString(p.Cmdline))
+		pt.RawSetString("cwd", lua.LString(p.Cwd))
+		pt.RawSetString("root", lua.LString(p.Root))
+		pt.RawSetString("uid", lua.LString(p.UID))
+		pt.RawSetString("euid", lua.LString(p.EUID))
+		pt.RawSetString("suid", lua.LString(p.SUID))
+		pt.RawSetString("gid", lua.LString(p.GID))
+		pt.RawSetString("egid", lua.LString(p.EGID))
+		pt.RawSetString("sgid", lua.LString(p.SGID))
+		pt.RawSetString("on_disk", lua.LNumber(p.OnDisk))
+		pt.RawSetString("resident_size", lua.LNumber(p.ResidentSize))
+		pt.RawSetString("total_size", lua.LNumber(p.TotalSize))
+		pt.RawSetString("user_time", lua.LNumber(p.UserTime))
+		pt.RawSetString("system_time", lua.LNumber(p.SystemTime))
+		pt.RawSetString("start_time", lua.LNumber(p.StartTime))
+		pt.RawSetString("disk_bytes_read", lua.LNumber(p.DiskBytesRead))
+		pt.RawSetString("disk_bytes_written", lua.LNumber(p.DiskBytesWritten))
+
 		result.Append(&pt)
 	}
 

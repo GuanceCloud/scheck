@@ -219,7 +219,7 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 
 		path := filepath.Join(ruleDir, f.Name())
 
-		if !strings.HasSuffix(f.Name(), ".sc") {
+		if !strings.HasSuffix(f.Name(), ".lua") {
 			continue
 		}
 
@@ -260,7 +260,7 @@ func TestRule(rulepath string) {
 	log.SetReportCaller(true)
 
 	rulepath, _ = filepath.Abs(rulepath)
-	rulepath = rulepath + ".sc"
+	rulepath = rulepath + ".lua"
 	ruledir := filepath.Dir(rulepath)
 
 	checker = newChecker(ruledir)
