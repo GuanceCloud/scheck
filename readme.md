@@ -130,6 +130,25 @@ checker --test  /ruledir/demo
 见 [函数](./funcs.md)
 
 
+## 创建通用库
+Security Checker 允许在检测脚本中使用 `require` 函数来导入Lua模块，模块文件只能存放在 `<rulesDir>/lib` 中，其中 `rulesDir` 为 `checker.conf` 中指定的规则目录。可以将一些常用的函数模块化，放在这个 lib 子目录下供检测脚本使用。  
+
+假设创建一个Lua模块 `common.lua`：  
+``` lua
+module={}
+function modules.Foo()
+    ...
+end
+return module
+```
+将 `common.lua` 放在 `/usr/local/security-checker/rules.d/lib` 目录下(这里假设规则目录配置为/usr/local/security-checker/rules.d)。
+
+假设有规则脚本 demo.lua 使用该通用模块：  
+``` lua
+common=require("common") --不需要些后缀名
+common.Foo()
+```
+
 ---
 
 ## 示例
