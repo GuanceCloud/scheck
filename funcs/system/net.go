@@ -37,7 +37,17 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 	var socketList []*impl.SocketInfo
 	var err error
 
-	socketList, err = impl.GetProcessOpenSockets()
+	var pids []int
+	lv := l.Get(1)
+	if lv != lua.LNil {
+		if lv.Type() != lua.LTNumber {
+			l.TypeError(1, lua.LTNumber)
+			return lua.MultRet
+		}
+		pids = append(pids, int(lv.(lua.LNumber)))
+	}
+
+	socketList, err = impl.EnumProcessesOpenSockets(pids)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
@@ -45,7 +55,6 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 
 	var result lua.LTable
 	for _, info := range socketList {
-
 		var item lua.LTable
 		item.RawSetString("socket", lua.LString(info.Socket))
 		if info.Family == syscall.AF_UNIX {
@@ -68,9 +77,12 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 		item.RawSetString("state", lua.LString(info.State))
 		item.RawSetString("net_namespace", lua.LNumber(info.Namespace))
 		item.RawSetString("pid", lua.LNumber(info.PID))
-		item.RawSetString("process_name", lua.LString(info.ProcessName))
-		item.RawSetString("cmdline", lua.LString(info.ProcessCmdline))
-		item.RawSetString("fd", lua.LString(info.Fd))
+		item.RawSetString("fd", lua.LNumber(info.Fd))
+
+		if pname, _, pcmdline, err := impl.GetProcessSimpleInfo(info.PID); err == nil {
+			item.RawSetString("process_name", lua.LString(pname))
+			item.RawSetString("cmdline", lua.LString(pcmdline))
+		}
 		result.Append(&item)
 	}
 
@@ -79,10 +91,21 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 }
 
 func (p *provider) listeningPorts(l *lua.LState) int {
+
+	var pids []int
+	lv := l.Get(1)
+	if lv != lua.LNil {
+		if lv.Type() != lua.LTNumber {
+			l.TypeError(1, lua.LTNumber)
+			return lua.MultRet
+		}
+		pids = append(pids, int(lv.(lua.LNumber)))
+	}
+
 	var socketList []*impl.SocketInfo
 	var err error
 
-	socketList, err = impl.GetProcessOpenSockets()
+	socketList, err = impl.EnumProcessesOpenSockets(pids)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
@@ -101,8 +124,12 @@ func (p *provider) listeningPorts(l *lua.LState) int {
 
 		var item lua.LTable
 		item.RawSetString("pid", lua.LNumber(info.PID))
-		item.RawSetString("exe", lua.LString(info.ProcessName))
-		item.RawSetString("cmdline", lua.LString(info.ProcessCmdline))
+
+		if pname, _, pcmdline, err := impl.GetProcessSimpleInfo(info.PID); err == nil {
+			item.RawSetString("process_name", lua.LString(pname))
+			item.RawSetString("cmdline", lua.LString(pcmdline))
+		}
+
 		if info.Family == syscall.AF_UNIX {
 			item.RawSetString("port", lua.LNumber(0))
 			item.RawSetString("path", lua.LString(info.UnixSocketPath))
@@ -120,7 +147,7 @@ func (p *provider) listeningPorts(l *lua.LState) int {
 			}
 			item.RawSetString("protocol", lua.LString(impl.LinuxProtocolNames[info.Protocol]))
 		}
-		item.RawSetString("fd", lua.LString(info.Fd))
+		item.RawSetString("fd", lua.LNumber(info.Fd))
 		item.RawSetString("net_namespace", lua.LNumber(info.Namespace))
 		result.Append(&item)
 	}

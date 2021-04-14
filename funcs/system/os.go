@@ -2,12 +2,10 @@ package system
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -333,6 +331,38 @@ func (p *provider) processes(l *lua.LState) int {
 	return 1
 }
 
+func (p *provider) processOpendFiles(l *lua.LState) int {
+
+	var pids []int
+	lv := l.Get(1)
+	if lv != lua.LNil {
+		if lv.Type() != lua.LTNumber {
+			l.TypeError(1, lua.LTNumber)
+			return lua.MultRet
+		}
+		pids = append(pids, int(lv.(lua.LNumber)))
+	}
+
+	fds, err := impl.EnumProcessesFds(pids)
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+
+	var result lua.LTable
+
+	for _, fd := range fds {
+		var t lua.LTable
+		t.RawSetString("pid", lua.LNumber(fd.PID))
+		t.RawSetString("fd", lua.LString(fd.Fd))
+		t.RawSetString("path", lua.LString(fd.LinkPath))
+		result.Append(&t)
+	}
+
+	l.Push(&result)
+	return 1
+}
+
 func (p *provider) shellHistory(l *lua.LState) int {
 
 	targetUser := ""
@@ -401,59 +431,62 @@ func (p *provider) shellHistory(l *lua.LState) int {
 	return 1
 }
 
+func (p *provider) parseUtmpFile(file string) (*lua.LTable, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var result lua.LTable
+	utmps, err := impl.ParseUtmp(f)
+	if err != nil {
+		return nil, err
+	}
+	for _, utmp := range utmps {
+		var item lua.LTable
+		item.RawSetString("pid", lua.LNumber(utmp.Pid))
+		item.RawSetString("username", lua.LString(utmp.User))
+		item.RawSetString("tty", lua.LString(utmp.Device))
+		item.RawSetString("host", lua.LString(utmp.Host))
+		item.RawSetString("type", lua.LNumber(utmp.Type))
+		item.RawSetString("time", lua.LNumber(utmp.Time))
+		result.Append(&item)
+	}
+	return &result, nil
+}
+
 func (p *provider) last(l *lua.LState) int {
 
-	// targetUser := ""
-	// limit := -1
-	// lv := l.Get(1)
-	// if lv.Type() != lua.LTNil {
-	// 	if lv.Type() != lua.LTString {
-	// 		l.TypeError(1, lua.LTString)
-	// 		return lua.MultRet
-	// 	} else {
-	// 		targetUser = lv.String()
-	// 	}
-	// }
-
-	// lv = l.Get(2)
-	// if lv.Type() != lua.LTNil {
-	// 	if lv.Type() != lua.LTNumber {
-	// 		l.TypeError(2, lua.LTNumber)
-	// 		return lua.MultRet
-	// 	} else {
-	// 		limit = int(lv.(lua.LNumber))
-	// 	}
-	// }
-
-	buf := bytes.NewBufferString("")
-	cmd := exec.Command("last")
-	cmd.Stdout = buf
-	if err := cmd.Run(); err != nil {
+	utmps, err := p.parseUtmpFile("/var/log/wtmp")
+	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
 
-	reader := bufio.NewReader(buf)
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			break
-		}
+	l.Push(utmps)
+	return 1
+}
 
-		fields := strings.FieldsFunc(line, func(r rune) bool {
-			if r == ' ' {
-				return true
-			}
-			return false
-		})
+func (p *provider) lastb(l *lua.LState) int {
 
-		if len(fields) < 5 {
-			continue
-		}
-
-		log.Printf("%v", len(fields))
-
+	utmps, err := p.parseUtmpFile("/var/log/btmp")
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
 	}
 
+	l.Push(utmps)
+	return 1
+}
+
+func (p *provider) loggedInUsers(l *lua.LState) int {
+
+	utmps, err := p.parseUtmpFile("/var/run/utmp")
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+
+	l.Push(utmps)
 	return 1
 }

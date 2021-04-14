@@ -1,8 +1,5 @@
 package impl
 
-// #include <impl.hpp>
-import "C"
-
 import (
 	"bufio"
 	"encoding/binary"
@@ -10,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,12 +17,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	hostutil "github.com/shirou/gopsutil/host"
+	sysconf "github.com/tklauser/go-sysconf"
 )
 
 var (
-	kCLKTCK      = int(C.sysconf(C._SC_CLK_TCK))
-	kMSIn1CLKTCK = int(1000 / C.sysconf(C._SC_CLK_TCK))
-
 	LinuxProtocolNames = map[int]string{
 		syscall.IPPROTO_ICMP:    "icmp",
 		syscall.IPPROTO_TCP:     "tcp",
@@ -62,7 +58,7 @@ var (
 type (
 	pidFdPair struct {
 		pid int
-		fd  string
+		fd  int
 	}
 
 	ProcessInfo struct {
@@ -133,10 +129,8 @@ type (
 
 		State string
 
-		PID            int
-		ProcessName    string
-		ProcessCmdline string
-		Fd             string
+		PID int
+		Fd  int
 	}
 
 	SimpleProcStat struct {
@@ -163,6 +157,12 @@ type (
 		ReadBytes           int64
 		WriteBytes          int64
 		CancelledWriteBytes int64
+	}
+
+	ProcessDescriptor struct {
+		PID      int
+		Fd       string
+		LinkPath string
 	}
 )
 
@@ -343,6 +343,17 @@ func procEnumerateProcesses() ([]int, error) {
 	return pids, nil
 }
 
+func GetProcessSimpleInfo(pid int) (name string, path string, cmdline string, err error) {
+	var procStat *SimpleProcStat
+	procStat, err = getSimpleProcStat(pid)
+	if err == nil {
+		name = procStat.Name
+		path = readProcLink(pid, "exe")
+		cmdline = readProcCMDLine(pid)
+	}
+	return
+}
+
 func GetProcessInfo(pid int, systemBootTime int64) (*ProcessInfo, error) {
 
 	procStat, err := getSimpleProcStat(pid)
@@ -386,6 +397,12 @@ func GetProcessInfo(pid int, systemBootTime int64) (*ProcessInfo, error) {
 	if n, err := strconv.ParseInt(procStat.TotalSize, 10, 64); err == nil {
 		info.TotalSize = n
 	}
+
+	var kCLKTCK int64 = 100
+	if n, err := sysconf.Sysconf(sysconf.SC_CLK_TCK); err == nil {
+		kCLKTCK = n
+	}
+	kMSIn1CLKTCK := (1000 / kCLKTCK)
 
 	if n, err := strconv.ParseInt(procStat.UserTime, 10, 64); err == nil {
 		info.UserTime = n * int64(kMSIn1CLKTCK)
@@ -433,6 +450,45 @@ func GetProcesses() ([]*ProcessInfo, error) {
 		}
 	}
 	return processes, nil
+}
+
+func EnumProcessesFds(pids []int) ([]*ProcessDescriptor, error) {
+	var err error
+	if len(pids) == 0 {
+		pids, err = procEnumerateProcesses()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var fds []*ProcessDescriptor
+	for _, pid := range pids {
+		if vals, err := GetProcessFds(pid); err == nil {
+			fds = append(fds, vals...)
+		}
+	}
+	return fds, nil
+}
+
+func GetProcessFds(pid int) ([]*ProcessDescriptor, error) {
+
+	dir := fmt.Sprintf("/proc/%d/fd", pid)
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var fds []*ProcessDescriptor
+	for _, file := range files {
+		link, err := os.Readlink(filepath.Join(dir, file.Name()))
+		if err == nil {
+			fds = append(fds, &ProcessDescriptor{
+				PID:      pid,
+				Fd:       file.Name(),
+				LinkPath: link,
+			})
+		}
+	}
+	return fds, nil
 }
 
 func procReadDescriptor(pid int, descriptor string) (string, error) {
@@ -500,7 +556,9 @@ func procGetSocketInodeToProcessInfoMap(pid int, infoMap map[string]pidFdPair) e
 			if strings.Index(link, "socket:[") == 0 {
 				inode := link[8 : len(link)-1]
 				//log.Printf("[debug] link=%s for %s/%s, inode=%s", link, descriptorsPath, fd, inode)
-				infoMap[inode] = pidFdPair{pid, fd}
+				if nfd, err := strconv.Atoi(fd); err == nil {
+					infoMap[inode] = pidFdPair{pid, nfd}
+				}
 			}
 		}
 	}
@@ -710,87 +768,76 @@ func procGetSocketList(family int, protocol int, ns int64, pid int) ([]*SocketIn
 	}
 }
 
-func GetProcessOpenSockets() ([]*SocketInfo, error) {
+func EnumProcessesOpenSockets(pids []int) ([]*SocketInfo, error) {
 
-	// var pis []*processInfo
-	// var err error
+	var err error
+	if len(pids) == 0 {
+		pids, err = procEnumerateProcesses()
+		if err != nil {
+			return nil, err
+		}
+	}
 
-	// pis, err = procEnumerateProcesses(true)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	netnsList := map[int64]bool{}
+	inodeProcMap := map[string]pidFdPair{}
+	var socketList []*SocketInfo
 
-	// netnsList := map[int64]bool{}
-	// inodeProcMap := map[string]pidFdPair{}
-	// var socketList []*SocketInfo
+	for _, pid := range pids {
 
-	// for _, pi := range pis {
+		err = procGetSocketInodeToProcessInfoMap(pid, inodeProcMap)
+		if err != nil {
+			log.Errorf("%s", err)
+		}
 
-	// 	pid := pi.pid
+		var ns int64
+		namespaces := procGetProcessNamespaces(pid, []string{"net"})
+		if len(namespaces) > 0 {
+			ns = namespaces["net"]
+		}
 
-	// 	err = procGetSocketInodeToProcessInfoMap(pid, inodeProcMap)
-	// 	if err != nil {
-	// 		log.Errorf("%s", err)
-	// 	}
+		if _, ok := netnsList[ns]; !ok {
+			netnsList[ns] = true
 
-	// 	var ns int64
-	// 	namespaces := procGetProcessNamespaces(pid, []string{"net"})
-	// 	if len(namespaces) > 0 {
-	// 		ns = namespaces["net"]
-	// 	}
+			for k := range LinuxProtocolNames {
+				if list, err := procGetSocketList(syscall.AF_INET, k, ns, pid); err == nil && len(list) > 0 {
+					socketList = append(socketList, list...)
+				} else {
+					if err != nil {
+						log.Errorf("%s", err)
+					}
+				}
 
-	// 	if _, ok := netnsList[ns]; !ok {
-	// 		netnsList[ns] = true
+				if list, err := procGetSocketList(syscall.AF_INET6, k, ns, pid); err == nil && len(list) > 0 {
+					socketList = append(socketList, list...)
+				} else {
+					if err != nil {
+						log.Errorf("%s", err)
+					}
+				}
+			}
 
-	// 		for k := range LinuxProtocolNames {
-	// 			if list, err := procGetSocketList(syscall.AF_INET, k, ns, pid); err == nil && len(list) > 0 {
-	// 				socketList = append(socketList, list...)
-	// 			} else {
-	// 				if err != nil {
-	// 					log.Errorf("%s", err)
-	// 				}
-	// 			}
+			if list, err := procGetSocketList(syscall.AF_UNIX, syscall.IPPROTO_IP, ns, pid); err == nil && len(list) > 0 {
+				socketList = append(socketList, list...)
+			} else {
+				if err != nil {
+					log.Errorf("%s", err)
+				}
+			}
+		}
+	}
 
-	// 			if list, err := procGetSocketList(syscall.AF_INET6, k, ns, pid); err == nil && len(list) > 0 {
-	// 				socketList = append(socketList, list...)
-	// 			} else {
-	// 				if err != nil {
-	// 					log.Errorf("%s", err)
-	// 				}
-	// 			}
-	// 		}
+	for _, info := range socketList {
+		if it, ok := inodeProcMap[info.Socket]; ok {
+			info.PID = it.pid
+			info.Fd = it.fd
 
-	// 		if list, err := procGetSocketList(syscall.AF_UNIX, syscall.IPPROTO_IP, ns, pid); err == nil && len(list) > 0 {
-	// 			socketList = append(socketList, list...)
-	// 		} else {
-	// 			if err != nil {
-	// 				log.Errorf("%s", err)
-	// 			}
-	// 		}
-	// 	}
-	// }
+		} else {
+			info.PID = -1
+			info.Fd = -1
+		}
+	}
 
-	// for _, info := range socketList {
-	// 	if it, ok := inodeProcMap[info.Socket]; ok {
-	// 		info.PID = it.pid
-	// 		info.Fd = it.fd
-
-	// 		for _, pi := range pis {
-	// 			if pi.pid == info.PID {
-	// 				info.ProcessName = pi.name
-	// 				info.ProcessCmdline = pi.cmdline
-	// 				break
-	// 			}
-	// 		}
-
-	// 	} else {
-	// 		info.PID = -1
-	// 		info.Fd = "-1"
-	// 	}
-	// }
-
-	// return socketList, nil
-	return nil, nil
+	return socketList, nil
 }
 
 func GetUserDetail(username string) ([]*UserInfo, error) {

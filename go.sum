@@ -1,3 +1,5 @@
+blitter.com/go/goutmp v1.0.5 h1:isP6bxSs1O06Oy7wB8u4y5SgLr22txfjg/gjG4qn0Og=
+blitter.com/go/goutmp v1.0.5/go.mod h1:gtlbjC8xGzMk/Cf0BpnVltSa3awOqJ+B5WAxVptTMxk=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=

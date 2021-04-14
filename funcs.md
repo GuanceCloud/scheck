@@ -11,17 +11,23 @@
 [kernel_modules](#kernel_modules)  
 [ulimit_info](#ulimit_info)  
 [mounts](#mounts)  
-[processes](#processes)  
 [interface_addresses](#interface_addresses)  
 [iptables](#iptables)  
+[processes](#processes)  
 [process_open_sockets](#process_open_sockets)  
+[process_open_files](#process_open_files)  
 [listening_ports](#listening_ports)  
 [users](#users)  
+[logged_in_users](#logged_in_users)  
+[last](#last)  
+[lastb](#lastb)  
 [shadow](#shadow)  
 [shell_history](#shell_history)  
 [trigger](#trigger)  
-[get_cache](#get_cache)  
+[get_cache](#get_cache)   
 [set_cache](#set_cache)
+[json_encode](#json_encode)   
+[json_decode](#json_decode)  
 
 
 
@@ -461,7 +467,7 @@ it issues an error when fail to read.
 | Name | Type | Description |
 | --- | ---- | ---- |
 | pid | number | Process (or thread) ID |
-| exe | string | The process path or shorthand argv[0] |
+| process_name | string | The process name |
 | cmdline | string | Complete argv |
 | fd | number | Socket file descriptor number |
 | socket | number | Socket handle or inode number |
@@ -474,6 +480,29 @@ it issues an error when fail to read.
 | path | string | For UNIX sockets (family=AF_UNIX), the domain path |
 | net_namespace | number | The inode number of the network namespace |
 | state | string | TCP socket state |
+
+---
+
+## process_open_files
+
+`process_open_files()`
+
+File descriptors for each process.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item corresponding to a processe which have open file, describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| fd | number | Process-specific file descriptor numbe |
+| path | string | Filesystem path of descriptor |
 
 ---
 
@@ -496,7 +525,7 @@ it issues an error when fail to read.
 | Name | Type | Description |
 | --- | ---- | ---- |
 | pid | number | Process (or thread) ID |
-| exe | string | The process path or shorthand argv[0] |
+| process_name | string | The process name |
 | cmdline | string | Complete argv |
 | socket | number | Socket handle or inode number |
 | fd | number | Socket file descriptor number |
@@ -530,6 +559,87 @@ it issues an error when fail to read.
 | gid | number | Group ID (unsigned) |
 | directory | string | User's home directory |
 | shell | string | User's configured default shell |
+
+
+---
+
+## logged_in_users
+
+`logged_in_users()`
+
+Users with an active shell on the system.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| username | string | Username |
+| type | number | Login type, see utmp.h |
+| tty | number | Device name |
+| host | string | Remote hostname |
+| time | string | Time entry was made, unix timestamp in seconds |
+
+
+---
+
+## last
+
+`last()`
+
+System logins and logouts.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| username | string | Username |
+| type | number | Login type, see utmp.h |
+| tty | number | Device name |
+| host | string | Remote hostname |
+| time | string | Time entry was made, unix timestamp in seconds |
+
+
+---
+
+## lastb
+
+`lastb()`
+
+Failed logins.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| username | string | Username |
+| type | number | Login type, see utmp.h |
+| tty | number | Device name |
+| host | string | Remote hostname |
+| time | string | Time entry was made, unix timestamp in seconds |
 
 ---
 
@@ -641,3 +751,52 @@ set a cache key-value pair.
 | Type | Description |
 | --- | ---- |
 | `string` | error detail if failed |
+
+---
+
+## json_encode
+
+`json_encode(object)`
+
+encode a lua table to json string
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| object | `table` | a lua table  | true |
+
+
+*Return value(s):*  
+
+it issues an error if fail to encode
+
+| Type | Description |
+| --- | ---- |
+| `string` | json string |
+
+---
+
+
+## json_decode
+
+`json_decode(str)`
+
+decode a json string to lua table
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| str | `string` | a json string  | true |
+
+
+*Return value(s):*  
+
+it issues an error if fail to encode
+
+| Type | Description |
+| --- | ---- |
+| `table` | a lua table |
+
+---
