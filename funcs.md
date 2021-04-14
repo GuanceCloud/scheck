@@ -25,7 +25,7 @@
 [shell_history](#shell_history)  
 [trigger](#trigger)  
 [get_cache](#get_cache)   
-[set_cache](#set_cache)
+[set_cache](#set_cache)  
 [json_encode](#json_encode)   
 [json_decode](#json_decode)  
 
