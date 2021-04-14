@@ -13,6 +13,7 @@ import (
 
 	cron "github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
+	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
@@ -56,6 +57,9 @@ func newChecker(rulesDir string) *Checker {
 		manifests: map[string]*RuleManifest{},
 		cron:      newLuaCron(),
 	}
+
+	lua.LuaPathDefault = filepath.Join(rulesDir, "/lib/?.lua")
+
 	return c
 }
 
