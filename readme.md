@@ -145,7 +145,7 @@ return module
 
 假设有规则脚本 demo.lua 使用该通用模块：  
 ``` lua
-common=require("common") --不需要些后缀名
+common=require("common") --不需要写后缀名
 common.Foo()
 ```
 
