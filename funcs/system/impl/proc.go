@@ -344,6 +344,9 @@ func procEnumerateProcesses() ([]int, error) {
 }
 
 func GetProcessSimpleInfo(pid int) (name string, path string, cmdline string, err error) {
+	if pid < 0 {
+		return
+	}
 	var procStat *SimpleProcStat
 	procStat, err = getSimpleProcStat(pid)
 	if err == nil {
@@ -355,6 +358,9 @@ func GetProcessSimpleInfo(pid int) (name string, path string, cmdline string, er
 }
 
 func GetProcessInfo(pid int, systemBootTime int64) (*ProcessInfo, error) {
+	if pid < 0 {
+		return nil, nil
+	}
 
 	procStat, err := getSimpleProcStat(pid)
 	if err != nil {
@@ -445,7 +451,7 @@ func GetProcesses() ([]*ProcessInfo, error) {
 
 	var processes []*ProcessInfo
 	for _, pid := range pids {
-		if p, err := GetProcessInfo(pid, int64(systemBoot)); err == nil {
+		if p, err := GetProcessInfo(pid, int64(systemBoot)); err == nil && p != nil {
 			processes = append(processes, p)
 		}
 	}
