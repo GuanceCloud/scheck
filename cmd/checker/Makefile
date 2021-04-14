@@ -39,7 +39,7 @@ define build
 endef
 
 build:
-	@rm -f "$(BUILD_DIR)/pub"/*
+	@rm -f $(BUILD_DIR)/pub/install.h $(BUILD_DIR)/pub/*.tar.gz
 	$(call build,linux,amd64)
 	$(call build,linux,386)
 	@tree -Csh -L 3 $(BUILD_DIR)
