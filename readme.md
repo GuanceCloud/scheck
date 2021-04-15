@@ -51,7 +51,7 @@ log_level='info'
 2. 清单文件：使用 [TOML](https://toml.io/en/) 格式，必须以 `.manifest` 为后缀名，[详情](#清单文件)。  
 脚本文件和清单文件必须同名。   
 
-Security Checker 会定时周期性(由清单文件的 `cron` 指定)地执行检测脚本，lua脚本代码每次执行时检测相关安全事件(比如文件被改动、有新用户登录等)是否触发，如果触发了，则使用 [trig]() 函数将事件(以行协议格式)发送到由配置文件中 `output` 指定的目标中。   
+Security Checker 会定时周期性(由清单文件的 `cron` 指定)地执行检测脚本，lua脚本代码每次执行时检测相关安全事件(比如文件被改动、有新用户登录等)是否触发，如果触发了，则使用 `trigger` 函数将事件(以行协议格式)发送到由配置文件中 `output` 指定的目标中。   
 
 Security Checker 定义了若干 lua 扩展函数，并且为确保安全，禁用了一些lua包或函数，仅支持以下 lua 内置包/函数：  
 ```
@@ -108,13 +108,13 @@ cron=''
 ```
 
 #### 模板支持
-清单文件中 `desc` 的字符串中支持设置模板变量，语法为 `{{.<Variable>}}`，比如 `文件{{.FileName}}被修改，改动后的内容为: {{.Content}}` 表示 FileName 和 Diff 是模板变量，将会被替换(包括前面的点号`.`)。变量的替换发生在调用 `trig` 函数时，该函数可传入一个 `table` 变量，其中包含了模板变量的替换值，假设传入如下参数：  
+清单文件中 `desc` 的字符串中支持设置模板变量，语法为 `{{.<Variable>}}`，比如 `文件{{.FileName}}被修改，改动后的内容为: {{.Content}}` 表示 FileName 和 Diff 是模板变量，将会被替换(包括前面的点号`.`)。变量的替换发生在调用 `trigger` 函数时，该函数可传入一个 `table` 变量，其中包含了模板变量的替换值，假设传入如下参数：  
 ```lua
 tmpl_vals={
     FileName="/etc/passwd",
     Content="delete user demo"
 }
-trig(tmpl_vals)
+trigger(tmpl_vals)
 ```
 则最终的 `desc` 值为：`文件/etc/passwd被修改，改动内容为: delete user demo`
 
@@ -192,12 +192,8 @@ local function check(file)
 	end
 
 	if old ~= hashval then
-		err = trig({File=file})
-		if err == "" then
-			set_cache(cache_key, hashval)
-		else
-			print("error: "..err)
-		end
+		trigger({File=file})
+		set_cache(cache_key, hashval)
 	end
 end
 
@@ -206,7 +202,7 @@ for i,v in ipairs(files) do
 end
 ```
 
-4. 当有敏感文件被改动后，下一个10秒会检测到并触发 trig 函数，从而将事件发送到文件 `/var/log/security-checker/event.log` 中，添加一行数据，例：  
+4. 当有敏感文件被改动后，下一个10秒会检测到并触发 trigger 函数，从而将事件发送到文件 `/var/log/security-checker/event.log` 中，添加一行数据，例：  
 ```
 check-file-01,category=security,level=warn,title=监视文件变动 message="文件 /etc/passwd 发生了变化" 1617262230001916515
 ```
@@ -279,10 +275,8 @@ local function check()
         content=content..'删除的用户: '..table.concat(dels, ',')
     end
     if content ~= '' then
-        local err=trig({Content=content})
-        if err == ''  then
-            set_cache(cache_key, currents)
-        end
+        trigger({Content=content})
+        set_cache(cache_key, currents)
     end
 end
 
@@ -315,7 +309,7 @@ cron='*/10 * * * *'
 
 3. 在清单文件同级目录下新建脚本文件 `ports.lua`，编辑如下：
 ```lua
-ocal function check()
+local function check()
     local cache_key='check_ports'
     local ports = listening_ports()
     local old=get_cache(cache_key)
@@ -342,10 +336,8 @@ ocal function check()
     end
 
     if content ~= '' then
-        local err=trig({Content="发现新端口: "..content})
-        if err == ''  then
-            set_cache(cache_key, ports)
-        end
+        trigger({Content="发现新端口: "..content})
+        set_cache(cache_key, ports)
     end
 end
 
