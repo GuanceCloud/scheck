@@ -16,7 +16,7 @@ func (p *provider) Funcs() []securityChecker.Func {
 		{Name: `read_file`, Fn: p.readFile},
 		{Name: `file_hash`, Fn: p.fileHash},
 		{Name: `hostname`, Fn: p.hostname},
-		{Name: `zone`, Fn: p.zone},
+		{Name: `time_zone`, Fn: p.zone},
 		{Name: `uptime`, Fn: p.uptime},
 		{Name: `kernel_info`, Fn: p.kernelInfo},
 		{Name: `kernel_modules`, Fn: p.kernelModules},
