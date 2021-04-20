@@ -309,7 +309,7 @@ func (m *RuleManifest) parse() (err error) {
 				hostname = h
 			}
 		}
-		rm.tags["hostname"] = hostname
+		rm.tags["host"] = hostname
 	}
 
 	*m = rm

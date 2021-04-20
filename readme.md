@@ -5,6 +5,14 @@
 因此 Security Checker 希望提供一种新型的安全的脚本方式（限制命令执行，限制本地IO，限制网络IO）来保证所有的行为安全可控，并且 Security Checker 将以日志方式通过统一的网络模型进行巡检事件的收集。同时 Security Checker 将提供海量的可更新的规则库脚本，包括系统，容器，网络，安全等一系列的巡检。
 
 
+[安装/更新](#安装/更新)  
+[配置](#配置)  
+[规则](#检测规则)  
+[测试规则](#测试规则)  
+[行协议](#行协议)  
+[函数](./funcs.md)  
+[示例](#示例)  
+
 ## 安装/更新
 
 *安装*：  
@@ -148,6 +156,27 @@ return module
 common=require("common") --不需要写后缀名
 common.Foo()
 ```
+
+## 行协议
+
+使用规则ID作为指标名。
+
+### tags
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- |
+| title | string | 安全事件标题 | true |
+| category | string | 事件分类，支持：`network`，`docker`，`Kubernetes`，`storage`，`db`，`host` | true |
+| level | string | 安全事件等级，支持：`info`，`warn`，`critical` | true |
+| host | string | 事件来源主机名（默认有） | false |
+| 自定义tags | string | 在清单文件中自定义的tag | false |
+
+
+### fields
+
+| Name | Type | Description |
+| --- | ---- | ---- |
+| message | string | 事件详情 |
 
 ---
 
