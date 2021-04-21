@@ -28,6 +28,7 @@
 27. [set_cache](#set_cache)  
 28. [json_encode](#json_encode)   
 29. [json_decode](#json_decode)  
+30. [crontab](#crontab)  
 
 
 
@@ -798,5 +799,32 @@ it issues an error if fail to encode
 | Type | Description |
 | --- | ---- |
 | `table` | a lua table |
+
+---
+
+## crontab
+
+`crontab()`
+
+Line parsed values from system and user cron/tab.
+
+*Return value(s):*  
+
+it issues an error when if failed.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| minute | string | The exact minute for the job |
+| hour | string | The hour of the day for the job |
+| day_of_monthmand | string | The day of the month for the job |
+| month | string | The month of the year for the job |
+| day_of_week | string | The day of the week for the job |
+| command | string | Raw command string |
+| path | string | File parsed |
 
 ---

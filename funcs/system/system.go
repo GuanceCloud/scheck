@@ -34,6 +34,7 @@ func (p *provider) Funcs() []securityChecker.Func {
 		{Name: `iptables`, Fn: p.ipTables},
 		{Name: `interface_addresses`, Fn: p.interfaceAddresses},
 		{Name: `listening_ports`, Fn: p.listeningPorts},
+		{Name: `crontab`, Fn: p.crontab},
 	}
 
 	return funcs

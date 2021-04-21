@@ -490,3 +490,91 @@ func (p *provider) loggedInUsers(l *lua.LState) int {
 	l.Push(utmps)
 	return 1
 }
+
+func (p *provider) crontab(l *lua.LState) int {
+	targetUser := ""
+	lv := l.Get(1)
+	if lv.Type() != lua.LTNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		} else {
+			targetUser = lv.String()
+		}
+	}
+
+	crondir := `/var/spool/cron`
+
+	files, err := ioutil.ReadDir(crondir)
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+
+	parseLine := func(path, line string, num int) *lua.LTable {
+		if line == "" {
+			return nil
+		}
+		var cron lua.LTable
+		columns := strings.Split(line, "\t")
+		if len(columns) == 1 {
+			columns = strings.Split(columns[0], " ")
+		}
+		if len(columns) < 5 {
+			log.Warnf("unknown line: %s[%d]", path, num)
+			return nil
+		}
+		var command string
+		for i := 0; i < len(columns); i++ {
+			if i == 0 {
+				cron.RawSetString("minute", lua.LString(columns[i]))
+			} else if i == 1 {
+				cron.RawSetString("hour", lua.LString(columns[i]))
+			} else if i == 2 {
+				cron.RawSetString("day_of_month", lua.LString(columns[i]))
+			} else if i == 3 {
+				cron.RawSetString("month", lua.LString(columns[i]))
+			} else if i == 4 {
+				cron.RawSetString("day_of_week", lua.LString(columns[i]))
+			} else if i == 5 {
+				command = columns[i]
+			} else {
+				command += " " + columns[i]
+			}
+		}
+		if command == "" {
+			log.Warnf("no cron command found: %s[%d]", path, num)
+			return nil
+		}
+		cron.RawSetString("command", lua.LString(command))
+		cron.RawSetString("path", lua.LString(path))
+		return &cron
+	}
+
+	var result lua.LTable
+	for _, file := range files {
+		if targetUser != "" && file.Name() != targetUser {
+			continue
+		}
+		fpath := filepath.Join(crondir, file.Name())
+		content, err := ioutil.ReadFile(fpath)
+		if err != nil {
+			log.Errorf("%s", err)
+			continue
+		}
+		lines := strings.Split(string(content), "\n")
+		for num, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || line[0] == '#' {
+				continue
+			}
+			cron := parseLine(fpath, line, num)
+			if cron != nil {
+				result.Append(cron)
+			}
+		}
+	}
+
+	l.Push(&result)
+	return 1
+}
