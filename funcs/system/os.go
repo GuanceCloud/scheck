@@ -36,6 +36,24 @@ func (p *provider) zone(l *lua.LState) int {
 	return 1
 }
 
+func (p *provider) uname(l *lua.LState) int {
+	info, err := hostutil.Info()
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+	var tbl lua.LTable
+	tbl.RawSetString("platform", lua.LString(info.Platform))
+	tbl.RawSetString("family", lua.LString(info.PlatformFamily))
+	tbl.RawSetString("platform_version", lua.LString(info.PlatformVersion))
+	tbl.RawSetString("os", lua.LString(info.OS))
+	tbl.RawSetString("arch", lua.LString(info.KernelArch))
+	tbl.RawSetString("kernel_version", lua.LString(info.KernelVersion))
+
+	l.Push(&tbl)
+	return 1
+}
+
 func (p *provider) uptime(l *lua.LState) int {
 	info, err := hostutil.Info()
 	if err != nil {

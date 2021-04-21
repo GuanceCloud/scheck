@@ -29,6 +29,7 @@
 28. [json_encode](#json_encode)   
 29. [json_decode](#json_decode)  
 30. [crontab](#crontab)  
+31. [uname](#uname)  
 
 
 
@@ -826,5 +827,31 @@ it issues an error when if failed.
 | day_of_week | string | The day of the week for the job |
 | command | string | Raw command string |
 | path | string | File parsed |
+
+---
+
+## uname
+
+`uname()`
+
+the operating system name and version
+
+*Return value(s):*  
+
+it issues an error when if failed.
+
+| Type | Description |
+| --- | ---- |
+| `table` | see below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| platform | string | OS Platform or ID, eg., centos |
+| platform_version | string | OS Platform version, eg., 7.7.1908 |
+| family | string | OS Platform family, eg., rhel |
+| os | string | os name, eg., Linux |
+| arch | string | OS Architecture, eg., x86_64 |
+| kernel_version | string | os kernel version |
 
 ---
