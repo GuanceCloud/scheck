@@ -163,5 +163,12 @@ func fileInfo2Table(fi os.FileInfo) *lua.LTable {
 	file.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
 	file.RawSetString("atime", lua.LNumber(st.Atim.Sec))
 
+	typ := "-"
+	mod := fi.Mode().String()
+	if len(mod) > 9 {
+		typ = mod[0:1]
+	}
+	file.RawSetString("type", lua.LString(typ))
+
 	return &file
 }

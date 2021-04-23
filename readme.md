@@ -46,6 +46,7 @@ rule_dir='/usr/local/security-checker/rules.d'
 output=''
 
 # ##(可选) 程序本身的日志配置
+disable_log = false #是否禁用日志
 log='/usr/local/security-checker/log'
 log_level='info'
 ```

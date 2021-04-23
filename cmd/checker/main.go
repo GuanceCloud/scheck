@@ -46,29 +46,32 @@ func main() {
 }
 
 func setupLogger() {
-	log.SetReportCaller(true)
-	if checker.Cfg.Log != "" {
-		lf, err := os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
-		if err != nil {
-			os.MkdirAll(filepath.Dir(checker.Cfg.Log), 0775)
-			lf, err = os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+	if checker.Cfg.DisableLog {
+		log.SetLevel(log.PanicLevel)
+	} else {
+		log.SetReportCaller(true)
+		if checker.Cfg.Log != "" {
+			lf, err := os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
-				log.Fatalf("%s", err)
+				os.MkdirAll(filepath.Dir(checker.Cfg.Log), 0775)
+				lf, err = os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+				if err != nil {
+					log.Fatalf("%s", err)
+				}
 			}
+			log.SetOutput(lf)
 		}
-		log.SetOutput(lf)
+		switch checker.Cfg.LogLevel {
+		case "debug":
+			log.SetLevel(log.DebugLevel)
+		case "warn":
+			log.SetLevel(log.WarnLevel)
+		case "error":
+			log.SetLevel(log.ErrorLevel)
+		default:
+			log.SetLevel(log.InfoLevel)
+		}
 	}
-	switch checker.Cfg.LogLevel {
-	case "debug":
-		log.SetLevel(log.DebugLevel)
-	case "warn":
-		log.SetLevel(log.WarnLevel)
-	case "error":
-		log.SetLevel(log.ErrorLevel)
-	default:
-		log.SetLevel(log.InfoLevel)
-	}
-
 }
 
 func applyFlags() {

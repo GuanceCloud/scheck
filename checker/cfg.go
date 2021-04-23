@@ -28,8 +28,9 @@ type Config struct {
 	RuleDir string `toml:rule_dir`
 	Output  string `toml:output`
 
-	Log      string `toml:log`
-	LogLevel string `toml:log_level`
+	DisableLog bool   `toml:disable_log`
+	Log        string `toml:log`
+	LogLevel   string `toml:log_level`
 }
 
 func LoadConfig(p string) error {
