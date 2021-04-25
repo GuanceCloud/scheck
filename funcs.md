@@ -30,7 +30,7 @@
 29. [json_decode](#json_decode)  
 30. [crontab](#crontab)  
 31. [uname](#uname)  
-
+32. [sysctl](#sysctl)  
 
 
 ## ls
@@ -855,3 +855,25 @@ it issues an error when if failed.
 | kernel_version | string | os kernel version |
 
 ---
+
+## sysctl
+
+`sysctl([key])`
+
+the operating system sysctl info
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | specify a key to get back, otherwise return all key-values | false |
+
+*Return value(s):*  
+
+it issues an error when if failed.
+
+| Type | Description |
+| --- | ---- |
+| `table` | same as run linux command 'sysctl -a' |
+
+

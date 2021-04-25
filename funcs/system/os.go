@@ -2,10 +2,12 @@ package system
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -590,6 +592,51 @@ func (p *provider) crontab(l *lua.LState) int {
 			if cron != nil {
 				result.Append(cron)
 			}
+		}
+	}
+
+	l.Push(&result)
+	return 1
+}
+
+func (p *provider) sysctl(l *lua.LState) int {
+
+	key := ""
+	lv := l.Get(1)
+	if lv.Type() != lua.LTNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		} else {
+			key = lv.String()
+		}
+	}
+
+	cmd := exec.Command("sysctl", "-a")
+	buf := bytes.NewBuffer([]byte{})
+	errbuf := bytes.NewBuffer([]byte{})
+	cmd.Stdout = buf
+	cmd.Stderr = errbuf
+	if err := cmd.Run(); err != nil {
+		l.RaiseError("%s, %s", err, errbuf.String())
+		return lua.MultRet
+	}
+
+	lines := strings.Split(buf.String(), "\n")
+	var result lua.LTable
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		fields := strings.Split(line, "=")
+		if len(fields) < 2 {
+			continue
+		}
+		k := strings.TrimSpace(fields[0])
+		if key != "" && k != key {
+			continue
+		}
+		result.RawSetString(k, lua.LString(strings.TrimSpace(fields[1])))
+		if key != "" {
+			break
 		}
 	}
 
