@@ -6,7 +6,8 @@ iploc.bin
 pub
 a.out
 dist/
-**build/
+build/
+!/cmd/make/build
 old/
 examples/
 *.tar.gz
