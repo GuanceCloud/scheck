@@ -111,7 +111,7 @@ func (p *provider) trigger(l *lua.LState) int {
 	}
 	fields["message"] = message
 
-	if err = output.Outputer.SendMetric(manifest.RuleID, tags, fields, tm); err != nil {
+	if err = output.SendMetric(manifest.RuleID, tags, fields, tm); err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}

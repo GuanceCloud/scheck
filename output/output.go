@@ -3,6 +3,7 @@ package output
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -19,11 +20,17 @@ import (
 )
 
 type (
+	sample struct {
+		data []byte
+	}
+
 	DataOutputer struct {
 		outputPath string
 
 		httpCli    *http.Client
 		outputFile *os.File
+
+		queue chan *sample
 	}
 )
 
@@ -34,6 +41,7 @@ var (
 func NewOutputer(output string) *DataOutputer {
 	o := &DataOutputer{
 		outputPath: output,
+		queue:      make(chan *sample, 1000),
 	}
 
 	if o.outputPath == "" {
@@ -63,22 +71,62 @@ func NewOutputer(output string) *DataOutputer {
 	return o
 }
 
+func Start(ctx context.Context, output string) {
+
+	Outputer = NewOutputer(output)
+
+	go func() {
+		defer Outputer.Close()
+		ticker := time.NewTicker(time.Second * 10)
+		defer ticker.Stop()
+
+		var pending []*sample
+		const maxPending int = 100
+		for {
+			select {
+			case <-ctx.Done():
+				Outputer.sendSamples(pending)
+				return
+			case sample, ok := <-Outputer.queue:
+				if !ok {
+					return
+				}
+				pending = append(pending, sample)
+				if len(pending) >= maxPending {
+					Outputer.sendSamples(pending)
+					pending = pending[:0]
+				}
+			case <-ticker.C:
+				Outputer.sendSamples(pending)
+				pending = pending[:0]
+			}
+		}
+	}()
+}
+
 func (o *DataOutputer) Close() {
 	if o.outputFile != nil && o.outputFile != os.Stdout {
 		if err := o.outputFile.Close(); err != nil {
 			log.Errorf("%s", err)
 		}
+		o.outputFile = nil
 	}
 }
 
-func (c *DataOutputer) SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
+func SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
 
 	data, err := makeMetric(measurement, tags, fields, t...)
 	if err != nil {
 		return err
 	}
 
-	return c.sendData(data)
+	select {
+	case Outputer.queue <- &sample{data}:
+	case <-time.After(time.Second * 10):
+		err = fmt.Errorf("timeout")
+	}
+
+	return err
 }
 
 func buildBody(data []byte) (body []byte, gzon bool, err error) {
@@ -94,6 +142,17 @@ func buildBody(data []byte) (body []byte, gzon bool, err error) {
 	}
 
 	return
+}
+
+func (o *DataOutputer) sendSamples(samples []*sample) error {
+	if len(samples) == 0 {
+		return nil
+	}
+	var datas [][]byte
+	for _, s := range samples {
+		datas = append(datas, s.data)
+	}
+	return o.sendData(bytes.Join(datas, []byte{'\n'}))
 }
 
 func (o *DataOutputer) sendData(data []byte) error {

@@ -6,7 +6,7 @@ iploc.bin
 pub
 a.out
 dist/
-build/
+**build/
 old/
 examples/
 *.tar.gz
@@ -19,3 +19,4 @@ git/git.go
 *.csv
 *.pyc
 *.zip
+install.sh

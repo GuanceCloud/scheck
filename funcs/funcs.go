@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	luajson "github.com/layeh/gopher-json"
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
 	checker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+	luajson "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/json"
 )
 
 type (

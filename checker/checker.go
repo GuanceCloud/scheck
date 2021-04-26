@@ -46,7 +46,7 @@ func Start(ctx context.Context, rulesDir, outputpath string) {
 	log.Debugf("rule dir: %s", rulesDir)
 
 	checker = newChecker(rulesDir)
-	output.NewOutputer(outputpath)
+	output.Start(ctx, outputpath)
 	checker.start(ctx)
 }
 
@@ -268,7 +268,9 @@ func TestRule(rulepath string) {
 	ruledir := filepath.Dir(rulepath)
 
 	checker = newChecker(ruledir)
-	output.NewOutputer("")
+	ctx, cancelfun := context.WithCancel(context.Background())
+	output.Start(ctx, "")
+	defer cancelfun()
 
 	r := newRule(rulepath)
 

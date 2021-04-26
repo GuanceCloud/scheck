@@ -28,7 +28,8 @@ var (
 )
 
 var (
-	Version = ""
+	Version     = ""
+	ReleaseType = ""
 )
 
 func main() {

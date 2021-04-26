@@ -1,8 +1,8 @@
 package utils
 
 import (
-	luajson "github.com/layeh/gopher-json"
 	lua "github.com/yuin/gopher-lua"
+	luajson "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/json"
 )
 
 func (p *provider) jsonEncode(l *lua.LState) int {
