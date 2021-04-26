@@ -1,4 +1,3 @@
-
 ## Security Checker
 一般在运维过程中有非常重要的工作就是对系统，软件，包括日志等一系列的状态进行巡检，传统方案往往是通过工程师编写shell（bash）脚本进行类似的工作，通过一些远程的脚本管理工具实现集群的管理。但这种方法实际上非常危险，由于系统巡检操作存在权限过高的问题，往往使用root方式运行，一旦恶意脚本执行，后果不堪设想。  
 实际情况中存在两种恶意脚本，一种是恶意命令，如 `rm -rf`，另外一种是进行数据偷窃，如将数据通过网络 IO 泄露给外部。 
@@ -82,7 +81,7 @@ os - 其中以下函数被禁用："execute", "remove", "rename", "setenv", "set
 # ##事件的规则编号，如 k8s-pod-001，将作为行协议的指标名
 id=''
 
-# ##事件的分类，根据业务自定义，如 security，network
+# ##事件的分类，根据业务自定义
 category=''
 
 # ##当前事件的危险等级，根据业务自定义，比如warn，error
@@ -113,8 +112,16 @@ cron=''
 
 # ##支持添加自定义key-value，且value必须为字符串
 #instanceID=''
-
 ```
+
+目前的几种 category 分类
+
+- `network`: 网络相关，主要涉及连接、端口、防火墙等
+- `storage`：存储相关，如磁盘、HDFS 等
+- `database`：各种数据库相关（MySQL/Redis/...）
+- `system`：主要是操作系统相关
+- `webserver`：如 Ngxin/Tomcat 这些
+- `container`：包括 Docker 和 Kubernetes
 
 #### 模板支持
 清单文件中 `desc` 的字符串中支持设置模板变量，语法为 `{{.<Variable>}}`，比如 `文件{{.FileName}}被修改，改动后的内容为: {{.Content}}` 表示 FileName 和 Diff 是模板变量，将会被替换(包括前面的点号`.`)。变量的替换发生在调用 `trigger` 函数时，该函数可传入一个 `table` 变量，其中包含了模板变量的替换值，假设传入如下参数：  
