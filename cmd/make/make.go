@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/make/build"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 )
 
 var (
@@ -18,8 +18,6 @@ var (
 	flagArchs        = flag.String("archs", "local", "os archs")
 	flagEnv          = flag.String(`env`, ``, `build for local/test/preprod/release`)
 	flagPub          = flag.Bool(`pub`, false, `publish binaries to OSS: local/test/release/preprod`)
-
-	l = logger.DefaultSLogger("make")
 )
 
 func applyFlags() {
@@ -36,10 +34,10 @@ func applyFlags() {
 
 	switch *flagEnv {
 	case "release":
-		l.Debug("under release, only checked inputs released")
+		log.Printf("under release, only checked inputs released")
 		build.ReleaseType = "checked"
 	default:
-		l.Debug("under non-release, all inputs released")
+		log.Printf("under non-release, all inputs released")
 		build.ReleaseType = "all"
 	}
 
