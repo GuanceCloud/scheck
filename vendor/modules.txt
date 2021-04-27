@@ -5,6 +5,8 @@
 github.com/StackExchange/wmi
 # github.com/aliyun/aliyun-oss-go-sdk v2.1.2+incompatible
 github.com/aliyun/aliyun-oss-go-sdk/oss
+# github.com/cavaliercoder/go-rpm v0.0.0-20200122174316-8cb9fd9c31a8
+## explicit
 # github.com/dustin/go-humanize v1.0.0
 ## explicit
 github.com/dustin/go-humanize

@@ -643,3 +643,19 @@ func (p *provider) sysctl(l *lua.LState) int {
 	l.Push(&result)
 	return 1
 }
+
+func (p *provider) rpmList(l *lua.LState) int {
+
+	cmd := exec.Command("rpm", "-qa")
+	buf := bytes.NewBuffer([]byte{})
+	errbuf := bytes.NewBuffer([]byte{})
+	cmd.Stdout = buf
+	cmd.Stderr = errbuf
+	if err := cmd.Run(); err != nil {
+		l.RaiseError("%s, %s", err, errbuf.String())
+		return lua.MultRet
+	}
+
+	l.Push(lua.LString(buf.String()))
+	return 1
+}

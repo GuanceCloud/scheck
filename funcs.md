@@ -31,6 +31,7 @@
 30. [crontab](#crontab)  
 31. [uname](#uname)  
 32. [sysctl](#sysctl)  
+33. [rpm_list](#rpm_list)  
 
 
 ## ls
@@ -876,4 +877,19 @@ it issues an error when if failed.
 | --- | ---- |
 | `table` | same as run linux command 'sysctl -a' |
 
+---
+
+## rpm_list
+
+`rpm_list()`
+
+list all current rpm packages
+
+*Return value(s):*  
+
+it issues an error when if failed.
+
+| Type | Description |
+| --- | ---- |
+| `string` | same as run linux command 'rpm -qa' |
 
