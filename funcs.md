@@ -813,7 +813,7 @@ Line parsed values from system and user cron/tab.
 
 *Return value(s):*  
 
-it issues an error when if failed.
+it issues an error when failed.
 
 | Type | Description |
 | --- | ---- |
@@ -840,7 +840,7 @@ the operating system name and version
 
 *Return value(s):*  
 
-it issues an error when if failed.
+it issues an error when failed.
 
 | Type | Description |
 | --- | ---- |
@@ -872,7 +872,7 @@ the operating system sysctl info
 
 *Return value(s):*  
 
-it issues an error when if failed.
+it issues an error when failed.
 
 | Type | Description |
 | --- | ---- |
@@ -888,7 +888,7 @@ list all current rpm packages
 
 *Return value(s):*  
 
-it issues an error when if failed.
+it issues an error when failed.
 
 | Type | Description |
 | --- | ---- |
@@ -907,8 +907,6 @@ check a package is installed
 | package | `string` | the package name, eg. yum | false |
 
 *Return value(s):*  
-
-it issues an error when if failed.
 
 | Type | Description |
 | --- | ---- |

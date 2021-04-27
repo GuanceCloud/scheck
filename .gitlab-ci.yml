@@ -1,8 +1,8 @@
 before_script:
-  - rm -rf /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/security-checker
-  - mkdir -p /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/security-checker
-  - cp -r ./. /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/security-checker
-  - cd /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/security-checker
+  - rm -rf /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/sec-checker
+  - mkdir -p /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/sec-checker
+  - cp -r ./. /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/sec-checker
+  - cd /root/go/src/gitlab.jiagouyun.com/cloudcare-tools/sec-checker
   - source ~/.ossenv
 
 variables:
