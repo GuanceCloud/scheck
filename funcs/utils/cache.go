@@ -40,7 +40,7 @@ func (c *cacheValue) fromLuaVal(lv lua.LValue) {
 	c.typ = lv.Type()
 	switch c.typ {
 	case lua.LTBool:
-		c.val = lv.(lua.LBool)
+		c.val = bool(lv.(lua.LBool))
 		c.len = 1
 	case lua.LTNumber:
 		c.val = float64(lv.(lua.LNumber))
