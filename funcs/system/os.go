@@ -659,3 +659,30 @@ func (p *provider) rpmList(l *lua.LState) int {
 	l.Push(lua.LString(buf.String()))
 	return 1
 }
+
+func (p *provider) rpmQuery(l *lua.LState) int {
+
+	pkg := ""
+	lv := l.Get(1)
+	if lv.Type() != lua.LTNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		} else {
+			pkg = lv.String()
+		}
+	}
+
+	cmd := exec.Command("rpm", "-q", pkg)
+	buf := bytes.NewBuffer([]byte{})
+	errbuf := bytes.NewBuffer([]byte{})
+	cmd.Stdout = buf
+	cmd.Stderr = errbuf
+	if err := cmd.Run(); err != nil {
+		l.Push(lua.LString(""))
+		return 1
+	}
+
+	l.Push(lua.LString(buf.String()))
+	return 1
+}

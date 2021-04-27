@@ -32,6 +32,7 @@
 31. [uname](#uname)  
 32. [sysctl](#sysctl)  
 33. [rpm_list](#rpm_list)  
+34. [rpm_query](#rpm_query)  
 
 
 ## ls
@@ -892,4 +893,24 @@ it issues an error when if failed.
 | Type | Description |
 | --- | ---- |
 | `string` | same as run linux command 'rpm -qa' |
+
+## rpm_query
+
+`rpm_query(pkg)`
+
+check a package is installed
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| package | `string` | the package name, eg. yum | false |
+
+*Return value(s):*  
+
+it issues an error when if failed.
+
+| Type | Description |
+| --- | ---- |
+| `string` | package's fullname, or empty if not found |
 
