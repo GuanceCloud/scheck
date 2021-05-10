@@ -1,9 +1,16 @@
 package main
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"path/filepath"
 
 	"os"
@@ -25,6 +32,8 @@ var (
 	flagConfig = flag.String("config", "", "configuration file to load")
 
 	flagTestRule = flag.String("test", ``, `the name of a rule, without file extension`)
+
+	flagUpdateRules = flag.Bool("update-rules", false, `update rules`)
 )
 
 var (
@@ -78,7 +87,16 @@ func setupLogger() {
 func applyFlags() {
 
 	if *flagVersion {
-		fmt.Printf("security checker version %s\n", Version)
+		fmt.Printf("security checker: %s\n", Version)
+		if data, err := ioutil.ReadFile(`/usr/local/security-checker/rules.d/version`); err == nil {
+			type versionSt struct {
+				Version string `json:"version"`
+			}
+			var verSt versionSt
+			if json.Unmarshal(data, &verSt) == nil {
+				fmt.Printf("rules: %s\n", verSt.Version)
+			}
+		}
 		os.Exit(0)
 	}
 
@@ -95,6 +113,13 @@ func applyFlags() {
 	if *flagTestRule != "" {
 		log.SetLevel(log.DebugLevel)
 		checker.TestRule(*flagTestRule)
+		os.Exit(0)
+	}
+
+	if *flagUpdateRules {
+		if !updateRules() {
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 }
@@ -127,4 +152,87 @@ func run() {
 
 	wg.Wait()
 	log.Printf("[info] quit")
+}
+
+func updateRules() bool {
+	ruleDir := "/usr/local/security-checker/rules.d"
+	if err := os.MkdirAll(ruleDir, 0775); err != nil {
+		fmt.Printf("[error] %s\n", err)
+		return false
+	}
+	ruleVer := `https://security-checker-prod.oss-cn-hangzhou.aliyuncs.com/prod/version`
+	resp, err := http.Get(ruleVer)
+	if err != nil {
+		fmt.Printf("[error] %s\n", err)
+		return false
+	}
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		resp.Body.Close()
+		fmt.Printf("[error] %s\n", err)
+		return false
+	}
+	resp.Body.Close()
+
+	type versionSt struct {
+		Version string `json:"version"`
+	}
+	var verSt versionSt
+	if err = json.Unmarshal(data, &verSt); err != nil {
+		fmt.Printf("[error] %s\n", err)
+		return false
+	}
+
+	ruleUrl := fmt.Sprintf("https://security-checker-prod.oss-cn-hangzhou.aliyuncs.com/prod/rule-%s.tar.gz", verSt.Version)
+	fmt.Println("Downloading rules...")
+	resp, err = http.Get(ruleUrl)
+	if err != nil {
+		fmt.Printf("[error] %s\n", err)
+		return false
+	}
+	defer resp.Body.Close()
+	data, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("[error] %s\n", err)
+		return false
+	}
+	fmt.Println("Intsalling rules...")
+	buf := bytes.NewBuffer(data)
+	gr, err := gzip.NewReader(buf)
+	if err != nil {
+		fmt.Printf("[error] %s\n", err)
+		return false
+	}
+	defer gr.Close()
+	tr := tar.NewReader(gr)
+	for {
+		hdr, err := tr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				fmt.Printf("[error] %s\n", err)
+				return false
+			}
+		}
+		fpath := filepath.Join(ruleDir, hdr.Name)
+		if !hdr.FileInfo().IsDir() {
+			fdir := filepath.Dir(fpath)
+			if err := os.MkdirAll(fdir, 0775); err != nil {
+				fmt.Printf("[error] %s\n", err)
+				return false
+			}
+			file, err := os.Create(fpath)
+			if err != nil {
+				fmt.Printf("[error] %s\n", err)
+				return false
+			}
+			if _, err := io.Copy(file, tr); err != nil {
+				fmt.Printf("[error] %s\n", err)
+				return false
+			}
+		}
+	}
+	fmt.Println("Install rules successfully")
+	return true
 }

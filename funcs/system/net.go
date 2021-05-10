@@ -3,6 +3,7 @@ package system
 import (
 	"io/ioutil"
 	"net"
+	"net/http"
 	"strings"
 	"syscall"
 
@@ -199,6 +200,25 @@ func (p *provider) interfaceAddresses(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) interfaceDetails(l *lua.LState) int {
+func (p *provider) httpGet(l *lua.LState) int {
+
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
+	}
+	url := lv.(lua.LString)
+	body, err := http.Get(url.String())
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+	defer body.Body.Close()
+	data, err := ioutil.ReadAll(body.Body)
+	if err != nil {
+		l.RaiseError("%s", err)
+		return lua.MultRet
+	}
+	l.Push(lua.LString(string(data)))
 	return 1
 }
