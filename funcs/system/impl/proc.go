@@ -288,7 +288,7 @@ func readProcLink(pid int, attr string) string {
 	path := getProcAttrFilePath(pid, attr)
 	l, err := os.Readlink(path)
 	if err != nil {
-		log.Warnf("%s", err)
+		//log.Warnf("%s", err)
 		return ""
 	}
 	return l

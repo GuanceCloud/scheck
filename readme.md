@@ -41,6 +41,9 @@ service security-checker start/stop/restart
 
 > 注意：Security Checker 目前仅支持 Linux
 
+
+默认安装目录为 `/usr/local/security-checker`。安装完成后会同时将可用的规则下载安装到`rules.d`子目录下。Security Checker的更新不会更新规则包，规则包的更新可以用命令`checker --update-rules`来完成。
+
 ## 配置
 
 进入默认安装目录 `/usr/local/security-checker`，打开配置文件 `checker.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
