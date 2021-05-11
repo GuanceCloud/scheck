@@ -39,6 +39,7 @@ func (p *provider) Funcs() []securityChecker.Func {
 		{Name: `sysctl`, Fn: p.sysctl},
 		{Name: `rpm_list`, Fn: p.rpmList},
 		{Name: `rpm_query`, Fn: p.rpmQuery},
+		{Name: `grep`, Fn: p.grep},
 	}
 
 	return funcs
