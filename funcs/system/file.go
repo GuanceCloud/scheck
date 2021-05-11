@@ -1,10 +1,12 @@
 package system
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -171,4 +173,37 @@ func fileInfo2Table(fi os.FileInfo) *lua.LTable {
 	file.RawSetString("type", lua.LString(typ))
 
 	return &file
+}
+
+func (p *provider) grep(l *lua.LState) int {
+
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
+	}
+	opts := lv.(lua.LString).String()
+
+	var args string
+	lv = l.Get(2)
+	if lv != lua.LNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		}
+		args = lv.(lua.LString).String()
+	}
+
+	cmd := exec.Command("grep", opts, args)
+	buf := bytes.NewBuffer([]byte{})
+	errbuf := bytes.NewBuffer([]byte{})
+	cmd.Stdout = buf
+	cmd.Stderr = errbuf
+	if err := cmd.Run(); err != nil {
+		l.RaiseError("%s, %s", err, errbuf.String())
+		return lua.MultRet
+	}
+
+	l.Push(lua.LString(buf.String()))
+	return 1
 }
