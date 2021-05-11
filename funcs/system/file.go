@@ -177,33 +177,68 @@ func fileInfo2Table(fi os.FileInfo) *lua.LTable {
 
 func (p *provider) grep(l *lua.LState) int {
 
+	var opts string
 	lv := l.Get(1)
-	if lv.Type() != lua.LTString {
-		l.TypeError(1, lua.LTString)
-		return lua.MultRet
+	if lv != lua.LNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		}
+		opts = lv.(lua.LString).String()
 	}
-	opts := lv.(lua.LString).String()
 
-	var args string
+	var pattern string
 	lv = l.Get(2)
 	if lv != lua.LNil {
 		if lv.Type() != lua.LTString {
 			l.TypeError(1, lua.LTString)
 			return lua.MultRet
 		}
-		args = lv.(lua.LString).String()
+		pattern = lv.(lua.LString).String()
 	}
 
-	cmd := exec.Command("grep", opts, args)
+	var filearg string
+	lv = l.Get(3)
+	if lv != lua.LNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		}
+		filearg = lv.(lua.LString).String()
+	}
+
+	cmd := exec.Command("grep")
+	if opts != "" {
+		cmd.Args = append(cmd.Args, opts)
+	}
+	if pattern != "" {
+		cmd.Args = append(cmd.Args, pattern)
+	}
+	if filearg != "" {
+		cmd.Args = append(cmd.Args, filearg)
+	}
+
 	buf := bytes.NewBuffer([]byte{})
 	errbuf := bytes.NewBuffer([]byte{})
 	cmd.Stdout = buf
 	cmd.Stderr = errbuf
-	if err := cmd.Run(); err != nil {
-		l.RaiseError("%s, %s", err, errbuf.String())
-		return lua.MultRet
-	}
+	err := cmd.Run()
+	if cmd.ProcessState.ExitCode() != 0 {
+		if cmd.ProcessState.ExitCode() == 1 {
+			l.Push(lua.LString(""))
+			l.Push(lua.LString(""))
+			return 2
+		}
+		errstr := errbuf.String()
+		if errstr == "" {
+			errstr = err.Error()
+		}
 
+		l.Push(lua.LString(""))
+		l.Push(lua.LString(errstr))
+		return 2
+	}
 	l.Push(lua.LString(buf.String()))
-	return 1
+	l.Push(lua.LString(""))
+	return 2
 }

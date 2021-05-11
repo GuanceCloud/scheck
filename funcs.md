@@ -916,7 +916,7 @@ check a package is installed
 
 ## grep
 
-`grep(opt, arg)`
+`grep(option, pattern, file)`
 
 run grep command
 
@@ -924,12 +924,14 @@ run grep command
 
 | Name | Type | Description | Required |
 | --- | ---- | ---- | ---- |
-| opt | `string` | the options for grep | true |
-| arg | `string` | the arguments for grep | true |
+| option | `string` | option(s) for grep | false |
+| pattern | `string` | pattern for grep | true |
+| file | `string` | file to search by grep | true |
 
 
 *Return value(s):*  
 
 | Type | Description |
 | --- | ---- |
-| `string` | result of grep |
+| `string` | result of grep, empty if not found |
+| `string` | error info if failed |
