@@ -174,21 +174,21 @@ func getSimpleProcStat(pid int) (*SimpleProcStat, error) {
 	path := getProcAttrFilePath(pid, "stat")
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Errorf("%s", err)
+		//log.Errorf("%s", err)
 		return nil, err
 	}
 	content := string(data)
 	start := strings.LastIndex(content, ")")
 	if start == -1 || len(content) <= start+2 {
 		err = fmt.Errorf("Invalid /proc/stat header")
-		log.Errorf("%s", err)
+		//log.Errorf("%s", err)
 		return nil, err
 	}
 
 	details := strings.Split(content[start+2:], " ")
 	if len(details) <= 19 {
 		err = fmt.Errorf("Invalid /proc/stat content")
-		log.Errorf("%s", err)
+		//log.Errorf("%s", err)
 		return nil, err
 	}
 
@@ -792,7 +792,7 @@ func EnumProcessesOpenSockets(pids []int) ([]*SocketInfo, error) {
 
 		err = procGetSocketInodeToProcessInfoMap(pid, inodeProcMap)
 		if err != nil {
-			log.Errorf("%s", err)
+			//log.Errorf("%s", err)
 		}
 
 		var ns int64
@@ -809,7 +809,7 @@ func EnumProcessesOpenSockets(pids []int) ([]*SocketInfo, error) {
 					socketList = append(socketList, list...)
 				} else {
 					if err != nil {
-						log.Errorf("%s", err)
+						//log.Errorf("%s", err)
 					}
 				}
 
@@ -817,7 +817,7 @@ func EnumProcessesOpenSockets(pids []int) ([]*SocketInfo, error) {
 					socketList = append(socketList, list...)
 				} else {
 					if err != nil {
-						log.Errorf("%s", err)
+						//log.Errorf("%s", err)
 					}
 				}
 			}
@@ -826,7 +826,7 @@ func EnumProcessesOpenSockets(pids []int) ([]*SocketInfo, error) {
 				socketList = append(socketList, list...)
 			} else {
 				if err != nil {
-					log.Errorf("%s", err)
+					//log.Errorf("%s", err)
 				}
 			}
 		}
