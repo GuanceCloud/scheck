@@ -236,6 +236,9 @@ func (m *RuleManifest) parse() (err error) {
 			case "desc":
 				rm.Desc = str
 			case "cron":
+				if str == "" {
+					str = Cfg.Cron
+				}
 				rm.Cron = str
 			}
 			if str != "" {

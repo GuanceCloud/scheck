@@ -1,9 +1,9 @@
 #!/bin/bash
 # init.d service script
 
-INSTALL_DIR="/usr/local/security-checker"
-SERVICE=security-checker
-BINARY="${INSTALL_DIR}"/checker
+INSTALL_DIR="/usr/local/scheck"
+SERVICE=scheck
+BINARY="${INSTALL_DIR}"/scheck
 CFG="${INSTALL_DIR}"/checker.conf
 PID="${INSTALL_DIR}"/checker.pid
 LOG="${INSTALL_DIR}"/log

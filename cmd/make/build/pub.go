@@ -50,7 +50,7 @@ func tarFiles(goos, goarch string) {
 		gz,
 		`autostart`,
 		`-C`,
-		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", AppName, goos, goarch)), AppBin,
+		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", AppBin, goos, goarch)), AppBin,
 	}
 
 	cmd := exec.Command("tar", args...)
@@ -151,6 +151,20 @@ func PubDatakit() {
 
 	ossfiles := map[string]string{
 		path.Join(PubDir, Release, "version"): path.Join(OSSPath, "version"),
+	}
+
+	var ver versionDesc
+	verdata, err := ioutil.ReadFile(filepath.Join(PubDir, Release, "version"))
+	if err != nil {
+		l.Fatalf("%s", err)
+	}
+	if err = json.Unmarshal(verdata, &ver); err != nil {
+		l.Fatalf("%s", err)
+	}
+	for _, v := range archs {
+		fields := strings.Split(v, "/")
+		f := fmt.Sprintf("%s-%s-%s-%s.md5", AppBin, fields[0], fields[1], ver.Version)
+		ossfiles[path.Join(PubDir, Release, f)] = path.Join(OSSPath, f)
 	}
 
 	if Archs == "darwin/amd64" {

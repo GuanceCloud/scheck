@@ -8,14 +8,14 @@ import (
 
 const (
 	MainConfigSample = `# ##(required) directory contains script
-rule_dir='/usr/local/security-checker/rules.d'
+rule_dir='/usr/local/scheck/rules.d'
 
 # ##(required) output of the check result, support local file or remote http server
 # ##localfile: file:///your/file/path
 # ##remote:  http(s)://your.url
-output='file:///var/log/security-checker/event.log'
+output='file:///var/log/scheck/event.log'
 
-log='/usr/local/security-checker/log'
+log='/usr/local/scheck/log'
 log_level='info'	
 `
 )
@@ -27,6 +27,8 @@ var (
 type Config struct {
 	RuleDir string `toml:rule_dir`
 	Output  string `toml:output`
+
+	Cron string `toml:cron`
 
 	DisableLog bool   `toml:disable_log`
 	Log        string `toml:log`
