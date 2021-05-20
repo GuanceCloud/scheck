@@ -41,6 +41,7 @@ service scheck start/stop/restart
 
 > 注意：Security Checker 目前仅支持 Linux
 
+可配置环境变量`SCHECK_OUTPUT`来设置 Security Checker 安装后的初始 output。  
 
 默认安装目录为 `/usr/local/scheck`。安装完成后会同时将可用的规则下载安装到`rules.d`子目录下。Security Checker的更新不会更新规则包，规则包的更新可以用命令`scheck --update-rules`来完成。
 
