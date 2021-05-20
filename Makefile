@@ -1,7 +1,6 @@
 .PHONY: build pub aaa
 
-BIN = "checker"
-NAME = "security-checker"
+BIN = "scheck"
 BUILD_DIR = build
 PUB_DIR = pub
 ENTRY = cmd/checker/main.go
@@ -46,14 +45,14 @@ define build
 	@mkdir -p $(BUILD_DIR) $(PUB_DIR)/$(1)
 	@mkdir -p git
 	@echo "$$GIT_INFO" > git/git.go
-	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/make.go -main $(ENTRY) -binary $(BIN) -name $(NAME) -build-dir $(BUILD_DIR) \
+	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/make.go -main $(ENTRY) -binary $(BIN) -build-dir $(BUILD_DIR) \
 		 -env $(1) -pub-dir $(PUB_DIR) -archs $(2) -download-addr $(3)
 	@tree -Csh -L 3 $(BUILD_DIR)
 endef
 
 define pub
-	@echo "publish $(1) $(NAME) ..."
-	@GO111MODULE=off go run cmd/make/make.go -pub -env $(1) -pub-dir $(PUB_DIR) -binary $(BIN) -name $(NAME) -download-addr $(2) \
+	@echo "publish $(1) ..."
+	@GO111MODULE=off go run cmd/make/make.go -pub -env $(1) -pub-dir $(PUB_DIR) -binary $(BIN) -download-addr $(2) \
 		-build-dir $(BUILD_DIR) -archs $(3)
 endef
 

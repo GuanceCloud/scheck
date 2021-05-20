@@ -2,6 +2,8 @@ package build
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -118,7 +120,7 @@ func Compile() {
 			l.Warnf("skip build datakit under %s", archs[idx])
 			continue
 		}
-		dir := fmt.Sprintf("%s/%s-%s-%s", BuildDir, AppName, goos, goarch)
+		dir := fmt.Sprintf("%s/%s-%s-%s", BuildDir, AppBin, goos, goarch)
 
 		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
@@ -145,12 +147,26 @@ func Compile() {
 	l.Infof("Done!(elapsed %v)", time.Since(start))
 }
 
+func calcMD5(path string) string {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	m := md5.New()
+	m.Write(data)
+	return hex.EncodeToString(m.Sum(nil))
+}
+
 func compileArch(bin, goos, goarch, dir, version string) {
 
 	output := filepath.Join(dir, bin)
+
 	if goos == "windows" {
 		output += ".exe"
 	}
+
+	md5File := fmt.Sprintf("%s-%s-%s-%s.md5", bin, goos, goarch, version)
+
 	cgo_enabled := "0"
 	if goos == "darwin" {
 		cgo_enabled = "1"
@@ -175,6 +191,14 @@ func compileArch(bin, goos, goarch, dir, version string) {
 	msg, err := runEnv(args, env)
 	if err != nil {
 		l.Fatalf("failed to run %v, envs: %v: %v, msg: %s", args, env, err, string(msg))
+	}
+
+	md5 := calcMD5(output)
+	if md5 == "" {
+		l.Fatalf("fail to compute md5: %s", output)
+	}
+	if err := ioutil.WriteFile(filepath.Join(PubDir, Release, md5File), []byte(md5), 0664); err != nil {
+		l.Fatalf("fail to write md5 checksum, %s", err)
 	}
 }
 

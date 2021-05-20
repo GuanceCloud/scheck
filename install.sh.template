@@ -18,8 +18,8 @@ fi
 download_url="${download_url}${goos}-${goarch}-${version}.tar.gz"
 
 
-service_name="security-checker"
-bin_name="checker"
+service_name="scheck"
+bin_name="scheck"
 install_dir="/usr/local/${service_name}"
 upgrade=0
 
@@ -61,9 +61,9 @@ fi
 init() {
     mkdir -p "${install_dir}/rules.d"
     if [ ${upgrade} -eq 0 ] ;then
-        ${install_dir}/checker -config-sample > ${install_dir}/checker.conf
+        ${install_dir}/${bin_name} -config-sample > ${install_dir}/checker.conf
 
-        ${install_dir}/checker -update-rules
+        ${install_dir}/${bin_name} -update-rules
     fi
 }
 
@@ -135,7 +135,7 @@ registerService() {
 
 init
 
-ln -s "${install_dir}/${bin_name}" /usr/local/bin/checker
+ln -s "${install_dir}/${bin_name}" /usr/local/bin/${bin_name}
 
 echo "register service..."
 registerService

@@ -6,9 +6,6 @@ import (
 
 var (
 	specParser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
-
-	// 进程级别的cache
-	//globalLuaCache = &module.LuaCache{}
 )
 
 type luaCron struct {

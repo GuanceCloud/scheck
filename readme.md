@@ -27,30 +27,30 @@ bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com
 bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh) --upgrade"
 ```
 
-安装完成后即以服务的方式运行，服务名为`security-checker`，使用服务管理工具来控制程序的启动/停止：  
+安装完成后即以服务的方式运行，服务名为`scheck`，使用服务管理工具来控制程序的启动/停止：  
 
 ```
-systemctl start/stop/restart security-checker
+systemctl start/stop/restart scheck
 ```
 
 或
 
 ```
-service security-checker start/stop/restart
+service scheck start/stop/restart
 ```
 
 > 注意：Security Checker 目前仅支持 Linux
 
 
-默认安装目录为 `/usr/local/security-checker`。安装完成后会同时将可用的规则下载安装到`rules.d`子目录下。Security Checker的更新不会更新规则包，规则包的更新可以用命令`checker --update-rules`来完成。
+默认安装目录为 `/usr/local/scheck`。安装完成后会同时将可用的规则下载安装到`rules.d`子目录下。Security Checker的更新不会更新规则包，规则包的更新可以用命令`scheck --update-rules`来完成。
 
 ## 配置
 
-进入默认安装目录 `/usr/local/security-checker`，打开配置文件 `checker.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
+进入默认安装目录 `/usr/local/scheck`，打开配置文件 `checker.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
 
 ```toml
 # ##(必选) 存放检测脚本的目录
-rule_dir = '/usr/local/security-checker/rules.d'
+rule_dir = '/usr/local/scheck/rules.d'
 
 # ##(必选) 将检测结果采集到哪里，支持本地文件或http(s)链接
 # ##本地文件时需要使用前缀 file://， 例：file:///your/file/path
@@ -59,7 +59,7 @@ output = ''
 
 # ##(可选) 程序本身的日志配置
 disable_log = false #是否禁用日志
-log = '/usr/local/security-checker/log'
+log = '/usr/local/scheck/log'
 log_level = 'info'
 ```
 
@@ -135,6 +135,19 @@ cron = ''
 #instanceID=''
 ```
 
+### Cron规则
+```
+# ┌───────────── Second
+# │ ┌───────────── Miniute
+# │ │ ┌───────────── Hour
+# │ │ │ ┌───────────── Day-of-Month
+# │ │ │ │ ┌───────────── Month
+# │ │ │ │ │                                   
+# │ │ │ │ │
+# │ │ │ │ │
+# * * * * *
+```
+
 ### 模板支持
 
 清单文件中 `desc` 的字符串中支持设置模板变量，语法为 `{{.<Variable>}}`，比如
@@ -187,7 +200,7 @@ end
 return module
 ```
 
-将 `common.lua` 放在 `/usr/local/security-checker/rules.d/lib` 目录下(这里假设规则目录配置为/usr/local/security-checker/rules.d)。
+将 `common.lua` 放在 `/usr/local/scheck/rules.d/lib` 目录下。
 
 假设有规则脚本 demo.lua 使用该通用模块：  
 
@@ -229,18 +242,18 @@ Security Checker 的输出为行协议格式。以规则 ID 为指标名。
 
 ### 检查敏感文件的变动
 
-一旦敏感文件有变动，则将事件记录到文件 `/var/log/security-checker/event.log` 中。    
+一旦敏感文件有变动，则将事件记录到文件 `/var/log/scheck/event.log` 中。    
 
 1. 进入安装目录，编辑配置文件 `checker.conf` 的 `output` 字段：  
 
 ```toml
-rule_dir  = '/usr/local/security-checker/rules.d'
-output    = '/var/log/security-checker/event.log'
-log       = '/usr/local/security-checker/log'
+rule_dir  = '/usr/local/scheck/rules.d'
+output    = '/var/log/scheck/event.log'
+log       = '/usr/local/scheck/log'
 log_level = 'info'
 ```
 
-2. 在目录 `/usr/local/security-checker/rules.d`(即以上配置文件中的 `rule_dir`) 下新建清单文件 `files.manifest`，编辑如下：  
+2. 在目录 `/usr/local/scheck/rules.d`(即以上配置文件中的 `rule_dir`) 下新建清单文件 `files.manifest`，编辑如下：  
 
 ```toml
 id       = 'check-file'
@@ -280,7 +293,7 @@ for i,v in ipairs(files) do
 end
 ```
 
-4. 当有敏感文件被改动后，下一个 10 秒会检测到并触发 trigger 函数，从而将事件发送到文件 `/var/log/security-checker/event.log` 中，添加一行数据，例：  
+4. 当有敏感文件被改动后，下一个 10 秒会检测到并触发 trigger 函数，从而将事件发送到文件 `/var/log/scheck/event.log` 中，添加一行数据，例：  
 
 ```
 check-file-01,category=security,level=warn,title=监视文件变动 message="文件 /etc/passwd 发生了变化" 1617262230001916515
@@ -367,13 +380,13 @@ check()
 1. 将配置文件 `checker.conf` 的 `output` 设置为 DataKit 的 server 地址：  
 
 ```toml
-rule_dir  = '/usr/local/security-checker/rules.d'
+rule_dir  = '/usr/local/scheck/rules.d'
 output    = 'http://localhost:9529/v1/write/security' # datakit 1.1.6(含)以上版本才支持
-log       = '/usr/local/security-checker/log'
+log       = '/usr/local/scheck/log'
 log_level = 'info'
 ```
 
-2. 在目录 `/usr/local/security-checker/rules.d` (即以上配置文件中的 `rule_dir`) 下新建清单文件 `ports.manifest`，编辑如下：  
+2. 在目录 `/usr/local/scheck/rules.d` (即以上配置文件中的 `rule_dir`) 下新建清单文件 `ports.manifest`，编辑如下：  
 
 ```toml
 id       = 'check-listening-ports'

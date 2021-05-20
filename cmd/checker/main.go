@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,6 +14,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"runtime"
 
 	"os"
 	"os/signal"
@@ -26,6 +29,8 @@ import (
 var (
 	flagFuncs   = flag.Bool("funcs", false, `show all supported lua-extend functions`)
 	flagVersion = flag.Bool("version", false, `show version`)
+
+	flagCheckMD5 = flag.Bool("check-md5", false, `md5 checksum`)
 
 	flagCfgSample = flag.Bool("config-sample", false, `show config sample`)
 
@@ -87,8 +92,8 @@ func setupLogger() {
 func applyFlags() {
 
 	if *flagVersion {
-		fmt.Printf("security checker: %s\n", Version)
-		if data, err := ioutil.ReadFile(`/usr/local/security-checker/rules.d/version`); err == nil {
+		fmt.Printf("scheck(%s): %s\n", ReleaseType, Version)
+		if data, err := ioutil.ReadFile(`/usr/local/scheck/rules.d/version`); err == nil {
 			type versionSt struct {
 				Version string `json:"version"`
 			}
@@ -97,6 +102,42 @@ func applyFlags() {
 				fmt.Printf("rules: %s\n", verSt.Version)
 			}
 		}
+		os.Exit(0)
+	}
+
+	if *flagCheckMD5 {
+
+		urls := map[string]string{
+			"release": `zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker`,
+			"test":    `zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker`,
+		}
+
+		url := fmt.Sprintf("https://%s/scheck-%s-%s-%s.md5", urls[ReleaseType], runtime.GOOS, runtime.GOARCH, Version)
+		resp, err := http.Get(url)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
+		remoteVal, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		bin := `/usr/local/scheck/scheck`
+		data, err := ioutil.ReadFile(bin)
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		md5 := md5.New()
+		md5.Write(data)
+		localVal := hex.EncodeToString(md5.Sum(nil))
+
+		if localVal != "" && localVal == string(remoteVal) {
+			fmt.Printf("MD5 verify ok\n")
+		} else {
+			fmt.Printf("[Error] MD5 checksum not match !!!\n")
+		}
+
 		os.Exit(0)
 	}
 
@@ -155,7 +196,7 @@ func run() {
 }
 
 func updateRules() bool {
-	ruleDir := "/usr/local/security-checker/rules.d"
+	ruleDir := "/usr/local/scheck/rules.d"
 	if err := os.MkdirAll(ruleDir, 0775); err != nil {
 		fmt.Printf("[error] %s\n", err)
 		return false

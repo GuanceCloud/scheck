@@ -33,6 +33,7 @@
 32. [sysctl](#sysctl)  
 33. [rpm_list](#rpm_list)  
 34. [rpm_query](#rpm_query)  
+35. [grep](#grep)  
 
 
 ## ls
@@ -912,3 +913,25 @@ check a package is installed
 | --- | ---- |
 | `string` | package's fullname, or empty if not found |
 
+
+## grep
+
+`grep(option, pattern, file)`
+
+run grep command
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| option | `string` | option(s) for grep | false |
+| pattern | `string` | pattern for grep | true |
+| file | `string` | file to search by grep | true |
+
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string` | result of grep, empty if not found |
+| `string` | error info if failed |
