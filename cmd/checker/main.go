@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"runtime"
+	"text/template"
 
 	"os"
 	"os/signal"
@@ -142,7 +143,24 @@ func applyFlags() {
 	}
 
 	if *flagCfgSample {
-		os.Stdout.WriteString(checker.MainConfigSample)
+
+		defaultOutput := `file:///var/log/scheck/event.log`
+		output := os.Getenv("SCHECK_OUTPUT")
+		if output == "" {
+			output = defaultOutput
+		}
+		tmp, err := template.New("cfg").Parse(checker.MainConfigSample)
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		var buf bytes.Buffer
+		err = tmp.Execute(&buf, map[string]string{
+			"Output": output,
+		})
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		os.Stdout.WriteString(buf.String())
 		os.Exit(0)
 	}
 

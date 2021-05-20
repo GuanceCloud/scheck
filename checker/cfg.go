@@ -13,10 +13,15 @@ rule_dir='/usr/local/scheck/rules.d'
 # ##(required) output of the check result, support local file or remote http server
 # ##localfile: file:///your/file/path
 # ##remote:  http(s)://your.url
-output='file:///var/log/scheck/event.log'
+output='{{.Output}}'
+
+
+# ##(optional)global cron, default is every 10 seconds
+#cron='*/10 * * * *'
 
 log='/usr/local/scheck/log'
 log_level='info'	
+#disable_log=false
 `
 )
 
