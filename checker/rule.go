@@ -37,8 +37,10 @@ type Rule struct {
 	stopch       chan bool
 	running      int32
 
-	rt     *funcs.ScriptRunTime
-	cronID int
+	rt         *funcs.ScriptRunTime
+	scheduleID int
+
+	interval time.Duration
 }
 
 type RuleManifest struct {
@@ -107,13 +109,26 @@ func (r *Rule) load() error {
 		log.Errorf("%s", err)
 		return err
 	}
+	reschedule := false
+	if r.cron != "" && manifest.Cron != r.cron {
+		log.Debugf("cron change from %s to %s", r.cron, manifest.Cron)
+		checker.scheduler.DelRule(r)
+		reschedule = true
+	}
 	r.cron = manifest.Cron
+	r.interval = checkInterval(r.cron)
 	r.disabled = manifest.disabled
+	if reschedule {
+		checker.reSchedule(r)
+	}
 
 	return nil
 }
 
 func (r *Rule) run() {
+	if r == nil {
+		return
+	}
 	if atomic.LoadInt32(&r.running) > 0 {
 		return
 	}
@@ -141,14 +156,14 @@ func (r *Rule) run() {
 		}
 	}
 
-	log.Debugf("start run %s", filepath.Base(r.File))
+	//log.Debugf("start run %s", filepath.Base(r.File))
 	r.mux.Lock()
 	err = r.rt.PCall(r.byteCode)
 	r.mux.Unlock()
 	if err != nil {
 		log.Errorf("run %s failed, %s", filepath.Base(r.File), err)
 	} else {
-		log.Debugf("run %s ok", filepath.Base(r.File))
+		//log.Debugf("run %s ok", filepath.Base(r.File))
 	}
 }
 
@@ -170,7 +185,7 @@ func (m *RuleManifest) load() error {
 		if m.lastModify > 0 {
 			log.Debugf("%s changed, reload it", m.path)
 		} else {
-			log.Debugf("load manifest: %s", m.path)
+			//log.Debugf("load manifest: %s", m.path)
 		}
 		err := m.parse()
 		if err != nil {
@@ -348,4 +363,42 @@ func ensureFieldBool(k string, v interface{}, b *bool) error {
 		}
 	}
 	return fmt.Errorf("unknown value for field '%s', expecting boolean", k)
+}
+
+func checkInterval(cronStr string) time.Duration {
+	fields := strings.Fields(cronStr)
+	intervals := map[int]int64{}
+
+	for idx, f := range fields {
+		parts := strings.Split(f, "/")
+		if len(parts) == 2 && parts[0] == "*" {
+			interval, err := strconv.ParseInt(parts[1], 10, 64)
+			if err == nil && interval > 0 {
+				intervals[idx] = interval
+			}
+		} else {
+			if f != "*" {
+				return 0
+			}
+		}
+	}
+
+	if len(intervals) == 1 {
+		for k, v := range intervals {
+			switch k {
+			case 0:
+				return time.Duration(v * int64(time.Second))
+			case 1:
+				return time.Duration(v * int64(time.Minute))
+			case 2:
+				return time.Duration(v * int64(time.Hour))
+			case 3:
+				return time.Duration(v * int64(time.Hour) * 24)
+			case 4:
+				return time.Duration(v * int64(time.Hour) * 24 * 30)
+			}
+		}
+	}
+
+	return 0
 }

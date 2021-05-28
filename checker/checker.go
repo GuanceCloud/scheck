@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	cron "github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
@@ -30,7 +29,9 @@ type (
 		rules     map[string]*Rule
 		manifests map[string]*RuleManifest
 
-		cron *luaCron
+		ruleGroups map[int64][]*Rule
+
+		scheduler *Scheduler
 
 		ruleMux     sync.Mutex
 		manifestMux sync.Mutex
@@ -46,6 +47,7 @@ func Start(ctx context.Context, rulesDir, outputpath string) {
 	log.Debugf("rule dir: %s", rulesDir)
 
 	checker = newChecker(rulesDir)
+
 	output.Start(ctx, outputpath)
 	checker.start(ctx)
 }
@@ -55,7 +57,7 @@ func newChecker(rulesDir string) *Checker {
 		rulesDir:  rulesDir,
 		rules:     map[string]*Rule{},
 		manifests: map[string]*RuleManifest{},
-		cron:      newLuaCron(),
+		scheduler: NewScheduler(),
 	}
 
 	lua.LuaPathDefault = filepath.Join(rulesDir, "/lib/?.lua")
@@ -79,13 +81,22 @@ func (c *Checker) addRule(r *Rule) {
 	c.ruleMux.Lock()
 	defer c.ruleMux.Unlock()
 
-	cronID, err := c.cron.addRule(r)
+	scheduleID, err := c.scheduler.AddRule(r)
 	if err != nil {
 		log.Errorf("%s", err)
 		return
 	}
-	r.cronID = cronID
+	r.scheduleID = scheduleID
 	c.rules[r.File] = r
+}
+
+func (c *Checker) reSchedule(r *Rule) {
+	scheduleID, err := c.scheduler.AddRule(r)
+	if err != nil {
+		log.Errorf("%s", err)
+		return
+	}
+	r.scheduleID = scheduleID
 }
 
 func (c *Checker) delRules() {
@@ -111,7 +122,7 @@ func (c *Checker) delRules() {
 }
 
 func (c *Checker) doDelRule(r *Rule) {
-	c.cron.Cron.Remove(cron.EntryID(r.cronID))
+	c.scheduler.DelRule(r)
 	if r.rt != nil {
 		r.rt.Close()
 	}
@@ -158,11 +169,11 @@ func (c *Checker) start(ctx context.Context) {
 		log.Info("checker exit")
 	}()
 
-	c.cron.start()
-
 	if err := c.loadRules(ctx, c.rulesDir); err != nil {
 		return
 	}
+
+	c.scheduler.Start()
 
 	select {
 	case <-ctx.Done():
@@ -177,7 +188,6 @@ func (c *Checker) start(ctx context.Context) {
 	go func() {
 		for {
 			sleepContext(ctx, time.Second*10)
-			log.Debugf("reload rules")
 
 			select {
 			case <-ctx.Done():
@@ -190,7 +200,7 @@ func (c *Checker) start(ctx context.Context) {
 	}()
 
 	<-ctx.Done()
-	c.cron.stop()
+	c.scheduler.Stop()
 }
 
 func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
@@ -198,20 +208,20 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 	if atomic.LoadInt32(&c.loading) > 0 {
 		return nil
 	}
-	atomic.AddInt32(&c.loading, 1)
-	defer atomic.AddInt32(&c.loading, -1)
-	ls, err := ioutil.ReadDir(ruleDir)
+	atomic.StoreInt32(&c.loading, 1)
+	defer atomic.StoreInt32(&c.loading, 0)
+	files, err := ioutil.ReadDir(ruleDir)
 	if err != nil {
 		log.Errorf("%s", err)
 		return err
 	}
 
 	for _, r := range c.rules {
-		atomic.AddInt32(&r.markAsDelete, 1)
+		atomic.StoreInt32(&r.markAsDelete, 1)
 	}
 
-	for _, f := range ls {
-		if f.IsDir() {
+	for _, file := range files {
+		if file.IsDir() {
 			continue
 		}
 
@@ -221,14 +231,16 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 		default:
 		}
 
-		path := filepath.Join(ruleDir, f.Name())
+		path := filepath.Join(ruleDir, file.Name())
 
-		if !strings.HasSuffix(f.Name(), ".lua") {
+		if !strings.HasSuffix(file.Name(), ".lua") {
 			continue
 		}
 
+		time.Sleep(time.Millisecond * 20)
+
 		if exist, ok := c.rules[path]; ok {
-			atomic.AddInt32(&exist.markAsDelete, -1)
+			atomic.StoreInt32(&exist.markAsDelete, 0)
 			exist.load()
 			continue
 		}
@@ -240,6 +252,9 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 	}
 
 	c.delRules()
+
+	cronNum, intervalNum := c.scheduler.countInfo()
+	log.Debugf("cronNum=%d, intervalNum=%d", cronNum, intervalNum)
 
 	return nil
 }

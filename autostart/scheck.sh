@@ -4,8 +4,8 @@
 INSTALL_DIR="/usr/local/scheck"
 SERVICE=scheck
 BINARY="${INSTALL_DIR}"/scheck
-CFG="${INSTALL_DIR}"/checker.conf
-PID="${INSTALL_DIR}"/checker.pid
+CFG="${INSTALL_DIR}"/scheck.conf
+PID="${INSTALL_DIR}"/scheck.pid
 LOG="${INSTALL_DIR}"/log
 
 start() {

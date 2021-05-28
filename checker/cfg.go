@@ -30,14 +30,14 @@ var (
 )
 
 type Config struct {
-	RuleDir string `toml:rule_dir`
-	Output  string `toml:output`
+	RuleDir string `toml:"rule_dir"`
+	Output  string `toml:"output"`
 
-	Cron string `toml:cron`
+	Cron string `toml:"cron"`
 
-	DisableLog bool   `toml:disable_log`
-	Log        string `toml:log`
-	LogLevel   string `toml:log_level`
+	DisableLog bool   `toml:"disable_log"`
+	Log        string `toml:"log"`
+	LogLevel   string `toml:"log_level"`
 }
 
 func LoadConfig(p string) error {

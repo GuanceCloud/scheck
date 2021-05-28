@@ -11,7 +11,7 @@ ExecReload=/bin/kill -1 $MAINPID
 KillMode=process
 Restart=always
 RestartSec=3s
-ExecStart=/usr/local/scheck/scheck -config /usr/local/scheck/checker.conf
+ExecStart=/usr/local/scheck/scheck -config /usr/local/scheck/scheck.conf
 
 [Install]
 WantedBy=default.target
