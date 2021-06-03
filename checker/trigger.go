@@ -36,7 +36,7 @@ func (p *provider) trigger(l *lua.LState) int {
 
 	cfg := funcs.GetScriptGlobalConfig(l)
 	if cfg != nil {
-		rule = checker.findRule(cfg.RulePath)
+		rule = Chk.findRule(cfg.RulePath)
 	}
 
 	if rule == nil {
@@ -80,7 +80,7 @@ func (p *provider) trigger(l *lua.LState) int {
 		//use the default manifest
 		manifestFileName = strings.TrimSuffix(filepath.Base(rule.File), filepath.Ext(rule.File))
 	}
-	manifest, err := checker.getManifest(manifestFileName)
+	manifest, err := Chk.getManifest(manifestFileName)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet

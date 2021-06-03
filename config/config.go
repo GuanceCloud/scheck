@@ -1,4 +1,4 @@
-package checker
+package config
 
 import (
 	"io/ioutil"

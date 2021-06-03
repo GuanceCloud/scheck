@@ -13,6 +13,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
@@ -20,7 +21,7 @@ import (
 )
 
 var (
-	checker *Checker
+	Chk *Checker
 )
 
 type (
@@ -46,10 +47,10 @@ func Start(ctx context.Context, rulesDir, outputpath string) {
 	log.Debugf("output: %s", outputpath)
 	log.Debugf("rule dir: %s", rulesDir)
 
-	checker = newChecker(rulesDir)
+	Chk = newChecker(rulesDir)
 
 	output.Start(ctx, outputpath)
-	checker.start(ctx)
+	Chk.start(ctx)
 }
 
 func newChecker(rulesDir string) *Checker {
@@ -278,11 +279,15 @@ func TestRule(rulepath string) {
 
 	log.SetReportCaller(true)
 
+	config.Cfg = &config.Config{
+		RuleDir: `/usr/local/scheck/rules.d`,
+	}
+
 	rulepath, _ = filepath.Abs(rulepath)
 	rulepath = rulepath + ".lua"
 	ruledir := filepath.Dir(rulepath)
 
-	checker = newChecker(ruledir)
+	Chk = newChecker(ruledir)
 	ctx, cancelfun := context.WithCancel(context.Background())
 	output.Start(ctx, "")
 	defer cancelfun()
@@ -293,7 +298,7 @@ func TestRule(rulepath string) {
 	if err != nil {
 		return
 	}
-	checker.rules[r.File] = r
+	Chk.rules[r.File] = r
 	r.run()
 
 	return

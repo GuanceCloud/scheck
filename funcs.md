@@ -34,7 +34,9 @@
 33. [rpm_list](#rpm_list)  
 34. [rpm_query](#rpm_query)  
 35. [grep](#grep)  
-
+36. [get_global_cache](#get_global_cache)  
+37. [set_global_cache](#set_global_cache)  
+38. [mysql_weak_psw](#mysql_weak_psw)  
 
 ## ls
 
@@ -895,6 +897,8 @@ it issues an error when failed.
 | --- | ---- |
 | `string` | same as run linux command 'rpm -qa' |
 
+---
+
 ## rpm_query
 
 `rpm_query(pkg)`
@@ -913,6 +917,7 @@ check a package is installed
 | --- | ---- |
 | `string` | package's fullname, or empty if not found |
 
+---
 
 ## grep
 
@@ -935,3 +940,74 @@ run grep command
 | --- | ---- |
 | `string` | result of grep, empty if not found |
 | `string` | error info if failed |
+
+---
+
+## mysql_weak_psw
+
+`mysql_weak_psw(host, port [,username])`
+
+check mysql weak password
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| host | `string` | url of mysql | true |
+| port | `string` | mysql port| true |
+| username | `string` | mysql username, default is 'root' | false |
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `boolean` | true means found some weak password |
+| `string` | the weak password if found |
+
+
+---
+
+## get_global_cache
+
+`get_global_cache(key)`
+
+get value for global cache key.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string`/`boolean`/`number` | cache value |
+
+---
+
+## set_global_cache
+
+`set_global_cache(key, value)`
+
+set a key-value to global cache.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+| value | `string`/`boolean`/`number` |  cache value by key | true |
+
+
+*Return value(s):*  
+
+
+| Type | Description |
+| --- | ---- |
+| `string` | error detail if failed |

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 
 	"github.com/influxdata/toml"
@@ -98,10 +99,10 @@ func (r *Rule) load() error {
 	rulename := strings.TrimSuffix(filepath.Base(r.File), filepath.Ext(r.File))
 	manifestPath := filepath.Join(ruledir, rulename+".manifest")
 
-	manifest := checker.manifests[manifestPath]
+	manifest := Chk.manifests[manifestPath]
 	if manifest == nil {
 		manifest = newManifest(manifestPath)
-		checker.addManifest(manifest)
+		Chk.addManifest(manifest)
 	}
 
 	if err = manifest.load(); err != nil {
@@ -112,14 +113,14 @@ func (r *Rule) load() error {
 	reschedule := false
 	if r.cron != "" && manifest.Cron != r.cron {
 		log.Debugf("cron change from %s to %s", r.cron, manifest.Cron)
-		checker.scheduler.DelRule(r)
+		Chk.scheduler.DelRule(r)
 		reschedule = true
 	}
 	r.cron = manifest.Cron
 	r.interval = checkInterval(r.cron)
 	r.disabled = manifest.disabled
 	if reschedule {
-		checker.reSchedule(r)
+		Chk.reSchedule(r)
 	}
 
 	return nil
@@ -252,7 +253,7 @@ func (m *RuleManifest) parse() (err error) {
 				rm.Desc = str
 			case "cron":
 				if str == "" {
-					str = Cfg.Cron
+					str = config.Cfg.Cron
 				}
 				rm.Cron = str
 			}

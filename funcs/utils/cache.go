@@ -36,6 +36,10 @@ var cacheDB = cachePool{
 	scripts: map[string]*scriptCache{},
 }
 
+var globalCache = &scriptCache{
+	kvSorage: map[string]*cacheValue{},
+}
+
 func (c *cacheValue) fromLuaVal(lv lua.LValue) {
 	c.typ = lv.Type()
 	switch c.typ {
@@ -114,6 +118,55 @@ func (c *scriptCache) clean() {
 	defer c.mux.Unlock()
 	c.kvSorage = map[string]*cacheValue{}
 	c.cur = 0
+}
+
+func (p *provider) setGlobalCache(l *lua.LState) int {
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return 0
+	}
+	key := string(lv.(lua.LString))
+
+	lv = l.Get(2)
+	if lv == lua.LNil {
+		globalCache.setKey(key, nil)
+		return 0
+	}
+	switch lv.Type() {
+	case lua.LTBool:
+	case lua.LTNumber:
+	case lua.LTString:
+	case lua.LTTable:
+
+	default:
+		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number'", lv.Type().String())
+		return 0
+	}
+
+	val := &cacheValue{}
+	val.fromLuaVal(lv)
+
+	globalCache.setKey(key, val)
+	return 0
+}
+
+func (p *provider) getGlobalCache(l *lua.LState) int {
+
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return 0
+	}
+	key := string(lv.(lua.LString))
+
+	val := globalCache.getKey(key)
+	if val == nil {
+		l.Push(lua.LNil)
+	} else {
+		l.Push(val.toLuaVal())
+	}
+	return 1
 }
 
 func (p *provider) setCache(l *lua.LState) int {

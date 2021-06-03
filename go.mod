@@ -8,6 +8,7 @@ require (
 	github.com/cavaliercoder/go-rpm v0.0.0-20200122174316-8cb9fd9c31a8 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-ole/go-ole v1.2.5 // indirect
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/influxdata/influxdb1-client v0.0.0-20200827194710-b269163b24ab
 	github.com/influxdata/toml v0.0.0-20180607005434-2a2e3012f7cf
 	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf // indirect

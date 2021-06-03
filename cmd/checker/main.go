@@ -25,6 +25,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 )
 
 var (
@@ -52,7 +53,7 @@ func main() {
 	flag.Parse()
 	applyFlags()
 
-	if err := checker.LoadConfig(*flagConfig); err != nil {
+	if err := config.LoadConfig(*flagConfig); err != nil {
 		log.Fatalf("%s", err)
 	}
 
@@ -62,22 +63,22 @@ func main() {
 }
 
 func setupLogger() {
-	if checker.Cfg.DisableLog {
+	if config.Cfg.DisableLog {
 		log.SetLevel(log.PanicLevel)
 	} else {
 		log.SetReportCaller(true)
-		if checker.Cfg.Log != "" {
-			lf, err := os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+		if config.Cfg.Log != "" {
+			lf, err := os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
-				os.MkdirAll(filepath.Dir(checker.Cfg.Log), 0775)
-				lf, err = os.OpenFile(checker.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+				os.MkdirAll(filepath.Dir(config.Cfg.Log), 0775)
+				lf, err = os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 				if err != nil {
 					log.Fatalf("%s", err)
 				}
 			}
 			log.SetOutput(lf)
 		}
-		switch checker.Cfg.LogLevel {
+		switch config.Cfg.LogLevel {
 		case "debug":
 			log.SetLevel(log.DebugLevel)
 		case "warn":
@@ -149,7 +150,7 @@ func applyFlags() {
 		if output == "" {
 			output = defaultOutput
 		}
-		tmp, err := template.New("cfg").Parse(checker.MainConfigSample)
+		tmp, err := template.New("cfg").Parse(config.MainConfigSample)
 		if err != nil {
 			log.Fatalf("%s", err)
 		}
@@ -193,7 +194,7 @@ func run() {
 			wg.Done()
 		}()
 
-		checker.Start(ctx, checker.Cfg.RuleDir, checker.Cfg.Output)
+		checker.Start(ctx, config.Cfg.RuleDir, config.Cfg.Output)
 	}()
 
 	signals := make(chan os.Signal, 1)
