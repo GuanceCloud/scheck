@@ -47,7 +47,7 @@ service scheck start/stop/restart
 
 ## 配置
 
-进入默认安装目录 `/usr/local/scheck`，打开配置文件 `checker.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
+进入默认安装目录 `/usr/local/scheck`，打开配置文件 `scheck.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
 
 ```toml
 # ##(必选) 存放检测脚本的目录
@@ -182,10 +182,11 @@ trigger(tmpl_vals)
 
 ## 测试规则
 
-在编写规则代码的时候，可以使用 Security Checker 来测试代码是否正确：  
+在编写规则代码的时候，可以使用 Security Checker 来测试代码是否正确。  
+假设 rules.d 目录下有一个 demo 规则：    
 
 ```shell
-$ checker --test  /ruledir/demo
+$ scheck --test  ./rules.d/demo
 ```
 
 ## lua 函数
@@ -194,7 +195,7 @@ $ checker --test  /ruledir/demo
 
 ## 创建通用库
 
-Security Checker 允许在检测脚本中使用 `require` 函数来导入 Lua 模块，模块文件只能存放在 `<rulesDir>/lib` 中，其中 `rulesDir` 为 `checker.conf` 中指定的规则目录。可以将一些常用的函数模块化，放在这个 lib 子目录下供检测脚本使用。  
+Security Checker 允许在检测脚本中使用 `require` 函数来导入 Lua 模块，模块文件只能存放在 `rules.d/lib` 目录下。可以将一些常用的函数模块化，放在这个 lib 子目录下供检测脚本使用。  
 
 假设创建一个Lua模块 `common.lua`：  
 
@@ -252,7 +253,7 @@ Security Checker 的输出为行协议格式。以规则 ID 为指标名。
 
 一旦敏感文件有变动，则将事件记录到文件 `/var/log/scheck/event.log` 中。    
 
-1. 进入安装目录，编辑配置文件 `checker.conf` 的 `output` 字段：  
+1. 进入安装目录，编辑配置文件 `scheck.conf` 的 `output` 字段：  
 
 ```toml
 rule_dir  = '/usr/local/scheck/rules.d'
@@ -385,7 +386,7 @@ check()
 
 一旦有新的端口被绑定，则将安全事件发送到 DataFlux
 
-1. 将配置文件 `checker.conf` 的 `output` 设置为 DataKit 的 server 地址：  
+1. 将配置文件 `scheck.conf` 的 `output` 设置为 DataKit 的 server 地址：  
 
 ```toml
 rule_dir  = '/usr/local/scheck/rules.d'
