@@ -182,7 +182,7 @@ trigger(tmpl_vals)
 
 ## 测试规则
 
-在编写规则代码的时候，可以使用 Security Checker 来测试代码是否正确。  
+在编写规则代码的时候，可以使用`scheck --test`来测试代码是否正确。  
 假设 rules.d 目录下有一个 demo 规则：    
 
 ```shell
