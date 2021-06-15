@@ -145,7 +145,7 @@ func applyFlags() {
 
 	if *flagCfgSample {
 
-		defaultOutput := `file:///var/log/scheck/event.log`
+		defaultOutput := `http://127.0.0.1:9529/v1/write/security`
 		output := os.Getenv("SCHECK_OUTPUT")
 		if output == "" {
 			output = defaultOutput
