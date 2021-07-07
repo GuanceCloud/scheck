@@ -133,7 +133,8 @@ it issues an error when fail to read.
 | --- | ---- | ---- |
 | size | number | Size of file in bytes |
 | block_size | number | Block size of filesystem |
-| mode | string | Permission bits |
+| mode | string | Permission string  |
+| perm | string | Permission bits |
 | uid | number | Owning user ID |
 | gid | number | Owning group ID |
 | device | number | Device ID (optional) |
