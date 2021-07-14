@@ -156,6 +156,8 @@ func fileInfo2Table(fi os.FileInfo) *lua.LTable {
 	file.RawSetString("size", lua.LNumber(fi.Size()))
 	file.RawSetString("block_size", lua.LNumber(st.Blksize))
 	file.RawSetString("mode", lua.LString(fi.Mode().String()))
+	// 001 001 001 = 73 110 100 100 = 420
+	file.RawSetString("perm", lua.LNumber(fi.Mode().Perm()))
 	file.RawSetString("uid", lua.LNumber(st.Uid))
 	file.RawSetString("gid", lua.LNumber(st.Gid))
 	file.RawSetString("device", lua.LNumber(st.Dev))

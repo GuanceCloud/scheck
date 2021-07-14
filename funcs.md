@@ -37,7 +37,7 @@
 36. [get_global_cache](#get_global_cache)  
 37. [set_global_cache](#set_global_cache)  
 38. [mysql_weak_psw](#mysql_weak_psw)  
-
+39. [mysql_ports_list](#mysql_ports_list)  
 ## ls
 
 `ls(dir[, rescue])`
@@ -133,7 +133,8 @@ it issues an error when fail to read.
 | --- | ---- | ---- |
 | size | number | Size of file in bytes |
 | block_size | number | Block size of filesystem |
-| mode | string | Permission bits |
+| mode | string | Permission string  |
+| perm | string | Permission bits |
 | uid | number | Owning user ID |
 | gid | number | Owning group ID |
 | device | number | Device ID (optional) |
@@ -1011,3 +1012,42 @@ set a key-value to global cache.
 | Type | Description |
 | --- | ---- |
 | `string` | error detail if failed |
+
+
+## mysql_ports_list
+
+`mysql_ports_list()`
+
+list the host MySQL ports
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`() | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| cmdline | string | Complete argv |
+| port | number | Transport layer port |
+| protocolversion | string | Mysql protocol version |
+| statusflags | string | Socket file descriptor number |
+| authpluginname | string | Auth plugin name |
+| s️erverversion | string | Mysql S️erver Version |
+| state | string | Process state |
+
+*output example:*
+```
+port	3307
+protocolversion	10
+statusflags	2
+authpluginname	mysql_native_password
+s️erverversion	5.7.34
+state	LISTEN
+cmdline	/usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3307 -container-ip 172.18.0.4 -container-port 3306
+pid	7062
+``` 
