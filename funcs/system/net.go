@@ -91,7 +91,10 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) listeningPorts(l *lua.LState) int {
+func (p *provider)
+
+
+listeningPorts(l *lua.LState) int {
 
 	var pids []int
 	lv := l.Get(1)

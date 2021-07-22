@@ -230,7 +230,19 @@ func (m *RuleManifest) parse() (err error) {
 		"desc":     false,
 		"cron":     false,
 	}
-
+	//屏蔽字段
+	invalidField := map[string]bool{
+		"fitOs": false,
+		"description": false,
+		"riskitems": false,
+		"audit": false,
+		"remediation": false,
+		"impact": false,
+		"defaultvalue": false,
+		"rationale": false,
+		"references": false,
+		"CIS": false,
+	}
 	for k := range requireKeys {
 		v := tbl.Fields[k]
 		if v == nil {
@@ -317,8 +329,12 @@ func (m *RuleManifest) parse() (err error) {
 		if err != nil {
 			return err
 		}
+
 		if str != "" {
-			rm.tags[k] = str
+			_, ok := invalidField[k]
+			if !ok {
+				rm.tags[k] = str
+			}
 		}
 	}
 
@@ -341,7 +357,12 @@ func ensureFieldString(k string, v interface{}, s *string) error {
 			*s = str.Value
 			return nil
 		}
+		if str, ok := kv.Value.(*ast.Array); ok {
+			*s = str.Source()
+			return nil
+		}
 	}
+
 	return fmt.Errorf("unknown value for field '%s', expecting string", k)
 }
 
