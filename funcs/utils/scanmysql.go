@@ -307,50 +307,14 @@ func Max(x, y int) int {
 	return y
 }
 
-//func (r InitialHandshakePacket) ScanMysqlPort(port int) map[string]interface{} {
-//	target := fmt.Sprintf("%s:%d", "localhost", port)
-//	conn, err := net.Dial("tcp", target)
-//	if err != nil {
-//		log.Debugf("Failed to connect %s\n", err.Error())
-//		//return
-//	}
-//
-//	handshakePacket := &InitialHandshakePacket{}
-//	err = handshakePacket.Decode(conn)
-//	if err != nil {
-//		log.Debugf("Failed to decode packet: %s\n", err.Error())
-//		//return
-//	}
-//
-//	mysqlInfo := make(map[string]interface{})
-//
-//
-//}
 
 func (p *provider) mysqlPortsList(l *lua.LState) int {
-
-
-	//lv := l.Get(1)
-	//if lv.Type() != lua.LTString {
-	//	l.TypeError(1, lua.LTString)
-	//	return lua.MultRet
-	//}
-	//host := lv.(lua.LString).String()
-
-	//lv = l.Get(2)
-	//if lv.Type() != lua.LTString {
-	//	l.TypeError(2, lua.LTString)
-	//	return lua.MultRet
-	//}
-	//port := lv.(lua.LString).String()
 
 	var result lua.LTable
 	listenPorts := impl.GetListeningPorts()
 	for i := range listenPorts{
 		if listenPorts[i]["state"] == "LISTEN" {
 			port := listenPorts[i]["port"]
-			//fmt.Sprintln(i)
-			//port := 3306
 			target := fmt.Sprintf("%s:%d", "localhost", port)
 
 			conn, err := net.Dial("tcp", target)
@@ -366,10 +330,8 @@ func (p *provider) mysqlPortsList(l *lua.LState) int {
 				continue
 			}
 			var item lua.LTable
-			//log.Debugf(fmt.Sprintf("ProtocolVersion %d", handshakePacket.ProtocolVersion))
 
 			if handshakePacket.ProtocolVersion != 0 {
-				//item.RawSetString("protocol", lua.LString(listenPorts[i]["port"]))
 				item.RawSetString("port", lua.LNumber(port.(uint16)))
 				item.RawSetString("protocolversion", lua.LString(fmt.Sprintf("%d", handshakePacket.ProtocolVersion)))
 				item.RawSetString("statusflags", lua.LString(fmt.Sprintf("%d", handshakePacket.StatusFlags)))
@@ -388,21 +350,4 @@ func (p *provider) mysqlPortsList(l *lua.LState) int {
 	return 1
 
 
-	////fmt.Printf("%s\n", target)
-	//fmt.Printf(checker.String())
-	//
-	//hit, pwd, err := mysqlChecker.Check(host, port, user)
-	//
-	//if err != nil && err != io.EOF {
-	//	l.RaiseError("%s", err)
-	//	return lua.MultRet
-	//}
-	//
-	//l.Push(lua.LBool(hit))
-	//if hit {
-	//	l.Push(lua.LString(pwd))
-	//	return 2
-	//}
-	//
-	//return 1
 }
