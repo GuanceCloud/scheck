@@ -232,16 +232,16 @@ func (m *RuleManifest) parse() (err error) {
 	}
 	//屏蔽字段
 	invalidField := map[string]bool{
-		"fitOs": false,
-		"description": false,
-		"riskitems": false,
-		"audit": false,
-		"remediation": false,
-		"impact": false,
+		"fitOs":        false,
+		"description":  false,
+		"riskitems":    false,
+		"audit":        false,
+		"remediation":  false,
+		"impact":       false,
 		"defaultvalue": false,
-		"rationale": false,
-		"references": false,
-		"CIS": false,
+		"rationale":    false,
+		"references":   false,
+		"CIS":          false,
 	}
 	for k := range requireKeys {
 		v := tbl.Fields[k]

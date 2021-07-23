@@ -933,11 +933,11 @@ func GenShellHistoryFromFile(file string) ([]*HistoryItem, error) {
 	return cmds, err
 }
 
-func GetListeningPorts() []map[string]interface{}{
+func GetListeningPorts() []map[string]interface{} {
 	//var err error
 	var socketList []*SocketInfo
 
-	pids := make([]int,0)
+	pids := make([]int, 0)
 	socketList, _ = EnumProcessesOpenSockets(pids)
 
 	listenPortList := make([]map[string]interface{}, 0)
@@ -984,11 +984,4 @@ func GetListeningPorts() []map[string]interface{}{
 	}
 	return listenPortList
 
-
-}
-func getLasts() ([]*lastItemInfo, error) {
-
-
-
-	return nil, nil
 }

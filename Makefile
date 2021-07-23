@@ -56,9 +56,10 @@ define pub
 		-build-dir $(BUILD_DIR) -archs $(3)
 endef
 
+gofmt:
+	@GO111MODULE=off go fmt ./...
 
-
-local:
+local: gofmt
 	$(call build,local, $(LOCAL_ARCHS), $(LOCAL_DOWNLOAD_ADDR))
 
 

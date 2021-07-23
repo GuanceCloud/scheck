@@ -8,9 +8,9 @@ package utils
 
 import (
 	"bytes"
+	log "github.com/sirupsen/logrus"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
 	"time"
-	log "github.com/sirupsen/logrus"
 	//"io"
 	"encoding/binary"
 	"errors"
@@ -307,12 +307,11 @@ func Max(x, y int) int {
 	return y
 }
 
-
 func (p *provider) mysqlPortsList(l *lua.LState) int {
 
 	var result lua.LTable
 	listenPorts := impl.GetListeningPorts()
-	for i := range listenPorts{
+	for i := range listenPorts {
 		if listenPorts[i]["state"] == "LISTEN" {
 			port := listenPorts[i]["port"]
 			target := fmt.Sprintf("%s:%d", "localhost", port)
@@ -341,13 +340,11 @@ func (p *provider) mysqlPortsList(l *lua.LState) int {
 				item.RawSetString("cmdline", lua.LString(fmt.Sprintf("%s", listenPorts[i]["cmdline"])))
 				item.RawSetString("pid", lua.LNumber(listenPorts[i]["pid"].(int)))
 
-
 				result.Append(&item)
 			}
 		}
 	}
 	l.Push(&result)
 	return 1
-
 
 }
