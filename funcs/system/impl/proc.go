@@ -933,11 +933,11 @@ func GenShellHistoryFromFile(file string) ([]*HistoryItem, error) {
 	return cmds, err
 }
 
-func GetListeningPorts() []map[string]interface{}{
+func GetListeningPorts() []map[string]interface{} {
 	//var err error
 	var socketList []*SocketInfo
 
-	pids := make([]int,0)
+	pids := make([]int, 0)
 	socketList, _ = EnumProcessesOpenSockets(pids)
 
 	listenPortList := make([]map[string]interface{}, 0)
@@ -954,13 +954,10 @@ func GetListeningPorts() []map[string]interface{}{
 		item := make(map[string]interface{}, 0)
 		item["pid"] = info.PID
 		item["state"] = info.State
-		//item.RawSetString("pid", lua.LNumber(info.PID))
 
 		if pname, _, pcmdline, err := GetProcessSimpleInfo(info.PID); err == nil {
 			item["process_name"] = pname
 			item["cmdline"] = pcmdline
-			//item.RawSetString("process_name", lua.LString(pname))
-			//item.RawSetString("cmdline", lua.LString(pcmdline))
 		}
 
 		if info.Family == syscall.AF_UNIX {
@@ -969,69 +966,22 @@ func GetListeningPorts() []map[string]interface{}{
 			item["socket"] = 0
 			item["family"] = "AF_UNIX"
 			item["protocol"] = "ip"
-			//item.RawSetString("port", lua.LNumber(0))
-			//item.RawSetString("path", lua.LString(info.UnixSocketPath))
-			//item.RawSetString("socket", lua.LString("0"))
-			//item.RawSetString("family", lua.LString("AF_UNIX"))
-			//item.RawSetString("protocol", lua.LString("ip"))
+
 		} else {
 			item["port"] = info.LocalPort
 			item["address"] = info.LocalAddress
 			item["socket"] = info.Socket
-			//item.RawSetString("port", lua.LNumber(info.LocalPort))
-			//item.RawSetString("address", lua.LString(info.LocalAddress))
-			//item.RawSetString("socket", lua.LString(info.Socket))
+
 			if info.Family == syscall.AF_INET {
 				item["family"] = "AF_INET"
-				//item.RawSetString("family", lua.LString("AF_INET"))
 			} else if info.Family == syscall.AF_INET6 {
 				item["family"] = "AF_INET6"
-				//item.RawSetString("family", lua.LString("AF_INET6"))
 			}
 			item["protocol"] = LinuxProtocolNames[info.Protocol]
-			//item.RawSetString("protocol", lua.LString(impl.LinuxProtocolNames[info.Protocol]))
 		}
 		listenPortList = append(listenPortList, item)
 
 	}
 	return listenPortList
 
-
-}
-func getLasts() ([]*lastItemInfo, error) {
-
-	// cstr := C.CString("")
-	// if nok, err := C.getlast_start(cstr); nok == 0 {
-	// 	log.Printf("[error] %s", err)
-	// 	return nil, err
-	// }
-
-	// var lasts []*lastItemInfo
-
-	// const USER_PROCESS = 7
-	// const DEAD_PROCESS = 8
-
-	// for {
-	// 	st := C.getlast()
-	// 	if st == nil {
-	// 		break
-	// 	}
-	// 	if st.ut_type == USER_PROCESS || st.ut_type == DEAD_PROCESS {
-	// 		//log.Printf("%s", C.GoString(&st.ut_user[0]))
-
-	// 		item := &lastItemInfo{
-	// 			username: C.GoString(&st.ut_user[0]),
-	// 			tty:      C.GoString(&st.ut_line[0]),
-	// 			pid:      int(st.ut_pid),
-	// 			typ:      int(st.ut_type),
-	// 			tm:       int64(&st.ut_time),
-	// 			host:     C.GoString(&st.ut_host[0]),
-	// 		}
-	// 		lasts = append(lasts, item)
-	// 	}
-	// }
-
-	// C.getlast_end()
-
-	return nil, nil
 }
