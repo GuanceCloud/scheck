@@ -4,11 +4,14 @@ go 1.14
 
 require (
 	blitter.com/go/goutmp v1.0.5 // indirect
+	github.com/BurntSushi/toml v0.3.1
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/cavaliercoder/go-rpm v0.0.0-20200122174316-8cb9fd9c31a8 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/gobuffalo/packd v0.1.0
+	github.com/gobuffalo/packr/v2 v2.2.0
 	github.com/influxdata/influxdb1-client v0.0.0-20200827194710-b269163b24ab
 	github.com/influxdata/toml v0.0.0-20180607005434-2a2e3012f7cf
 	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf // indirect

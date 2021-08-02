@@ -1,3 +1,4 @@
+//+build darwin
 package system
 
 import (
@@ -163,9 +164,9 @@ func fileInfo2Table(fi os.FileInfo) *lua.LTable {
 	file.RawSetString("device", lua.LNumber(st.Dev))
 	file.RawSetString("inode", lua.LNumber(st.Ino))
 	file.RawSetString("hard_links", lua.LNumber(st.Nlink))
-	file.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
-	file.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
-	file.RawSetString("atime", lua.LNumber(st.Atim.Sec))
+	//file.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
+	//file.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
+	//file.RawSetString("atime", lua.LNumber(st.Atim.Sec))
 
 	typ := "-"
 	mod := fi.Mode().String()

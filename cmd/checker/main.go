@@ -13,19 +13,20 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
-	"runtime"
-	"text/template"
-
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"sync"
 	"syscall"
+	"text/template"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
 )
 
 var (
@@ -41,6 +42,10 @@ var (
 	flagTestRule = flag.String("test", ``, `the name of a rule, without file extension`)
 
 	flagUpdateRules = flag.Bool("update-rules", false, `update rules`)
+
+	flagRulesToDoc      = flag.Bool("doc", false, `Generate doc document from manifest file`)
+	flagRulesToTemplate = flag.Bool("tpl", false, `Generate doc document from template file`)
+	flagOutDir          = flag.String("dir", "", `document Exported directory`)
 )
 
 var (
@@ -49,10 +54,8 @@ var (
 )
 
 func main() {
-
 	flag.Parse()
 	applyFlags()
-
 	if err := config.LoadConfig(*flagConfig); err != nil {
 		log.Fatalf("%s", err)
 	}
@@ -77,6 +80,8 @@ func setupLogger() {
 				}
 			}
 			log.SetOutput(lf)
+			log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出
+			//log.AddHook() // todo 重写hook接口 就可以实现多端输出
 		}
 		switch config.Cfg.LogLevel {
 		case "debug":
@@ -182,19 +187,49 @@ func applyFlags() {
 		}
 		os.Exit(0)
 	}
+	if *flagRulesToDoc {
+		if *flagOutDir == "" {
+
+			man.ToMakeMdFile(man.GetAllName(), "doc")
+		} else {
+			man.ToMakeMdFile(man.GetAllName(), *flagOutDir)
+		}
+		os.Exit(0)
+	}
+
+	if *flagRulesToTemplate {
+		if *flagOutDir == "" {
+			man.DfTemplate(man.GetAllName(), "gitee")
+		} else {
+			man.DfTemplate(man.GetAllName(), *flagOutDir)
+		}
+		os.Exit(0)
+	}
 }
 
 func run() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
+	//内置系统
 	go func() {
 		defer func() {
 			wg.Done()
 		}()
-
+		fmt.Println("2 check run")
+		//checker.Start(ctx, config.Cfg.RuleDir, config.Cfg.Output)
+		// 测试packd2 20210723 测试通过
+		man.ScheckCoreSyncDisk(config.Cfg.RuleDir)
+		time.Sleep(time.Second * 10)
 		checker.Start(ctx, config.Cfg.RuleDir, config.Cfg.Output)
+	}()
+	// 用自定义入口
+	go func() {
+		defer func() {
+			wg.Done()
+		}() //程序退出的时候执行
+		checker.Start(ctx, config.Cfg.CustomRuleDir, config.Cfg.Output)
 	}()
 
 	signals := make(chan os.Signal, 1)

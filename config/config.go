@@ -9,7 +9,7 @@ import (
 const (
 	MainConfigSample = `# ##(required) directory contains script
 rule_dir='/usr/local/scheck/rules.d'
-
+custom_rule_dir='/usr/local/scheck/custom.rules.d'
 # ##(required) output of the check result, support local file or remote http server
 # ##localfile: file:///your/file/path
 # ##remote:  http(s)://your.url
@@ -30,8 +30,9 @@ var (
 )
 
 type Config struct {
-	RuleDir string `toml:"rule_dir"`
-	Output  string `toml:"output"`
+	RuleDir       string `toml:"rule_dir"`
+	CustomRuleDir string `toml:"custom.rules.d"` // 用户自定义入口
+	Output        string `toml:"output"`
 
 	Cron string `toml:"cron"`
 

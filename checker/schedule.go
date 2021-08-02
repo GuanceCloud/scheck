@@ -2,10 +2,13 @@ package checker
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	cron "github.com/robfig/cron/v3"
 )
@@ -58,7 +61,7 @@ func (s *Scheduler) countInfo() (cron int, interval int) {
 }
 
 func (s *Scheduler) AddRule(r *Rule) (int, error) {
-	if r.interval > 0 {
+	if r.interval > 0 { // 设置时间大于0 按照设置的时间间隔进行执行 否则使用默认的cron
 		s.mux.Lock()
 		defer s.mux.Unlock()
 		g, interval := s.getGroup(r.interval)
@@ -67,7 +70,7 @@ func (s *Scheduler) AddRule(r *Rule) (int, error) {
 	} else {
 		var id cron.EntryID
 		var err error
-		id, err = s.cron.AddFunc(r.cron, func() {
+		id, err = s.cron.AddFunc(r.cron, func() { // 添加到调度中的定时器中
 			r.run()
 		})
 		return int(id), err
@@ -90,6 +93,8 @@ func (s *Scheduler) DelRule(r *Rule) {
 func (s *Scheduler) Start() {
 	s.cron.Start()
 	for _, g := range s.intervalGroups {
+		//
+		log.Infof("调度启动for循环启动  当前的runId=%d ", g.runid)
 		g.start(s.ctx)
 	}
 }
@@ -152,7 +157,7 @@ func (g *intervalGroup) start(ctx context.Context) {
 			default:
 			}
 			start := time.Now()
-			//fmt.Printf("run group[%s](%d)\n", g.interval, len(g.runs))
+			fmt.Printf("run group[%s](%d)\n", g.interval, len(g.runs))
 
 			var keys []int
 			for k := range g.runs {
@@ -167,12 +172,13 @@ func (g *intervalGroup) start(ctx context.Context) {
 				}
 				run := g.runs[id]
 				if run != nil {
+					log.Infof("当前执行的runId=%d funcID=%d", g.runid, id)
 					run()
 				}
 				time.Sleep(time.Millisecond * 100)
 			}
 			used := time.Now().Sub(start)
-			if used < g.interval {
+			if used < g.interval { // 线程执行时间小于设置间隔时间 休眠两者时间差 总体时间还是设置的时间 超过就休眠一秒 继续执行
 				sleepContext(ctx, g.interval-used)
 			} else {
 				sleepContext(ctx, time.Second)

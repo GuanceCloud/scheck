@@ -157,14 +157,14 @@ func (r *Rule) run() {
 		}
 	}
 
-	//log.Debugf("start run %s", filepath.Base(r.File))
+	log.Debugf("start run %s", filepath.Base(r.File))
 	r.mux.Lock()
 	err = r.rt.PCall(r.byteCode)
 	r.mux.Unlock()
 	if err != nil {
 		log.Errorf("run %s failed, %s", filepath.Base(r.File), err)
 	} else {
-		//log.Debugf("run %s ok", filepath.Base(r.File))
+		log.Debugf("run %s ok", filepath.Base(r.File))
 	}
 }
 
@@ -186,7 +186,7 @@ func (m *RuleManifest) load() error {
 		if m.lastModify > 0 {
 			log.Debugf("%s changed, reload it", m.path)
 		} else {
-			//log.Debugf("load manifest: %s", m.path)
+			log.Debugf("load manifest: %s", m.path)
 		}
 		err := m.parse()
 		if err != nil {
@@ -281,6 +281,7 @@ func (m *RuleManifest) parse() (err error) {
 		}
 	}
 
+	// 模版rm.Desc
 	if rm.tmpl, err = template.New("test").Parse(rm.Desc); err != nil {
 		return fmt.Errorf("invalid desc: %s", err)
 	}
@@ -387,6 +388,7 @@ func ensureFieldBool(k string, v interface{}, b *bool) error {
 	return fmt.Errorf("unknown value for field '%s', expecting boolean", k)
 }
 
+// 从cron中 取出设置的间隔时间
 func checkInterval(cronStr string) time.Duration {
 	fields := strings.Fields(cronStr)
 	intervals := map[int]int64{}

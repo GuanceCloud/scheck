@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/make/build"
 	"os"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/make/build"
 )
 
 var (
