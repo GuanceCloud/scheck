@@ -1,0 +1,27 @@
+id="0016-resolv"
+category="system"
+level="warn"
+title="resolv 被修改"
+#desc="文件 {{.File}} 被修改"
+desc="文件{{.Content}} 被修改"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机resolv 被修改"]
+rationale=["/etc/resolv.conf它是DNS客户机配置文件，用于设置DNS服务器的IP地址及DNS域名，还包含了主机的域名搜索顺序。该文件是由域名解析 器（resolver，一个根据主机名解析IP地址的库）使用的配置文件。它的格式很简单，每行以一个关键字开头，后接一个或多个由空格隔开的参数。如果这个文件被非法修改，会造成服务不可用或dns无法解析。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机/etc/resolv.conf 是否非法被修改。可以执行以下命令验证：
+
+```bash
+ls -l /etc/resolv.conf
+```
+'''
+remediation='''如果主机/etc/resolv.conf被非法修改，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

@@ -1,0 +1,31 @@
+id="0096-squid-uninstalled"
+category="system"
+level="warn"
+title="确保未安装squid HTTP代理服务器"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="0 * * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS"]
+description=["Squid是一种标准的代理服务器，用于许多发行版和环境。"]
+rationale=["除非系统专门设置为充当代理服务器，否则建议删除squid包以减少潜在的攻击面。", "注意：存在多个HTTP代理服务器。除非需要，否则应检查并移除这些。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''执行以下命令，验证是否安装了squid。
+
+```bash
+# rpm -q squid
+package squid is not installed
+```
+'''
+remediation='''运行命令移除squid。
+```bash
+#  yum remove squid
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7<br>\n    9.2确保只运行审批通过的端口、协议和业务<br>\n       确保只有网络端口、协议和服务在系统上监听经过验证的业务需求，正在每个系统上运行。"]

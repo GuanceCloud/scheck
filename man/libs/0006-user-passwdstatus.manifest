@@ -1,0 +1,27 @@
+id="0006-user-passwdstatus"
+category="system"
+level="warn"
+title="主机用户密码状态发生改变"
+desc="{{ .Content }} 主机名用户密码状态发生改变"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机用户密码状态发生改变"]
+rationale=["帐户密码状态有LK：密码被锁定、NP：没有设置密码、PS：密码已设置 3种用户状态，主机帐户密码状态的信息是主机用户登录的关键，如果是未知操作导致账号密码状态方式改变，需要注意主机环境是否被入侵。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机帐户密码状态 是否非法被修改。可以执行以下命令验证：
+
+```bash
+ls -l /etc/shadow
+```
+'''
+remediation='''如果主机帐户密码状态被非法修改，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

@@ -1,0 +1,26 @@
+id="0007-time-zone"
+category="system"
+level="warn"
+title="主机时区发生变化"
+desc="主机时区发生变化，改为 {{.Content}}"
+cron="1 */5 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机时区发生变化"]
+rationale=["Time zone时区设置是最为重要的基本系统配置之一，如果时区设置错误，可能会引起在线业务或应用不能正常访问，甚至会拒绝提供服务。如果主机被恶意修改时区，会影响主机系统正常运行。"]
+riskitems=["应用拒绝服务"]
+audit='''验证主机时区 是否非法被修改。可以执行以下命令验证：
+
+```bash
+timedatectl
+```
+'''
+remediation='''如果主机时区被非法修改，使用`timedatectl  set-timezone` 恢复主机时区，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

@@ -1,0 +1,28 @@
+id="0027-ssh-tunnel"
+category="network"
+level="critical"
+title="存在ssh隧道"
+desc="存在{{.Count}}个ssh隧道, pid 为 {{.Pid}} 强烈建议立即处理"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机是否存在ssh隧道"]
+rationale=["SSH隧道即SSH端口转发，在SSH客户端与SSH服务端之间建立一个隧道，将网络数据通过该隧道转发至指定端口，从而进行网络通信。SSH隧道自动提供了相应的加密及解密服务，保证了数据传输的安全性。如果主机存在未知的ssh隧道，主机会面临数据泄露的危险，所以应该在审计范围内。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机进程列表，是否存在cmdline 为 sshd: root@notty的 进程。可以执行以下命令验证：
+
+```bash
+ps -ef | grep -v grep| grep "sshd: root@notty"
+```
+'''
+remediation='''如果存在 未知的cmdline 为 sshd: root@notty的 进程，请执行`kill -9 隧道pid`，关闭危险进程。
+'''
+impact=["无"]
+defaultvalue=["默认情况下，不允许存在cmdline 为 sshd: root@notty的 进程。"]
+references=["[黑客入侵应急排查思路&&流程（非官方）](https://www.sohu.com/a/236820450_99899618)", "[记录一次真实的挖矿 入侵排查分析（非官方）](https://www.cnblogs.com/zsl-find/articles/11688640.html)"]
+CIS=["无"]

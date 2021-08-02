@@ -1,0 +1,23 @@
+id="0051-libusrsbin-add"
+category="system"
+level="warn"
+title="/usr/sbin 目录被添加文件"
+desc="{{.Content}} 目录有文件添加"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机目录/usr/sbin下有新文件被添加"]
+rationale=["/usr/sbin目录放置的是系统基本的关键命令的可执行文件，如果有新文件添加，需要判断是否为正常的系统命令。"]
+riskitems=["功能不可用"]
+audit='''无
+'''
+remediation='''如果检测到/sbin目录下文件被删除，请检查是否为正常的系统命令。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

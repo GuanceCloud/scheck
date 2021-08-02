@@ -1,0 +1,36 @@
+id="0070-grub-priv"
+category="system"
+level="warn"
+title="确保已配置引导加载程序配置的权限(-rw-------)"
+#desc="文件 {{.File}} 发生了变化"
+desc="文件{{.Content}} 发生了变化"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS"]
+description=["GRUB是一个来自GNU项目的多操作系统启动程序。GRUB是多启动规范的实现，它允许用户可以在计算机内同时拥有多个操作系统，并在计算机启动时选择希望运行的操作系统。GRUB可用于选择操作系统分区上的不同内核，也可用于向这些内核传递启动参数。\n>"]
+rationale=["grub配置文件包含有关引导设置的信息以及用于解锁引导选项的密码。 grub2配置通常是存储在/boot/grub2/中的grub.cfg。"]
+riskitems=["被黑客利用，强行进入系统"]
+audit='''运行以下命令，并验证Uid和Gid均为0/ root，并且Access不授予组或其他权限：
+>
+
+``` bash
+stat /boot/grub2/grub.cfg Access: (0600/-rw-------)
+Uid: ( 0/root)
+Gid: ( 0/root)
+```
+'''
+remediation='''运行以下命令来设置grub配置的所有权和权限：
+>
+
+``` bash
+chown root:root /boot/grub2/grub.cfg
+chmod 600 /boot/grub2/grub.cfg
+```
+'''
+impact=["配置权限后，仅超级用户可以读取该文件。"]
+defaultvalue=["默认情况下，权限是root:root  -rw-------"]
+references=["无"]
+CIS=["Version 7\n>   5.1 Establish Secure Configurations \n>\n>   Maintain documented, standard security configuration standards for all authorized operating systems and software."]

@@ -1,0 +1,33 @@
+id="0087-avahi-uninstalled"
+category="system"
+level="warn"
+title="Avahi被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS"]
+description=["Avahi是一个免费的零通信实现，包括一个用于多播DNS/DNS-SD服务发现的系统。Avahi允许程序发布和发现运行在本地网络上的服务和主机。例如，用户可以将计算机插入网络，Avahi会自动找到要打印的打印机、要查看的文件和要交谈的人，以及在机器上运行的网络服务。"]
+rationale=["系统功能通常不需要自动发现网络服务。建议删除此软件包，以减少潜在的攻击面。"]
+riskitems=["增加攻击面"]
+audit='''运行以下命令以验证是否未安装对应组件：
+```bash
+# rpm -q avahi-autoipd avahi
+package avahi-autoipd is not installed
+package avahi is not installed
+```
+'''
+remediation='''运行以下命令以删除对应的包：
+```bash
+# systemctl stop avahi-daemon.socket avahi-daemon.service
+# yum remove avahi-autoipd avahi
+```
+'''
+impact=["对于依赖avahi替代DNS的系统可能会失去域名解析支持"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7\n    2.6 地址未经批准的软件\n    确保删除未经授权的软件，或库存及时更新"]

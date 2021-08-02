@@ -1,0 +1,30 @@
+id="0104-talk-uninstalled"
+category="system"
+level="warn"
+title="talk客户端被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS"]
+description=["talk软件允许用户通过终端会话跨系统发送和接收消息。默认情况下会安装允许初始化会话的talk客户端。"]
+rationale=["由于软件使用未加密的协议进行通信，因此存在安全风险。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''运行以下命令以验证是否未安装talk软件包：
+
+```bash
+ # rpm -q talk
+package talk is not installed
+```
+'''
+remediation='''运行以下命令以删除talk包：
+```bash
+# yum remove talk
+```
+'''
+impact=["许多不安全的服务客户机被用作故障排除工具和测试环境。卸载它们会抑制测试和故障排除的能力。如果需要，建议在使用后移除客户端，以防止意外或故意误用。"]
+references=["无"]
+CIS=["Version 7\n2.6未经批准的软件地址\n确保删除未经授权的软件或及时更新资源清册"]

@@ -1,0 +1,28 @@
+id="0056-rc.local-priv"
+category="system"
+level="warn"
+title="rc.local权限被修改"
+desc="{{.Content}}权限被修改"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机文件/etc/rc.local权限是否被修改"]
+rationale=["rc.local脚本是一个Linux系统开机后会自动执行的脚本，可以在该脚本内添加需要开机启动的命令行指令。"]
+riskitems=["功能不可用"]
+audit='''运行以下命令，并验证Uid和Gid均为0/ root，权限为755：
+
+```bash
+stat /etc/rc.d/rc.local
+Access: (0755/-rwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+```
+'''
+remediation='''如果检测到/etc/rc.local文件权限已被变更，可通过root用户登录该服务器后将该权限进行修复，并审计本次变更。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["[黑客入侵应急排查思路&&流程（非官方）](https://www.sohu.com/a/236820450_99899618)", "[记录一次真实的挖矿 入侵排查分析（非官方）](https://www.cnblogs.com/zsl-find/articles/11688640.html)"]
+CIS=["无"]

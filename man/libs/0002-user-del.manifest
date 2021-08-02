@@ -1,0 +1,27 @@
+id="0002-user-del"
+category="system"
+level="warn"
+title="主机用户被删除"
+desc="主机删除 {{.Num}} 位用户，删除用户是 {{.Content}}"
+cron="1 */5 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机是否删除用户"]
+rationale=["主机是否删除用户用户是正常行为，如果主机删除未知用户，会造成主机的信息安全泄露，所以需要在审计范围内"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机是否删除用户。可以执行以下命令验证：
+
+```bash
+cat /etc/passwd |cut -f 1 -d :
+```
+'''
+remediation='''如果主机删除用户，请勿必仔细查看用户信息。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

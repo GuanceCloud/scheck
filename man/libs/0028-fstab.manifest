@@ -1,0 +1,27 @@
+id="0028-fstab"
+category="system"
+level="warn"
+title="fstab 被修改"
+desc="文件{{.Content}} 被修改"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机fstab 文件被修改"]
+rationale=["文件/etc/fstab存放的是系统中的文件系统信息，如果配置错误，或恶意修改会造成主机无法启动。"]
+riskitems=["服务不可用"]
+audit='''验证主机/etc/fstab 是否非法被修改。可以执行以下命令验证：
+
+```bash
+ls -l /etc/fstab
+```
+'''
+remediation='''如果主机/etc/fstab被非法修改，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+/etc/fstab文件出错,无法进入Linux系统，进入救援模式，修改/etc/fstab文件。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

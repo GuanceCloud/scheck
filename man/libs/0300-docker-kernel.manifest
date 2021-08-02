@@ -1,0 +1,28 @@
+id="0300-docker-kernel"
+category="container"
+level="warn"
+title="容器服务器内核版本是否为3.10或更高"
+desc="当前服务器内核版本低于3.10 为 {{ .Version }} "
+cron="1 */5 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Linux"]
+description=["守护程序模式下的Docker有特定的内核需求。3.10 Linux内核是Docker的最低要求。"]
+rationale=["早于3.10的内核缺少运行Docker容器所需的一些功能。众所周知，这些较旧的版本存在bug，这些bug会导致数据丢失，并且在某些情况下会频繁出现死机。因此，建议使用3.10（或更新的维护版本）Linux内核的最新次要版本（3.x.y）。此外，使用更新的Linux内核可以确保修复之前发现的关键内核错误。"]
+riskitems=["容器安全"]
+audit='''执行下面的命令，找出Linux内核版本：
+
+```bash
+uname -r
+```
+确保找到的内核版本是3.10或更新版本。
+'''
+remediation='''查看Docker内核和操作系统需求，并适当地选择您的内核和操作系统。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["[check-kernel-dependencies](https://docs.docker.com/installation/binaries/#check-kernel-dependencies)", "[installation-list](https://docs.docker.com/installation/#installation-list)"]
+CIS=["无"]

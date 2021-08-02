@@ -1,0 +1,23 @@
+id="0048-libusrbin-add"
+category="system"
+level="warn"
+title="/usr/bin 目录被添加文件"
+desc="{{.Content}}"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机目录/usr/bin下有新文件被添加"]
+rationale=["/usr/bin目录放置的是系统基本的关键命令的可执行文件，如果有新文件添加，需要判断是否为正常的系统命令。"]
+riskitems=["功能不可用"]
+audit='''无
+'''
+remediation='''如果检测到/usr/bin目录下文件被删除，请检查是否为正常的系统命令。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

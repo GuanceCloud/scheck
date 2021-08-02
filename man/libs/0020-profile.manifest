@@ -1,0 +1,27 @@
+id="0020-profile"
+category="system"
+level="warn"
+title="主机profile被修改"
+desc="主机{{.Content}} 被修改"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机/etc/profile 被修改"]
+rationale=["Linux是一个多用户的操作系统。每个用户登录系统后，都会有一个专用的运行环境。通常每个用户默认的环境都是相同的，这个默认环境实际上就是一组环境变量的定义。用户可以对自己的运行环境进行定制，其方法就是修改相应的系统环境变量。/etc/profile 被恶意修改，会造成服务不可用。"]
+riskitems=["服务不可用"]
+audit='''验证主机/etc/profile 是否非法被修改。可以执行以下命令验证：
+
+```bash
+ls -l /etc/profile
+```
+'''
+remediation='''如果主机/etc/profile，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

@@ -1,0 +1,8 @@
+id="0000-global-cache"
+category="system"
+level="warn"
+title="全局变量"
+desc="此脚本为全局变量缓存，不触发tigger函数"
+cron="0 * * * *"
+# 开关
+disabled=false

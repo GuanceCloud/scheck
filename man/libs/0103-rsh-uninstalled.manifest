@@ -1,0 +1,30 @@
+id="0103-rsh-uninstalled"
+category="system"
+level="warn"
+title="rsh 被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS"]
+description=["rsh包中包含rsh服务的客户端命令\n>"]
+rationale=["这些遗留的客户端包含许多安全暴露，已被更安全的SSH包取代。即使删除了服务，最好也确保删除了客户端，以防止用户无意中尝试使用这些命令，从而暴露他们的凭据。注意，删除rsh包将删除rsh、rcp和rlogin的客户端。"]
+riskitems=["数据泄露"]
+audit='''执行如下命令查看是否安装了rsh包:
+
+```bash
+# rpm -q rsh
+package rsh is not installed
+```
+'''
+remediation='''执行如下命令，删除rsh包
+```bash
+# yum remove rsh
+```
+'''
+impact=["许多不安全的服务客户端被用作故障排除工具和在测试环境中使用。卸载它们会抑制测试和故障排除能力。如果需要，建议在使用后，移除客户端，以防止意外或故意误用。"]
+CIS=["Version 7\n\n> **2.6处理未经批准的软件**\n>\n> 确保未经授权的软件被删除或库存被及时更新"]

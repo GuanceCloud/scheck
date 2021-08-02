@@ -1,0 +1,30 @@
+id="0076-Translation-uninstalled"
+category="system"
+level="warn"
+title="mcstrans服务 被安装了"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="1 */5 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS"]
+description=["mcstransd守护进程向请求信息的客户端进程提供类别标签信息。标签翻译在/etc/selinux/targeted/setrans.conf中定义"]
+rationale=["由于不经常使用此服务，请删除它以减少系统上运行的潜在易受攻击的代码量。"]
+riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]
+audit='''验证是否未安装mcstrans。运行以下命令：
+
+```bash
+ # rpm -q mcstrans
+package mcstrans is not installed
+```
+'''
+remediation='''运行以下命令卸载mcstrans：
+```bash
+# yum remove mcstrans
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+CIS=["Version 7\n9.2确保只运行经批准的端口、协议和服务\n确保每个系统上只运行在具有已验证业务需求的系统上侦听的网络端口、协议和服务。"]

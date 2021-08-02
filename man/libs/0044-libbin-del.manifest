@@ -1,0 +1,23 @@
+id="0044-libbin-del"
+category="system"
+level="warn"
+title="/bin 目录有文件被删除"
+desc="{{.Content}}有文件被删除"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+fitOs=["CentOS", "Ubuntu"]
+description=["监控主机目录/bin下的文件是否被删除"]
+rationale=["/bin目录放置的是系统基本的关键命令的可执行文件，如果被删除，可能会导致系统无法正常运行。"]
+riskitems=["功能不可用"]
+audit='''无
+'''
+remediation='''如果检测到/bin目录下文件被删除，请检查是否为关键系统命令
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

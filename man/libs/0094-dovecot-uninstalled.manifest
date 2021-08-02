@@ -1,0 +1,31 @@
+id="0094-dovecot-uninstalled"
+category="system"
+level="warn"
+title="IMAP和POP3服务被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS"]
+description=["除非本系统提供POP3和/或IMAP服务器，否则推荐使用\n    该包被删除，以减少潜在的攻击面。"]
+rationale=["除非本系统提供POP3和/或IMAP服务器，否则推荐使用\n该包被删除，以减少潜在的攻击面。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''执行以下命令，验证是否安装了dovecot。
+
+```bash
+# rpm -q dovecot
+package dovecot is not installed
+```
+'''
+remediation='''运行命令移除dovecot。
+```bash
+# yum remove dovecot
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7", "9.2确保只运行审批通过的端口、协议和业务<br>\n    确保只有网络端口、协议和服务在系统上监听经过验证的业务需求，正在每个系统上运行。"]

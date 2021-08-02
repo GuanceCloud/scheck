@@ -1,0 +1,31 @@
+id="0304-docker-registry-ownership"
+category="container"
+level="warn"
+title="registry.service文件所有权没有设置为root:root"
+desc="registry.service文件所有权没有设置为root:root，当前的registry.service Uid为{{ .Uid }} Gid 为 {{.Gid}} "
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+fitOs=["CentOS", "Linux"]
+description=["如果您在使用systemd管理服务的计算机上使用Docker，请验证Docker registry.service文件所有权和组所有权是否正确设置为root。"]
+rationale=["docker.service文件包含可能更改docker守护程序行为的敏感参数。因此，它应该由root拥有，组应该由root拥有，以保持文件的完整性。"]
+riskitems=["容器安全"]
+audit='''执行以下命令以验证文件和组是否归root所有：
+
+```bash
+stat -c %U:%G /usr/lib/systemd/system/docker.service | grep -v root:root
+```
+上述命令不应返回任何内容。
+'''
+remediation='''
+```bash
+#> chown root:root /usr/lib/systemd/system/docker.service
+```
+这会将文件的所有权和组所有权设置为root。
+'''
+impact=["无"]
+defaultvalue=["系统上可能不存在此文件。在这种情况下，本建议不适用。默认情况下，如果文件存在，则此文件的所有权和组所有权将正确设置为root。"]
+references=["[docker-systemd](https://docs.docker.com/articles/systemd/)","[docker-registry](https://github.com/docker/docker-registry)"]
+CIS=["无"]
