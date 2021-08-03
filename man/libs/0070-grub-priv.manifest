@@ -9,7 +9,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["GRUB是一个来自GNU项目的多操作系统启动程序。GRUB是多启动规范的实现，它允许用户可以在计算机内同时拥有多个操作系统，并在计算机启动时选择希望运行的操作系统。GRUB可用于选择操作系统分区上的不同内核，也可用于向这些内核传递启动参数。\n>"]
 rationale=["grub配置文件包含有关引导设置的信息以及用于解锁引导选项的密码。 grub2配置通常是存储在/boot/grub2/中的grub.cfg。"]
 riskitems=["被黑客利用，强行进入系统"]

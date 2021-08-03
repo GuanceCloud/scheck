@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS", "Linux"]
+os_arch=["CentOS", "Linux"]
 description=["守护程序模式下的Docker有特定的内核需求。3.10 Linux内核是Docker的最低要求。"]
 rationale=["早于3.10的内核缺少运行Docker容器所需的一些功能。众所周知，这些较旧的版本存在bug，这些bug会导致数据丢失，并且在某些情况下会频繁出现死机。因此，建议使用3.10（或更新的维护版本）Linux内核的最新次要版本（3.x.y）。此外，使用更新的Linux内核可以确保修复之前发现的关键内核错误。"]
 riskitems=["容器安全"]

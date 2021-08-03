@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,14 +46,14 @@ type Rule struct {
 }
 
 type RuleManifest struct {
-	RuleID   string `toml:"id"`
-	Category string `toml:"category"`
-	Level    string `toml:"level"`
-	Title    string `toml:"title"`
-	Desc     string `toml:"desc"`
-	Cron     string `toml:"cron"`
-
-	tags map[string]string
+	RuleID   string   `toml:"id"`
+	Category string   `toml:"category"`
+	Level    string   `toml:"level"`
+	Title    string   `toml:"title"`
+	Desc     string   `toml:"desc"`
+	Cron     string   `toml:"cron"`
+	OSArch   []string `toml:"os_arch"`
+	tags     map[string]string
 
 	path string
 
@@ -113,9 +114,23 @@ func (r *Rule) load() error {
 	reschedule := false
 	if r.cron != "" && manifest.Cron != r.cron {
 		log.Debugf("cron change from %s to %s", r.cron, manifest.Cron)
-		Chk.scheduler.DelRule(r)
+		Chk.scheduler.DelRule(r) //
 		reschedule = true
 	}
+	// 添加操作系统参数字段后 需要判断是否运行该lua文件
+	runLua := false
+	for _, localOS := range manifest.OSArch {
+		if strings.Contains(strings.ToUpper(localOS), strings.ToUpper(runtime.GOOS)) {
+			//log.Warnf("有相同的操作系统匹配到。。。 localos=%s", localOS)
+			runLua = true
+		}
+	}
+	if !runLua {
+		//log.Warnf("manifest中不支持当前操作系统 当前的os=%s", strings.ToUpper(runtime.GOOS))
+		Chk.doDelRule(r) // 删除当前规则 删除lua文件
+		return fmt.Errorf("manifest中不支持当前操作系统")
+	}
+
 	r.cron = manifest.Cron
 	r.interval = checkInterval(r.cron)
 	r.disabled = manifest.disabled
@@ -214,11 +229,13 @@ func (m *RuleManifest) parse() (err error) {
 	var tbl *ast.Table
 	contents, err = ioutil.ReadFile(rm.path)
 	if err != nil {
+		log.Warnf("read file err=%v", err)
 		return
 	}
 	contents = bytes.TrimPrefix(contents, []byte("\xef\xbb\xbf"))
 	tbl, err = toml.Parse(contents)
 	if err != nil {
+		log.Warnf("toml.Parse err=%v", err)
 		return
 	}
 
@@ -229,10 +246,10 @@ func (m *RuleManifest) parse() (err error) {
 		"title":    false,
 		"desc":     false,
 		"cron":     false,
+		"os_arch":  false,
 	}
 	//屏蔽字段
 	invalidField := map[string]bool{
-		"fitOs":        false,
 		"description":  false,
 		"riskitems":    false,
 		"audit":        false,
@@ -268,6 +285,14 @@ func (m *RuleManifest) parse() (err error) {
 					str = config.Cfg.Cron
 				}
 				rm.Cron = str
+			case "os_arch":
+				fmt.Printf("-------str=%s \n", str)
+				arr, err := ensureFieldStrings(k, v, &str)
+				if err != nil {
+					log.Warnf("获取os_arch字段失败err = %v", err)
+				}
+				rm.OSArch = arr
+
 			}
 			if str != "" {
 				requireKeys[k] = true
@@ -359,6 +384,7 @@ func ensureFieldString(k string, v interface{}, s *string) error {
 			return nil
 		}
 		if str, ok := kv.Value.(*ast.Array); ok {
+
 			*s = str.Source()
 			return nil
 		}
@@ -366,7 +392,19 @@ func ensureFieldString(k string, v interface{}, s *string) error {
 
 	return fmt.Errorf("unknown value for field '%s', expecting string", k)
 }
+func ensureFieldStrings(k string, v interface{}, s *string) ([]string, error) {
+	arr := make([]string, 0)
+	if kv, ok := v.(*ast.KeyValue); ok {
+		if str, ok := kv.Value.(*ast.Array); ok {
+			for _, val := range str.Value {
+				arr = append(arr, val.Source())
+			}
+			return arr, nil
+		}
+	}
 
+	return nil, fmt.Errorf("unknown value for field '%s', expecting string", k)
+}
 func ensureFieldBool(k string, v interface{}, b *bool) error {
 	var err error
 	if kv, ok := v.(*ast.KeyValue); ok {

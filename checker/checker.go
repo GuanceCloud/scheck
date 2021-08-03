@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -84,7 +85,7 @@ func (c *Checker) addRule(r *Rule) {
 
 	scheduleID, err := c.scheduler.AddRule(r)
 	if err != nil {
-		log.Errorf("%s", err)
+		log.Errorf("path=%s r.cron=%s err=%s", r.File, r.cron, err)
 		return
 	}
 	r.scheduleID = scheduleID
@@ -122,12 +123,23 @@ func (c *Checker) delRules() {
 	}
 }
 
+// doDelRule 从checker中删除规则 也应当从文件列表中删除
 func (c *Checker) doDelRule(r *Rule) {
 	c.scheduler.DelRule(r)
 	if r.rt != nil {
 		r.rt.Close()
 	}
 	delete(c.rules, r.File)
+	// delete lua file
+	if err := os.Remove(r.File); err != nil {
+		log.Warnf("删除lua文件错误 err=%v", err)
+	}
+	// delete manifest file
+	index := strings.LastIndex(r.File, ".")
+	manifestFile := r.File[:index] + ".manifest"
+	if err := os.Remove(manifestFile); err != nil {
+		log.Warnf("删除manifestFile文件错误 err=%v", err)
+	}
 }
 
 func (c *Checker) addManifest(m *RuleManifest) {
@@ -173,7 +185,7 @@ func (c *Checker) start(ctx context.Context) {
 	if err := c.loadRules(ctx, c.rulesDir); err != nil {
 		return
 	}
-
+	log.Warnf("------------调度启动------")
 	c.scheduler.Start()
 
 	select {
@@ -213,7 +225,7 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 	defer atomic.StoreInt32(&c.loading, 0)
 	files, err := ioutil.ReadDir(ruleDir)
 	if err != nil {
-		log.Errorf("%s", err)
+		log.Errorf("loadRules error ：filepath=%s err=%v", ruleDir, err)
 		return err
 	}
 
@@ -245,7 +257,7 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 			exist.load()
 			continue
 		}
-
+		fmt.Printf("初始化 一个rule  参数path=%s \n", path)
 		r := newRule(path)
 		if err := r.load(); err == nil {
 			c.addRule(r)

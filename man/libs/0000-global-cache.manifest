@@ -6,3 +6,5 @@ desc="此脚本为全局变量缓存，不触发tigger函数"
 cron="0 * * * *"
 # 开关
 disabled=false
+
+os_arch=["CentOS", "Ubuntu"]

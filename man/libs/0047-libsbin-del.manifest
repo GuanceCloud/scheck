@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS", "Ubuntu"]
+os_arch=["CentOS", "Ubuntu"]
 description=["监控主机目录/sbin下的文件是否被删除"]
 rationale=["/sbin目录放置的是系统基本的关键命令的可执行文件，如果被删除，可能会导致系统无法正常运行。"]
 riskitems=["功能不可用"]

@@ -9,7 +9,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-fitOs=["CentOS", "Ubuntu"]
+os_arch=["CentOS", "Ubuntu"]
 description=["监控主机/etc/yum-repos.d 目录下配置 被修改"]
 rationale=["repo文件是Fedora中yum源（软件仓库）的配置文件，通常一个repo文件定义了一个或者多个软件仓库的细节内容，例如我们将从哪里下载需要安装或者升级的软件包，repo文件中的设置内容将被yum读取和应用。如果配置错误，会造成服务不可用。"]
 riskitems=["服务不也用"]

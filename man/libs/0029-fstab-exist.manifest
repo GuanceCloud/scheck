@@ -8,7 +8,7 @@ cron="1 */1 * * *"
 disabled=false
 
 
-fitOs=["CentOS", "Ubuntu"]
+os_arch=["CentOS", "Ubuntu"]
 description=["监控主机/etc/fstab 文件是否存在"]
 rationale=["文件/etc/fstab存放的是系统中的文件系统信息，如果/etc/fstab被删除改会造成主机无法启动。"]
 riskitems=["服务不可用"]

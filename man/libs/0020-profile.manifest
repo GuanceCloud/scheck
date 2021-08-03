@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS", "Ubuntu"]
+os_arch=["CentOS", "Ubuntu"]
 description=["监控主机/etc/profile 被修改"]
 rationale=["Linux是一个多用户的操作系统。每个用户登录系统后，都会有一个专用的运行环境。通常每个用户默认的环境都是相同的，这个默认环境实际上就是一组环境变量的定义。用户可以对自己的运行环境进行定制，其方法就是修改相应的系统环境变量。/etc/profile 被恶意修改，会造成服务不可用。"]
 riskitems=["服务不可用"]

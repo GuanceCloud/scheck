@@ -10,7 +10,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["地址空间布局随机化（ASLR）是一种利用漏洞缓解技术，它将进程中关键数据区域的地址空间进行随机排列。"]
 rationale=["随机放置虚拟内存区域将使写入内存页攻击变得困难，因为内存位置将不断变化。\n>"]
 riskitems=["服务不可用"]

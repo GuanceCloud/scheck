@@ -8,7 +8,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["除非需要，否则应该删除rsync包以减少攻击表面积\n    这个系统。\n    rsyncd服务存在安全风险，因为它使用未加密的协议\n    沟通。\n    注意:如果rsync包存在一个必需的依赖项，但是rsyncd服务没有\n    必需的，服务应该被屏蔽。"]
 rationale=["syncd服务可用于通过网络链接在系统之间同步文件。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

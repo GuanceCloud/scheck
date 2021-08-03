@@ -9,7 +9,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["除非本系统提供POP3和/或IMAP服务器，否则推荐使用\n    该包被删除，以减少潜在的攻击面。"]
 rationale=["除非本系统提供POP3和/或IMAP服务器，否则推荐使用\n该包被删除，以减少潜在的攻击面。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

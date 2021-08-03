@@ -6,4 +6,5 @@ desc="/etc/ssh目录{.Content} 被修改"
 cron="1 */1 * * *"
 # 开关
 disabled=false
+os_arch=["CentOS", "Ubuntu","linux"]
 

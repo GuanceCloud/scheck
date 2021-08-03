@@ -9,7 +9,7 @@ cron="1 */1 * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["talk软件允许用户通过终端会话跨系统发送和接收消息。默认情况下会安装允许初始化会话的talk客户端。"]
 rationale=["由于软件使用未加密的协议进行通信，因此存在安全风险。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

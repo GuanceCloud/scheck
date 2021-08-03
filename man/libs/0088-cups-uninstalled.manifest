@@ -10,7 +10,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["通用Unix打印系统(CUPS)提供了打印到本地和网络打印机的功能。运行CUPS的系统也可以接受来自远程系统的打印作业，并将其打印到本地打印机上。它还提供了基于web的远程管理功能"]
 rationale=["系统功能通常不需要自动发现网络服务。建议删除此软件包，以减少潜在的攻击面。"]
 riskitems=["增加攻击面"]

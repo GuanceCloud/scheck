@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS", "Ubuntu"]
+os_arch=["CentOS", "Ubuntu"]
 description=["监控主机名发生变化"]
 rationale=["Linux操作系统的hostname是一个kernel变量，可以通过hostname命令来查看本机的hostname。也可以直接cat /proc/sys/kernel/hostname查看。 \n，如果主机名设置错误，可能会引起在线业务或应用不能正常访问，甚至会拒绝提供服务。如果主机名被恶意修改，会影响主机系统正常运行。"]
 riskitems=["应用拒绝服务"]

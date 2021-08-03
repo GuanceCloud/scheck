@@ -47,7 +47,7 @@ define build
 	@echo "$$GIT_INFO" > git/git.go
 	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/make.go -main $(ENTRY) -binary $(BIN) -build-dir $(BUILD_DIR) \
 		 -env $(1) -pub-dir $(PUB_DIR) -archs $(2) -download-addr $(3)
-	@tree -Csh -L 3 $(BUILD_DIR)
+
 endef
 
 define pub
@@ -82,6 +82,9 @@ pub_testing:
 pub_release:
 	$(call pub,release,$(RELEASE_DOWNLOAD_ADDR),$(DEFAULT_ARCHS))
 
+man:
+	@packr2 clean
+	@packr2
 
 # local:
 # 	$(call build,linux,amd64)

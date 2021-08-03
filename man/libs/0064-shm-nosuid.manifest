@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["nosuid挂载选项指定文件系统不能包含setuid文件\n>", "注意：/dev/shm是由systemd自动挂载的。但即使/dev/shm已经在启动时被挂载，它依然需要在\n    >\n    >   /etc/fstab中 添加挂载选项。"]
 rationale=["在文件系统上设置此选项可以防止用户将特权程序引入系统，并允许非根用户执行这些程序"]
 riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]

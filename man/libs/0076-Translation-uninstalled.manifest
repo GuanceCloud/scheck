@@ -9,7 +9,7 @@ cron="1 */5 * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["mcstransd守护进程向请求信息的客户端进程提供类别标签信息。标签翻译在/etc/selinux/targeted/setrans.conf中定义"]
 rationale=["由于不经常使用此服务，请删除它以减少系统上运行的潜在易受攻击的代码量。"]
 riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]

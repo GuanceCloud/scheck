@@ -8,7 +8,7 @@ cron="1 */5 * * *"
 disabled=false
 
 
-fitOs=["CentOS", "Ubuntu"]
+os_arch=["CentOS", "Ubuntu"]
 description=["监控主机时区发生变化"]
 rationale=["Time zone时区设置是最为重要的基本系统配置之一，如果时区设置错误，可能会引起在线业务或应用不能正常访问，甚至会拒绝提供服务。如果主机被恶意修改时区，会影响主机系统正常运行。"]
 riskitems=["应用拒绝服务"]

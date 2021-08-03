@@ -8,7 +8,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["NIS服务本质上是一个不安全的系统，容易受到DOS攻击，\n    缓冲区溢出，并且在查询NIS映射时身份验证很差。NIS通常\n    已被轻量级目录访问协议(LDAP)等协议所取代。它是\n    建议删除ypserv包，如果需要更安全的服务\n    被使用。"]
 rationale=["ypserv包提供NIS (Network Information Service)服务。这种服务,正式\n    黄页是一种用于分发系统的客户机-服务器目录服务协议\n    配置文件。NIS服务器是允许分发的程序的集合\n    的配置文件。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

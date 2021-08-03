@@ -6,3 +6,4 @@ desc="敏感文件 {{.File}} 被删除"
 cron="1 */1 * * *"
 # 开关
 disabled=false
+os_arch=["CentOS","Ubuntu","linux"]

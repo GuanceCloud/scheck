@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["rpcbind实用程序将RPC服务映射到它们侦听的端口。RPC进程在启动时通知rpcbind，注册他们正在侦听的端口以及他们希望提供服务的RPC程序编号。客户端系统然后用特定的RPC程序号联系服务器上的rpcbind。rpcbind服务将客户端重定向到正确的端口号，以便它可以与所请求的服务通信\n> Portmapper是一个RPC服务，它总是侦听tcp和udp111，并用于映射其他RPC服务(如nfs、nlockmgr、quotad、mountd等)。到其在服务器上相应的端口号。当远程主机对该服务器进行RPC调用时，它首先咨询portmap以确定RPC服务器侦听的位置"]
 rationale=["发送到端口映射器的小请求（~82字节)会产生大响应(7倍到28倍放大），这使其成为DDoS攻击的合适工具。如果不需要rpcbind，则建议删除rpcbind软件包，以减少系统的攻击面。\n> 注意：企业Linux虚拟化所使用的许多libvirt包和网络文件系统(NFS)所使用的nfs-utils包都依赖于rpcbind包。如果需要rpcbind作为依赖项，则应停止服务rpcbind.service和rpcbind.socket并进行屏蔽，以减少系统的攻击面。"]
 riskitems=["增加被攻击风险"]

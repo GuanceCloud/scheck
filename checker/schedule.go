@@ -61,6 +61,7 @@ func (s *Scheduler) countInfo() (cron int, interval int) {
 }
 
 func (s *Scheduler) AddRule(r *Rule) (int, error) {
+	fmt.Printf("添加一个rule  打印结构体 %+v \n", r)
 	if r.interval > 0 { // 设置时间大于0 按照设置的时间间隔进行执行 否则使用默认的cron
 		s.mux.Lock()
 		defer s.mux.Unlock()
@@ -93,7 +94,6 @@ func (s *Scheduler) DelRule(r *Rule) {
 func (s *Scheduler) Start() {
 	s.cron.Start()
 	for _, g := range s.intervalGroups {
-		//
 		log.Infof("调度启动for循环启动  当前的runId=%d ", g.runid)
 		g.start(s.ctx)
 	}

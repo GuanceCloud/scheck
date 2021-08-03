@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
+	"runtime"
 
 	"github.com/influxdata/toml"
 )
@@ -31,14 +33,21 @@ var (
 
 type Config struct {
 	RuleDir       string `toml:"rule_dir"`
-	CustomRuleDir string `toml:"custom.rules.d"` // 用户自定义入口
+	CustomRuleDir string `toml:"custom"` // 用户自定义入口
 	Output        string `toml:"output"`
+	Cron          string `toml:"cron"`
+	DisableLog    bool   `toml:"disable_log"`
+	Log           string `toml:"log"`
+	LogLevel      string `toml:"log_level"`
 
-	Cron string `toml:"cron"`
+	Cgroup *Cgroup `toml:"cgroup"` // 动态控制
+}
 
-	DisableLog bool   `toml:"disable_log"`
-	Log        string `toml:"log"`
-	LogLevel   string `toml:"log_level"`
+// Cgroup cpu&mem 控制量
+type Cgroup struct {
+	Enable bool    `toml:"enable"`
+	CPUMax float64 `toml:"cpu_max"`
+	CPUMin float64 `toml:"cpu_min"`
 }
 
 func LoadConfig(p string) error {
@@ -54,4 +63,12 @@ func LoadConfig(p string) error {
 	Cfg = c
 
 	return nil
+}
+
+// 查看当前的cpu和mem大小 控制cgroup的百分比 从而控制程序运行过程中占用系统资源的情况
+func hostInfo() {
+	cpuMun := runtime.NumCPU()
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Printf("当前cpu数量是%d 内存是%d", cpuMun, m.TotalAlloc)
 }

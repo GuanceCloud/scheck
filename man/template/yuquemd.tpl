@@ -16,7 +16,7 @@
 
 
 ## 兼容版本
-{{range .Fitos }}
+{{range .OSArch }}
 {{if . }}
 - {{ . }}
 {{else}}

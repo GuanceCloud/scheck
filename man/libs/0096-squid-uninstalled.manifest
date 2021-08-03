@@ -9,7 +9,7 @@ cron="0 * * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["Squid是一种标准的代理服务器，用于许多发行版和环境。"]
 rationale=["除非系统专门设置为充当代理服务器，否则建议删除squid包以减少潜在的攻击面。", "注意：存在多个HTTP代理服务器。除非需要，否则应检查并移除这些。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

@@ -8,7 +8,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["网络信息服务(NIS)，以前称为黄页，是一个客户机-服务器用于分发系统配置文件的目录服务协议。NIS客户端(ypbind)用于将机器绑定到NIS服务器并接收分发的配置文件。"]
 rationale=["NIS服务本质上是一个不安全的系统，容易受到DOS攻击，缓冲区溢出，并且在查询NIS映射时身份验证很差。NIS通常已被轻量级目录访问协议(LDAP)等协议所取代。建议删除该服务。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

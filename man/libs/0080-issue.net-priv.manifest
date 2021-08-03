@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["在从配置的服务进行远程连接登录之前，/etc/issue.net文件的内容将显示给用户。"]
 rationale=["如果/etc/issue.net文件没有正确的所有权，则未经授权的用户可能会使用错误或误导性信息对其进行修改。"]
 riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]

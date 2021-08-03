@@ -2,12 +2,13 @@ package man
 
 import (
 	"fmt"
-	"github.com/gobuffalo/packd"
-	"github.com/gobuffalo/packr/v2"
 	"log"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/gobuffalo/packd"
+	"github.com/gobuffalo/packr/v2"
 )
 
 var (
@@ -83,20 +84,24 @@ func WalkList() {
 	重新写入脚本
 */
 func ScheckCoreSyncDisk(ruleDir string) error {
+	fmt.Println("进入ScheckCoreSyncDisk")
 	// 删除目录
 	if _, err := os.Stat(ruleDir); err == nil {
 		if err := os.RemoveAll(ruleDir); err != nil {
 			log.Fatal(err)
 			return nil
 		}
+		fmt.Println("已经全部删除文件。。")
 	}
 	// 创建目录，将lua 脚本同步到磁盘上
 	if _, err := os.Stat(ruleDir); err != nil {
 		if err := os.Mkdir(ruleDir, 0775); err == nil {
 			// 遍历 lua脚本名称
+			fmt.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
 			for _, name := range ScriptBox.List() {
 				if content, err := ScriptBox.Find(name); err == nil {
 					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
+					name = strings.ReplaceAll(name, "\\", "/")
 					fmt.Println(strings.Split(name, "/"))
 					// 处理多级目录
 					paths := strings.Split(name, "/")
@@ -121,7 +126,7 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 	return nil
 }
 
-// todo 用户自己的lua文件发生变化时可以自动重载 删除文件后 也要从执行脚本列表中删除
+// todo 用户自己的lua文件发生变化时可以自动重载 删除文件后 也要从执行脚本列表中删除?
 // ------二次开发使用 从文件夹中读取文件
 func GetMD(name string) (string, error) {
 	return ScriptBox.FindString(name + ".md")

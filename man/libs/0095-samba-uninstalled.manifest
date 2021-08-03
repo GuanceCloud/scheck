@@ -8,7 +8,7 @@ cron="0 * * * *"
 disabled=false
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["Samba守护进程允许系统管理员配置他们的Linux系统以共享\n    文件系统和目录与Windows桌面。Samba将发布文件系统\n    和目录通过服务器消息块(SMB)协议。Windows桌面用户将\n    能够将这些目录和文件系统作为字母驱动器挂载到它们的系统上。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
 audit='''执行以下命令，验证是否安装了samba。

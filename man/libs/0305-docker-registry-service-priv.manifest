@@ -8,7 +8,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-fitOs=["CentOS", "Linux"]
+os_arch=["CentOS", "Linux"]
 description=["如果您在使用systemd管理服务的计算机上使用Docker，请验证Docker registry.service文件权限是否正确设置为“644”或更严格。"]
 rationale=["docker registry.service文件包含可能更改docker守护程序行为的敏感参数。因此，除了root之外的任何其他用户都不应该写它来维护文件的完整性。"]
 riskitems=["容器安全"]

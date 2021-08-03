@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS", "Ubuntu"]
+os_arch=["CentOS", "Ubuntu"]
 description=["监控主机/etc/sudoers是否被修改"]
 rationale=["在Linux中，/etc/sudoers文件允许用户按照安全策略的指定，以超级用户或其他用户的身份执行命令。安全策略确定用户必须具有哪些特权才能运行sudo。该策略可能要求用户使用密码或其他身份验证机制对自己进行身份验证。"]
 riskitems=["黑客渗透", "数据泄露"]

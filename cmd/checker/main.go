@@ -22,6 +22,8 @@ import (
 	"text/template"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
+
 	log "github.com/sirupsen/logrus"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
@@ -80,7 +82,7 @@ func setupLogger() {
 				}
 			}
 			log.SetOutput(lf)
-			log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出
+			log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
 			//log.AddHook() // todo 重写hook接口 就可以实现多端输出
 		}
 		switch config.Cfg.LogLevel {
@@ -199,7 +201,7 @@ func applyFlags() {
 
 	if *flagRulesToTemplate {
 		if *flagOutDir == "" {
-			man.DfTemplate(man.GetAllName(), "gitee")
+			man.DfTemplate(man.GetAllName(), "C://Users/gitee")
 		} else {
 			man.DfTemplate(man.GetAllName(), *flagOutDir)
 		}
@@ -218,10 +220,9 @@ func run() {
 			wg.Done()
 		}()
 		fmt.Println("2 check run")
-		//checker.Start(ctx, config.Cfg.RuleDir, config.Cfg.Output)
 		// 测试packd2 20210723 测试通过
 		man.ScheckCoreSyncDisk(config.Cfg.RuleDir)
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 5)
 		checker.Start(ctx, config.Cfg.RuleDir, config.Cfg.Output)
 	}()
 	// 用自定义入口
@@ -229,9 +230,14 @@ func run() {
 		defer func() {
 			wg.Done()
 		}() //程序退出的时候执行
+		fmt.Printf("用户自定义的路径是%s \n", config.Cfg.CustomRuleDir)
 		checker.Start(ctx, config.Cfg.CustomRuleDir, config.Cfg.Output)
 	}()
-
+	// 启动 cgroup 控制cpu
+	go func() {
+		fmt.Printf("当前的配置 cgroup max=%.2f min=%.2f \n", config.Cfg.Cgroup.CPUMax, config.Cfg.Cgroup.CPUMin)
+		cgroup.Run()
+	}()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 

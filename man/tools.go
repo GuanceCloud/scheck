@@ -2,19 +2,20 @@ package man
 
 /*
 模版模块
-从manifest中读取文件 后生成md格式的模版 导出命令：？ 使用
+从manifest中读取文件 后生成md格式的模版 导出命令：-doc 使用
 */
 import (
 	"bytes"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/BurntSushi/toml"
+	log "github.com/sirupsen/logrus"
 )
 
 type Tmp struct {
@@ -93,14 +94,15 @@ func (t *Tmp) GetTemplate() string {
 }
 
 type Markdown struct {
-	RuleID       string   `toml:"id"`
-	Category     string   `toml:"category"`
-	Level        string   `toml:"level"`
-	Title        string   `toml:"title"`
-	Desc         string   `toml:"desc"`
-	Cron         string   `toml:"cron"`
-	Disabled     bool     `toml:"disabled"`
-	Fitos        []string `toml:"fitos"`
+	RuleID   string `toml:"id"`
+	Category string `toml:"category"`
+	Level    string `toml:"level"`
+	Title    string `toml:"title"`
+	Desc     string `toml:"desc"`
+	Cron     string `toml:"cron"`
+	Disabled bool   `toml:"disabled"`
+	//Fitos        []string `toml:"fitos"`
+	OSArch       []string `toml:"os_arch"`
 	Description  []string `toml:"description"`
 	Rationale    []string `toml:"rationale"`
 	Riskitems    []string `toml:"riskitems"`
@@ -181,12 +183,27 @@ func ScheckList(dir_path string) []string {
 }
 
 func CreateFile(content string, file string) error {
-	err := ioutil.WriteFile(file, []byte(content), 0644)
+	//fmt.Printf("当前的路径是 base之前 %s \n", file)
+	file = doFilepath(file)
+	//fmt.Printf("当前的路径是  %s \n", file)
+
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatalf("打开文件失败err=%v", err)
+		return err
+	}
+	defer f.Close()
+	_, err = f.Write([]byte(content))
+	//err := ioutil.WriteFile(file, []byte(content), 0777)
 	if err != nil {
 		log.Fatalf("写入文件失败err=%v", err)
 		return err
 	}
 	return nil
+}
+func doFilepath(file string) string {
+	return strings.ReplaceAll(file, "\\", "/")
+
 }
 
 type Summary struct {
@@ -207,7 +224,7 @@ func DfTemplate(filesName []string, outputPath string) {
 		md := Markdown{path: v, Id: id}
 		md.TemplateDecodeFile()
 		// 去除不要生成的
-		if len(md.Fitos) < 1 {
+		if len(md.Description) < 1 {
 			continue
 		}
 		yaml := Tmp{Path: "manifest", Obj: md}
@@ -244,7 +261,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 			log.Fatalf("err:%s", err)
 		}
 		// 去除不要生成的
-		if len(md.Fitos) < 1 {
+		if len(md.Description) < 1 {
 			continue
 		}
 		_, ok := category[md.Category]

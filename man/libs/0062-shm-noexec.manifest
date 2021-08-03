@@ -10,7 +10,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["noexec挂载选项指定文件系统不能包含可执行二进制文件\n>", "注意：/dev/shm是由systemd自动挂载的。但即使/dev/shm已经在启动时被挂载，它依然需要在\n    >\n    >   /etc/fstab中 添加挂载选项。"]
 rationale=["在文件系统上设置此选项将阻止用户从共享内存中执行程序。\n    >\n    >   这可以阻止用户在系统上引入潜在的恶意软件"]
 riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]

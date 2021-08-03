@@ -9,7 +9,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["prelink是一个程序，它修改ELF共享库和ELF动态链接的二进制文件，使动态链接器在启动时执行重定位所需的时间大大减少。"]
 rationale=["预链接功能可能会干扰AIDE的操作，因为它会更改二进制文件。如果恶意用户能够破坏libc等公共库，预链接也会增加系统的漏洞。"]
 riskitems=["服务不可用"]

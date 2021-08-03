@@ -10,7 +10,7 @@ disabled=false
 
 
 
-fitOs=["CentOS"]
+os_arch=["CentOS"]
 description=["动态主机配置协议(DHCP)是一种允许为计算机动态分配IP地址的服务。"]
 rationale=["除非系统被专门设置为充当DHCP服务器，否则建议删除dhcp软件包，以减少潜在的攻击面"]
 riskitems=["增加被攻击风险"]
