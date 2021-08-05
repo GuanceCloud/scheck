@@ -2,7 +2,7 @@ id="0306-docker-socket-ownership"
 category="container"
 level="warn"
 title="docker.socket文件所有权没有设置为root:root"
-desc="docker.socket文件所有权没有设置为root:root，，当前的docker.socket Uid为{{ .Uid }} Gid 为 {{.Gid}} "
+desc="docker.socket文件所有权没有设置为root:root，当前的docker.socket Uid为{{ .Uid }} Gid 为 {{.Gid}} "
 cron="0 */30 * * *"
 # 开关
 disabled=false

@@ -1,0 +1,32 @@
+id="0308-docker-env-ownership"
+category="container"
+level="warn"
+title="docker环境文件所有权没有设置为root:root"
+desc="docker环境文件所有权没有设置为root:root，当前的docker.socket Uid为{{ .Uid }} Gid 为 {{.Gid}} "
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["CentOS", "Linux"]
+description=["docker守护程序利用Docker环境文件设置Docker守护程序运行时环境。如果在使用systemd管理服务的计算机上使用Docker，则文件为/etc/sysconfig/Docker。在其他系统上，环境文件为/etc/default/docker。验证环境文件所有权和组所有权是否正确设置为root”。"]
+rationale=["docker环境文件包含敏感参数，这些参数可能会在运行时改变Docker守护程序的行为。因此，它应该由root”拥有，组应该由root”拥有，以保持文件的完整性。"]
+riskitems=["容器安全"]
+audit='''执行以下命令以验证环境文件是否为root”所有，组是否为root”所有：
+
+```bash
+stat -c %U:%G /etc/sysconfig/docker | grep -v root:root
+```
+上述命令不应返回任何内容。
+'''
+remediation='''
+```bash
+#> chown root:root /etc/sysconfig/docker
+```
+这会将环境文件的所有权和组所有权设置为root”。
+'''
+impact=["无"]
+defaultvalue=["默认情况下，此文件的所有权和组所有权正确设置为root。"]
+references=["[systemd](https://docs.docker.com/articles/systemd/)"]
+CIS=["无"]
