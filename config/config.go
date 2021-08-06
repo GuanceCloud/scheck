@@ -56,17 +56,17 @@ var (
 )
 
 type Config struct {
-	RuleDir       string `toml:"rule_dir,omitempty"`
-	CustomRuleDir string `toml:"custom_rule_dir,omitempty"` // 用户自定义入口
-	Output        string `toml:"output,omitempty"`
-	Cron          string `toml:"cron,omitempty"`
-	DisableLog    bool   `toml:"disable_log,omitempty"`
-	Log           string `toml:"log,omitempty"`
-	LogLevel      string `toml:"log_level,omitempty"`
-	System        *System `toml:"system,omitempty"`
+	RuleDir       string    `toml:"rule_dir,omitempty"`
+	CustomRuleDir string    `toml:"custom_rule_dir,omitempty"` // 用户自定义入口
+	Output        string    `toml:"output,omitempty"`
+	Cron          string    `toml:"cron,omitempty"`
+	DisableLog    bool      `toml:"disable_log,omitempty"`
+	Log           string    `toml:"log,omitempty"`
+	LogLevel      string    `toml:"log_level,omitempty"`
+	System        *System   `toml:"system,omitempty"`
 	ScOutput      *ScOutput `toml:"scoutput"`
-	Logging       *Logging `toml:"logging,omitempty"` // 日志配置
-	Cgroup *Cgroup `toml:"cgroup"` // 动态控制
+	Logging       *Logging  `toml:"logging,omitempty"` // 日志配置
+	Cgroup        *Cgroup   `toml:"cgroup"`            // 动态控制
 }
 
 type System struct {
@@ -77,34 +77,33 @@ type System struct {
 }
 
 type ScOutput struct {
-	Http *Http `toml:"output,omitempty"`
-	Log *Log  `toml:"log,omitempty"`
+	Http   *Http   `toml:"output,omitempty"`
+	Log    *Log    `toml:"log,omitempty"`
 	AliSls *AliSls `toml:"alisls,omitempty"`
-
 }
 
 type Http struct {
-	Enable bool    `toml:"enable"`
-	Output        string `toml:"output,omitempty"`
+	Enable bool   `toml:"enable"`
+	Output string `toml:"output,omitempty"`
 }
 type Log struct {
-	Enable bool    `toml:"enable"`
-	Output        string `toml:"output,omitempty"`
+	Enable bool   `toml:"enable"`
+	Output string `toml:"output,omitempty"`
 }
 type AliSls struct {
-	Enable bool    `toml:"enable"`
+	Enable          bool   `toml:"enable"`
 	EndPoint        string `toml:"endpoint"`
 	AccessKeyID     string `toml:"access_key_id"`
 	AccessKeySecret string `toml:"access_key_secret"`
-	ProjectName  string `toml:"project_name"`
-	LogStoreName  string `toml:"log_store_name"`
-	Description  string `toml:"description,omitempty"`
+	ProjectName     string `toml:"project_name"`
+	LogStoreName    string `toml:"log_store_name"`
+	Description     string `toml:"description,omitempty"`
 }
 
 type Logging struct {
-	Log           string `toml:"log"`
-	LogLevel      string `toml:"log_level"`
-	Cgroup *Cgroup `toml:"cgroup"` // 动态控制cpu和Mem
+	Log      string  `toml:"log"`
+	LogLevel string  `toml:"log_level"`
+	Cgroup   *Cgroup `toml:"cgroup"` // 动态控制cpu和Mem
 }
 
 // Cgroup cpu&mem 控制量
@@ -136,7 +135,6 @@ func DefaultConfig() *Config {
 	}
 	return c
 }
-
 
 func LoadConfig(p string) error {
 	cfgdata, err := ioutil.ReadFile(p)

@@ -3,7 +3,6 @@ package securityChecker
 import (
 	"bytes"
 	bstoml "github.com/BurntSushi/toml"
-
 )
 
 func TomlMarshal(v interface{}) ([]byte, error) {
