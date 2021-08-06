@@ -30,6 +30,7 @@ var (
 		`linux/arm`,
 		`linux/arm64`,
 	}
+	ReleaseVersion = git.Version
 )
 
 func runEnv(args, env []string) ([]byte, error) {
@@ -135,14 +136,14 @@ func Compile() {
 		compileArch(AppBin, goos, goarch, dir, vd.Version)
 
 		if goos == "windows" {
-			installerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
+			installerExe = fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, ReleaseVersion)
 		} else {
-			installerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
+			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, ReleaseVersion)
 		}
-
 	}
 
-	buildInstaller(strings.TrimSpace(git.Version), DownloadAddr)
+	// build installer 将install/main.go 编译成exe文件和sh文件 (slq:outdir随意填的 后面改 20210805P)
+	buildInstaller("build/install/", strings.TrimSpace(git.Version), DownloadAddr)
 
 	l.Infof("Done!(elapsed %v)", time.Since(start))
 }
@@ -208,8 +209,8 @@ type installInfo struct {
 	Version      string
 }
 
-func buildInstaller(version, download string) {
-
+func buildInstaller(outdir, version, download string) {
+	// -------------生成sh文件------------
 	data, err := ioutil.ReadFile("install.sh.template")
 	if err != nil {
 		l.Fatal(err)
@@ -230,4 +231,27 @@ func buildInstaller(version, download string) {
 	if err != nil {
 		l.Fatal(err)
 	}
+
+	// ------------ 生成windows的exe文件------------
+	goos, goarch := runtime.GOOS, runtime.GOARCH
+	l.Debugf("building %s-%s/installer...", goos, goarch)
+
+	args := []string{
+		"go", "build",
+		"-o", filepath.Join(outdir, installerExe),
+		"-ldflags",
+		fmt.Sprintf("-w -s -X main.DataKitBaseURL=%s -X main.DataKitVersion=%s", DownloadAddr, ReleaseVersion),
+		"cmd/installer/main.go",
+	}
+
+	env := []string{
+		"GOOS=" + goos,
+		"GOARCH=" + goarch,
+	}
+
+	msg, err := runEnv(args, env)
+	if err != nil {
+		l.Fatalf("failed to run %v, envs: %v: %v, msg: %s", args, env, err, string(msg))
+	}
+	l.Infof("build installer to %s", filepath.Join(outdir, installerExe))
 }

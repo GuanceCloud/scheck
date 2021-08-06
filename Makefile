@@ -9,7 +9,15 @@ ENTRY = cmd/checker/main.go
 RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker
 
 # 测试环境
-TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
+#TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
+TEST_DOWNLOAD_ADDR = df-storage-dev.oss-cn-hangzhou.aliyuncs.com/songlongqi/scheck
+
+# 环境变量添加到本机中
+#export LOCAL_OSS_ACCESS_KEY='LTAIxxxxxxxxxxxxxxxxxxxx'
+#export LOCAL_OSS_SECRET_KEY='nRr1xxxxxxxxxxxxxxxxxxxxxxxxxx'
+#export LOCAL_OSS_BUCKET='df-storage-dev'
+#export LOCAL_OSS_HOST='oss-cn-hangzhou.aliyuncs.com'
+#export LOCAL_OSS_ADDR='df-storage-dev.oss-cn-hangzhou.aliyuncs.com/songlongqi/scheck'
 
 
 LOCAL_ARCHS = "local"
@@ -41,12 +49,13 @@ export GIT_INFO
 
 define build
 	@echo "===== $(BIN) $(1) ===="
+	@echo "==git version=== $(VERSION) ===="
 	@rm -rf $(PUB_DIR)/$(1)/*
 	@mkdir -p $(BUILD_DIR) $(PUB_DIR)/$(1)
 	@mkdir -p git
 	@echo "$$GIT_INFO" > git/git.go
 	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/make.go -main $(ENTRY) -binary $(BIN) -build-dir $(BUILD_DIR) \
-		 -env $(1) -pub-dir $(PUB_DIR) -archs $(2) -download-addr $(3)
+		 -env $(1) -pub-dir $(PUB_DIR) -archs $(2) -download-addr $(TEST_DOWNLOAD_ADDR)
 
 endef
 
