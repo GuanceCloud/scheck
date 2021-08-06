@@ -22,6 +22,9 @@ import (
 	"text/template"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
 
 	log "github.com/sirupsen/logrus"
@@ -53,18 +56,26 @@ var (
 var (
 	Version     = ""
 	ReleaseType = ""
+
+	l = logger.DefaultSLogger("main")
 )
 
 func main() {
 	flag.Parse()
 	applyFlags()
+
 	if err := config.LoadConfig(*flagConfig); err != nil {
+		fmt.Printf("加载配置文件错误 err=%v \n", err)
 		log.Fatalf("%s", err)
 	}
-
+	time.Sleep(time.Second * 3)
 	setupLogger()
-
-	run()
+	service.Entry = run
+	if err := service.StartService(); err != nil {
+		l.Errorf("start service failed: %s", err.Error())
+		return
+	}
+	//	run()
 }
 
 func setupLogger() {
@@ -76,13 +87,13 @@ func setupLogger() {
 			lf, err := os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
 				os.MkdirAll(filepath.Dir(config.Cfg.Log), 0775)
-				lf, err = os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+				lf, err = os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
 				if err != nil {
 					log.Fatalf("%s", err)
 				}
 			}
 			log.SetOutput(lf)
-			log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
+			//log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
 			//log.AddHook() // todo 重写hook接口 就可以实现多端输出
 		}
 		switch config.Cfg.LogLevel {
@@ -206,6 +217,14 @@ func applyFlags() {
 			man.DfTemplate(man.GetAllName(), *flagOutDir)
 		}
 		os.Exit(0)
+	}
+	if *flagConfig == "" {
+		confPath := "/usr/local/scheck"
+		//*flagConfig = "scheck.conf"
+		if runtime.GOOS == "windows" { // 设置路径
+			confPath = "C:\\Program Files\\scheck"
+		}
+		*flagConfig = filepath.Join(confPath, "scheck.conf")
 	}
 }
 
@@ -337,3 +356,5 @@ func updateRules() bool {
 	fmt.Println("Install rules successfully")
 	return true
 }
+
+// output 发送规则：满100个字节就发送

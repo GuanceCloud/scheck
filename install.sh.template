@@ -1,6 +1,6 @@
 #! /bin/bash
 
-download_url="https://{{.DownloadUrl}}/security-checker-"
+download_url="https://{{.DownloadUrl}}/schecke-"
 
 version={{.Version}}
 
@@ -66,8 +66,8 @@ init() {
         ${install_dir}/${bin_name} -update-rules
     fi
 
-    if [ -f "${install_dir}/checker.conf" ] ;then
-        mv "${install_dir}/checker.conf" ${install_dir}/${bin_name}.conf 2>&1
+    if [ -f "${install_dir}/scheck.conf" ] ;then
+        mv "${install_dir}/scheck.conf" ${install_dir}/${bin_name}.conf 2>&1
     fi
 }
 

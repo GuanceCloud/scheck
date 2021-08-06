@@ -70,6 +70,7 @@ func newRule(path string) *Rule {
 	}
 }
 
+// load 从文件夹中加载 改成从scriptBox中获取
 func (r *Rule) load() error {
 
 	r.mux.Lock()
