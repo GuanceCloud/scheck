@@ -1,11 +1,7 @@
 package install
 
 import (
-	"runtime"
 	"testing"
-
-	tu "gitlab.jiagouyun.com/cloudcare-tools/cliutils/testutil"
-	"gitlab.jiagouyun.com/cloudcare-tools/datakit/config"
 )
 
 func TestPreEnableHostobjectInput(t *testing.T) {
@@ -21,6 +17,7 @@ func TestPreEnableHostobjectInput(t *testing.T) {
 	}
 }
 
+/*
 func TestUpgradeMainConfigure(t *testing.T) {
 	cases := []struct {
 		c, expect *config.Config
@@ -55,3 +52,4 @@ func TestUpgradeMainConfigure(t *testing.T) {
 		}
 	}
 }
+*/
