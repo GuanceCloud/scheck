@@ -121,7 +121,7 @@ func DefaultConfig() *Config {
 			RuleDir:       "/usr/local/scheck/rules.d",
 			CustomRuleDir: "/usr/local/scheck/custom.rules.d",
 			Cron:          "",
-			DisableLog:    true,
+			//DisableLog:    true,
 		},
 		ScOutput: &ScOutput{
 			Http: &Http{
@@ -130,13 +130,13 @@ func DefaultConfig() *Config {
 			},
 			Log: &Log{
 				Enable: false,
-				Output: filepath.Join("/var/local/datakit", "event.log"),
+				Output: filepath.Join("/var/log/scheck", "event.log"),
 			},
 			AliSls: &AliSls{},
 		},
 		Logging: &Logging{
 			LogLevel: "info",
-			Log:      "/usr/local/scheck/log",
+			Log:      filepath.Join("/usr/local/scheck/", "log"),
 		},
 		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0},
 	}

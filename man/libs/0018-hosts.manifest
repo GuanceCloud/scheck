@@ -8,7 +8,7 @@ cron="1 */1 * * *"
 disabled=false
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机hosts 被修改"]
 rationale=["hosts文件是Linux系统中一个负责IP地址与域名快速解析的文件，以ASCII格式保存在“/etc”目录下，文件名为“hosts”。\n  hosts文件包含了IP地址和主机名之间的映射，还包括主机名的别名。在没有域名服务器的情况下，系统上的所有网络程序都通过查询该文件来解析对应于某个主机名的IP地址，否则就需要使用DNS服务程序来解决。通常可以将常用的域名和IP地址映射加入到hosts文件中，实现快速方便的访问。\n  hosts 文件被恶意修改会造成服务不可用。"]
 riskitems=["服务不可用"]

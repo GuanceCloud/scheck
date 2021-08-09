@@ -10,7 +10,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机/etc/group是否存在"]
 rationale=["/etc/resolv.conf它是DNS客户机配置文件，用于设置DNS服务器的IP地址及DNS域名，还包含了主机的域名搜索顺序。该文件是由域名解析 器（resolver，一个根据主机名解析IP地址的库）使用的配置文件。它的格式很简单，每行以一个关键字开头，后接一个或多个由空格隔开的参数。如果这个文件被删除，会造成服务不可用或dns无法解析。"]
 riskitems=["服务不可用"]

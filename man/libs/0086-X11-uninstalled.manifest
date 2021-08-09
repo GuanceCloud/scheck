@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS"]
+os_arch=["Linux"]
 description=["X windows系统提供了一个图形用户界面(Gui)，其中用户可以有多个窗口来运行程序和各种添加。X Windows系统通常用于用户登录的工作站，但不适用于用户通常不登录的服务器上。"]
 rationale=["除非您的组织特别需要通过XWindows访问图形登录，否则请删除它以减少潜在的攻击面。"]
 riskitems=["黑客渗透", "数据泄露"]

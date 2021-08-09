@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS"]
+os_arch=["Linux"]
 description=["登录后，/etc/motd文件的内容将显示给用户，并作为经过身份验证的用户的当日消息。"]
 rationale=["如果/etc/motd文件没有正确的所有权，则未经授权的用户可能会使用错误或误导性的信息对其进行修改。"]
 riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]

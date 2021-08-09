@@ -36,6 +36,7 @@ func (p *provider) trigger(l *lua.LState) int {
 	var rule *Rule
 
 	cfg := funcs.GetScriptGlobalConfig(l)
+
 	if cfg != nil {
 		rule = Chk.findRule(cfg.RulePath)
 	}

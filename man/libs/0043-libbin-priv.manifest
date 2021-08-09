@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机目录/bin下的文件权限是否被修改"]
 rationale=["bin目录放置的是系统关键命令的可执行文件，如果权限发生改变，可能会导致命令无法执行，对系统造成影响。"]
 riskitems=["功能不可用"]

@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机确保squashfs不被启用"]
 rationale=["取消对不需要的文件系统类型的支持可以减少系统的本地攻击面。如果不需要此文件系统类型，请禁用它。"]
 riskitems=["黑客渗透", "数据泄露"]

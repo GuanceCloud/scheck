@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机启动加载文件，对否被篡改"]
 rationale=["在linux下要把一个程序加入开机启动，一般可以通过修改rc.local来完成，但linux下通常有两个rc.local文件。分别是/etc/rc.local(连接文件)和/etc/init.d/rc.local(真实文件)。使用MD5sum求文件MD5校验值，对比新老校验值可以发现文件被修改。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

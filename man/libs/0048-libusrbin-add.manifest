@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机目录/usr/bin下有新文件被添加"]
 rationale=["/usr/bin目录放置的是系统基本的关键命令的可执行文件，如果有新文件添加，需要判断是否为正常的系统命令。"]
 riskitems=["功能不可用"]

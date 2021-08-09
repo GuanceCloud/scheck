@@ -3,18 +3,18 @@ package checker
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
+	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	log "github.com/sirupsen/logrus"
-	lua "github.com/yuin/gopher-lua"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"

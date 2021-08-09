@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Linux"]
+os_arch=["Linux"]
 description=["如果在使用systemd管理服务的计算机上使用Docker，请验证'Docker.socket'文件所有权和组所有权是否正确设置为'root'。"]
 rationale=["docker.socket文件包含可能改变docker远程API行为的敏感参数。因此，它应该只能由root写入，以保持文件的完整性。"]
 riskitems=["容器安全"]

@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Linux"]
+os_arch=["Linux"]
 description=["docker守护程序利用Docker环境文件设置Docker守护程序运行时环境。如果在使用systemd管理服务的计算机上使用Docker，则文件为/etc/sysconfig/Docker。在其他系统上，环境文件为/etc/default/docker。验证环境文件所有权和组所有权是否正确设置为root”。"]
 rationale=["docker环境文件包含敏感参数，这些参数可能会在运行时改变Docker守护程序的行为。因此，它应该由root”拥有，组应该由root”拥有，以保持文件的完整性。"]
 riskitems=["容器安全"]

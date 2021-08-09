@@ -8,7 +8,7 @@ cron="1 */1 * * *"
 disabled=false
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机fstab 文件被修改"]
 rationale=["文件/etc/fstab存放的是系统中的文件系统信息，如果配置错误，或恶意修改会造成主机无法启动。"]
 riskitems=["服务不可用"]

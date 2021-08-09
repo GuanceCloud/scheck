@@ -10,7 +10,7 @@ disabled=false
 
 
 
-os_arch=["CentOS"]
+os_arch=["Linux"]
 description=["sudo是linux系统管理指令，是允许系统管理员让普通用户执行一些或者全部的root命令的一个工具，如halt，reboot，su等等。这样不仅减少了root用户的登录 和管理时间，同样也提高了安全性。sudo不是对shell的一个代替，它是面向每个命令的。", "注意：visudo以类似于vipw（8）的安全方式编辑sudoers文件。 visudo锁定sudoers文件以防止同时进行多次编辑，提供基本的完整性检查并检查解析错误。如果当前用户正在编辑sudoers文件，您将收到一条提示消息，稍后再试。"]
 rationale=["更好的分配用户权限，减少root用户的管理操作。提高了系统的安全性。"]
 riskitems=["root管理操作增加，系统安全性大大降低。"]

@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机文件/etc/rc.local权限是否被修改"]
 rationale=["rc.local脚本是一个Linux系统开机后会自动执行的脚本，可以在该脚本内添加需要开机启动的命令行指令。"]
 riskitems=["功能不可用"]

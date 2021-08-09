@@ -10,7 +10,7 @@ disabled=false
 
 
 
-os_arch=["CentOS"]
+os_arch=["Linux"]
 description=["轻量级目录访问协议（LDAP）是作为NIS/YP的替代品引入的。它是一种提供从中央数据库中查找信息的方法的服务。"]
 rationale=["如果系统不需要充当LDAP客户端，建议删除该软件以减少潜在的攻击面。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

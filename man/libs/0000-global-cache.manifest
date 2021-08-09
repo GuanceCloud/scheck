@@ -7,4 +7,4 @@ cron="0 * * * *"
 # 开关
 disabled=false
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
