@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -141,7 +142,7 @@ func TestChecker(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	_ = cancel
-	Start(ctx, ruleDir, "")
+	Start(ctx, ruleDir, &config.ScOutput{})
 }
 
 func TestParse(t *testing.T) {

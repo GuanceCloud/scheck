@@ -56,17 +56,17 @@ var (
 )
 
 type Config struct {
-	RuleDir       string    `toml:"rule_dir,omitempty"`
-	CustomRuleDir string    `toml:"custom_rule_dir,omitempty"` // 用户自定义入口
-	Output        string    `toml:"output,omitempty"`
-	Cron          string    `toml:"cron,omitempty"`
-	DisableLog    bool      `toml:"disable_log,omitempty"`
-	Log           string    `toml:"log,omitempty"`
-	LogLevel      string    `toml:"log_level,omitempty"`
-	System        *System   `toml:"system,omitempty"`
-	ScOutput      *ScOutput `toml:"scoutput"`
-	Logging       *Logging  `toml:"logging,omitempty"` // 日志配置
-	Cgroup        *Cgroup   `toml:"cgroup"`            // 动态控制
+	//RuleDir       string    `toml:"rule_dir,omitempty"`
+	//CustomRuleDir string    `toml:"custom_rule_dir,omitempty"` // 用户自定义入口
+	//Output        string    `toml:"output,omitempty"`
+	//Cron          string    `toml:"cron,omitempty"`
+	//DisableLog    bool      `toml:"disable_log,omitempty"`
+	//Log           string    `toml:"log,omitempty"`
+	//LogLevel      string    `toml:"log_level,omitempty"`
+	System   *System   `toml:"system,omitempty"`
+	ScOutput *ScOutput `toml:"scoutput"`
+	Logging  *Logging  `toml:"logging,omitempty"` // 日志配置
+	Cgroup   *Cgroup   `toml:"cgroup"`            // 动态控制
 }
 
 type System struct {
@@ -77,7 +77,7 @@ type System struct {
 }
 
 type ScOutput struct {
-	Http   *Http   `toml:"output,omitempty"`
+	Http   *Http   `toml:"http,omitempty"`
 	Log    *Log    `toml:"log,omitempty"`
 	AliSls *AliSls `toml:"alisls,omitempty"`
 }
@@ -98,6 +98,7 @@ type AliSls struct {
 	ProjectName     string `toml:"project_name"`
 	LogStoreName    string `toml:"log_store_name"`
 	Description     string `toml:"description,omitempty"`
+	SecurityToken   string `toml:"security_token,omitempty"`
 }
 
 type Logging struct {
@@ -114,25 +115,39 @@ type Cgroup struct {
 }
 
 func DefaultConfig() *Config {
+
 	c := &Config{
-		System: &System{RuleDir: "",
-			CustomRuleDir: "",
+		System: &System{
+			RuleDir:       "/usr/local/scheck/rules.d",
+			CustomRuleDir: "/usr/local/scheck/custom.rules.d",
 			Cron:          "",
 			DisableLog:    true,
 		},
 		ScOutput: &ScOutput{
 			Http: &Http{
 				Enable: true,
-				Output: "",
+				Output: "http://127.0.0.1:9529/v1/write/security",
 			},
 			Log: &Log{
 				Enable: false,
-				Output: "",
+				Output: filepath.Join("/var/local/datakit", "event.log"),
 			},
 			AliSls: &AliSls{},
 		},
+		Logging: &Logging{
+			LogLevel: "info",
+			Log:      "/usr/local/scheck/log",
+		},
 		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0},
 	}
+
+	// windows 下，日志继续跟 datakit 放在一起
+	if runtime.GOOS == "windows" {
+		c.Logging.Log = filepath.Join(securityChecker.InstallDir, "log")
+		c.System.RuleDir = filepath.Join(securityChecker.InstallDir, "rules.d")
+		c.ScOutput.Log.Output = filepath.Join(securityChecker.InstallDir, "event.log")
+	}
+
 	return c
 }
 

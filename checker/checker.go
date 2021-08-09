@@ -43,9 +43,9 @@ type (
 )
 
 // Start
-func Start(ctx context.Context, rulesDir, outputpath string) {
+func Start(ctx context.Context, rulesDir string, outputpath *config.ScOutput) {
 
-	log.Debugf("output: %s", outputpath)
+	log.Debugf("output: %v", outputpath)
 	log.Debugf("rule dir: %s", rulesDir)
 
 	Chk = newChecker(rulesDir)
@@ -290,9 +290,12 @@ func sleepContext(ctx context.Context, duration time.Duration) error {
 func TestRule(rulepath string) {
 
 	log.SetReportCaller(true)
+	pwd, _ := os.Getwd()
+
+	fmt.Println(filepath.Join(pwd, filepath.Dir(rulepath)))
 
 	config.Cfg = &config.Config{
-		RuleDir: `/usr/local/scheck/rules.d`,
+		System: &config.System{RuleDir: filepath.Join(pwd, filepath.Dir(rulepath))},
 	}
 
 	rulepath, _ = filepath.Abs(rulepath)
@@ -301,7 +304,7 @@ func TestRule(rulepath string) {
 
 	Chk = newChecker(ruledir)
 	ctx, cancelfun := context.WithCancel(context.Background())
-	output.Start(ctx, "")
+	output.Start(ctx, &config.ScOutput{})
 	defer cancelfun()
 
 	r := newRule(rulepath)

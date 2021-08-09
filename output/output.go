@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -26,11 +28,11 @@ type (
 
 	DataOutputer struct {
 		outputPath string
-
+		scOutPut   *config.ScOutput
 		httpCli    *http.Client
 		outputFile *os.File
-
-		queue chan *sample
+		Sls        *AliYunLog
+		queue      chan *sample
 	}
 )
 
@@ -38,42 +40,80 @@ var (
 	Outputer *DataOutputer
 )
 
-func NewOutputer(output string) *DataOutputer {
+func NewOutputer(scOutPut *config.ScOutput) *DataOutputer {
 	o := &DataOutputer{
-		outputPath: output,
-		queue:      make(chan *sample, 1000),
+		//outputPath: output,
+		scOutPut: scOutPut,
+		queue:    make(chan *sample, 1000),
+	}
+	if scOutPut.AliSls == nil && scOutPut.Log == nil && scOutPut.Http == nil {
+		o.outputFile = os.Stdout
+	} else if o.scOutPut.Http.Enable {
+		if strings.HasPrefix(o.scOutPut.Http.Output, "http://") || strings.HasPrefix(o.scOutPut.Http.Output, "https://") {
+			o.httpCli = &http.Client{
+				Timeout: 30 * time.Second,
+			}
+		}
+	} else if o.scOutPut.Log.Enable {
+		if strings.HasPrefix(o.scOutPut.Log.Output, "file://") {
+			path := strings.TrimPrefix(o.scOutPut.Log.Output, "file://")
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+			if err != nil {
+				os.MkdirAll(filepath.Dir(path), 0775)
+				f, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+				if err != nil {
+					log.Errorf("%s", err)
+				}
+			} else {
+				o.outputFile = f
+			}
+		}
+	} else if o.scOutPut.AliSls.Enable {
+		// Todo 阿里云sls 对接
+		if o.scOutPut.AliSls.AccessKeyID == "" || o.scOutPut.AliSls.AccessKeySecret == "" || o.scOutPut.AliSls.EndPoint == "" {
+			log.Errorf("%s", "access_key_id or access_key_secret or endpoint cannot be empty ")
+		}
+
+		var sls AliYunLog
+		o.Sls = &sls
+		o.Sls.conn(o.scOutPut.AliSls)
+		//创建工程
+		o.Sls.CreateProject()
+
+	} else {
+		o.outputFile = os.Stdout
 	}
 
-	if o.outputPath == "" {
-		o.outputFile = os.Stdout
-	} else if strings.HasPrefix(o.outputPath, "file://") {
-		path := strings.TrimPrefix(o.outputPath, "file://")
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-		if err != nil {
-			os.MkdirAll(filepath.Dir(path), 0775)
-			f, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-			if err != nil {
-				log.Errorf("%s", err)
-			}
-		} else {
-			o.outputFile = f
-		}
-	} else if strings.HasPrefix(o.outputPath, "http://") || strings.HasPrefix(o.outputPath, "https://") {
-		o.httpCli = &http.Client{
-			Timeout: 30 * time.Second,
-		}
-	} else {
-		log.Warnf("invalid output: %s", output)
-	}
+	//if o.outputPath == "" {
+	//	o.outputFile = os.Stdout
+	//} else if strings.HasPrefix(o.outputPath, "file://") {
+	//	path := strings.TrimPrefix(o.outputPath, "file://")
+	//	f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	//	if err != nil {
+	//		os.MkdirAll(filepath.Dir(path), 0775)
+	//		f, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	//		if err != nil {
+	//			log.Errorf("%s", err)
+	//		}
+	//	} else {
+	//		o.outputFile = f
+	//	}
+	//} else if strings.HasPrefix(o.outputPath, "http://") || strings.HasPrefix(o.outputPath, "https://") {
+	//	o.httpCli = &http.Client{
+	//		Timeout: 30 * time.Second,
+	//	}
+	//} else {
+	//	log.Warnf("invalid output: %s", output)
+	//}
 
 	Outputer = o
 
 	return o
 }
 
-func Start(ctx context.Context, output string) {
+func Start(ctx context.Context, scOutPut *config.ScOutput) {
 
-	Outputer = NewOutputer(output)
+	Outputer = NewOutputer(scOutPut)
 
 	go func() {
 		defer Outputer.Close()
@@ -114,10 +154,28 @@ func (o *DataOutputer) Close() {
 }
 
 func SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
-
-	data, err := makeMetric(measurement, tags, fields, t...)
-	if err != nil {
-		return err
+	var data []byte
+	var err error
+	// 阿里云日志处理
+	if Outputer.scOutPut.AliSls.Enable {
+		sls := make(map[string]interface{})
+		sls["RuleID"] = measurement
+		for k, v := range tags {
+			sls[k] = v
+		}
+		for k, v := range fields {
+			sls[k] = v
+		}
+		sls["timestamp"] = time.Now().UTC()
+		data, err = json.Marshal(sls)
+		if err != nil {
+			return err
+		}
+	} else {
+		data, err = makeMetric(measurement, tags, fields, t...)
+		if err != nil {
+			return err
+		}
 	}
 
 	select {
@@ -152,11 +210,30 @@ func (o *DataOutputer) sendSamples(samples []*sample) error {
 	for _, s := range samples {
 		datas = append(datas, s.data)
 	}
-	return o.sendData(bytes.Join(datas, []byte{'\n'}))
+	if o.scOutPut.AliSls.Enable {
+		return o.sendSls(datas)
+	} else {
+		return o.sendData(bytes.Join(datas, []byte{'\n'}))
+	}
+}
+
+// sls 发送方法
+func (o *DataOutputer) sendSls(datas [][]byte) error {
+	for _, i := range datas {
+		fields := make(map[string]interface{})
+		if err := json.Unmarshal(i, &fields); err != nil {
+			log.Fatalf("data 序列号失败 %s", err)
+			return err
+		}
+		var err error
+		err = o.Sls.CreateIndex(fields)
+		err = o.Sls.PutLogs(fields)
+		return err
+	}
+	return nil
 }
 
 func (o *DataOutputer) sendData(data []byte) error {
-
 	if len(data) == 0 {
 		return nil
 	}

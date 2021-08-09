@@ -19,7 +19,6 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
-	"text/template"
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
@@ -79,15 +78,15 @@ func main() {
 }
 
 func setupLogger() {
-	if config.Cfg.DisableLog {
+	if config.Cfg.System.DisableLog {
 		log.SetLevel(log.PanicLevel)
 	} else {
 		log.SetReportCaller(true)
-		if config.Cfg.Log != "" {
-			lf, err := os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+		if config.Cfg.Logging.Log != "" {
+			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
-				os.MkdirAll(filepath.Dir(config.Cfg.Log), 0775)
-				lf, err = os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
+				os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
 				if err != nil {
 					log.Fatalf("%s", err)
 				}
@@ -96,7 +95,7 @@ func setupLogger() {
 			//log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
 			//log.AddHook() // todo 重写hook接口 就可以实现多端输出
 		}
-		switch config.Cfg.LogLevel {
+		switch config.Cfg.Logging.LogLevel {
 		case "debug":
 			log.SetLevel(log.DebugLevel)
 		case "warn":
@@ -162,24 +161,30 @@ func applyFlags() {
 	}
 
 	if *flagCfgSample {
+		//
+		//defaultOutput := `http://127.0.0.1:9529/v1/write/security`
+		//output := os.Getenv("SCHECK_OUTPUT")
+		//if output == "" {
+		//	output = defaultOutput
+		//}
+		//tmp, err := template.New("cfg").Parse(config.MainConfigSample)
+		//if err != nil {
+		//	log.Fatalf("%s", err)
+		//}
+		//var buf bytes.Buffer
+		//err = tmp.Execute(&buf, map[string]string{
+		//	"Output": output,
+		//})
+		//if err != nil {
+		//	log.Fatalf("%s", err)
+		//}
+		//var buf bytes.Buffer
+		res, err := securityChecker.TomlMarshal(config.DefaultConfig())
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		os.Stdout.WriteString(string(res))
 
-		defaultOutput := `http://127.0.0.1:9529/v1/write/security`
-		output := os.Getenv("SCHECK_OUTPUT")
-		if output == "" {
-			output = defaultOutput
-		}
-		tmp, err := template.New("cfg").Parse(config.MainConfigSample)
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
-		var buf bytes.Buffer
-		err = tmp.Execute(&buf, map[string]string{
-			"Output": output,
-		})
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
-		os.Stdout.WriteString(buf.String())
 		os.Exit(0)
 	}
 
@@ -240,17 +245,17 @@ func run() {
 		}()
 		fmt.Println("2 check run")
 		// 测试packd2 20210723 测试通过
-		man.ScheckCoreSyncDisk(config.Cfg.RuleDir)
+		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		time.Sleep(time.Second * 5)
-		checker.Start(ctx, config.Cfg.RuleDir, config.Cfg.Output)
+		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.ScOutput)
 	}()
 	// 用自定义入口
 	go func() {
 		defer func() {
 			wg.Done()
 		}() //程序退出的时候执行
-		fmt.Printf("用户自定义的路径是%s \n", config.Cfg.CustomRuleDir)
-		checker.Start(ctx, config.Cfg.CustomRuleDir, config.Cfg.Output)
+		fmt.Printf("用户自定义的路径是%s \n", config.Cfg.System.CustomRuleDir)
+		checker.Start(ctx, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
 	// 启动 cgroup 控制cpu
 	go func() {

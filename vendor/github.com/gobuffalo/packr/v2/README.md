@@ -1,3 +1,7 @@
+**NOTICE: Please consider migrating your projects to github.com/markbates/pkger. It has an idiomatic API, minimal dependencies, a stronger test suite (tested directly against the std lib counterparts), transparent tooling, and more.**
+
+https://blog.gobuffalo.io/introducing-pkger-static-file-embedding-in-go-1ce76dc79c65
+
 # Packr (v2)
 
 [![GoDoc](https://godoc.org/github.com/gobuffalo/packr/v2?status.svg)](https://godoc.org/github.com/gobuffalo/packr/v2)
@@ -40,8 +44,6 @@ The `--legacy` command is available on all commands that generate `-packr.go` fi
 
 ```bash
 $ packr2 --legacy
-$ packr2 install --legacy
-$ packr2 build --legacy
 ```
 
 ## Usage
@@ -139,11 +141,7 @@ func main() {
 
 ---
 
-## Building a Binary (the easy way)
-
-When it comes time to build, or install, your Go binary, simply use `packr2 build` or `packr2 install` just as you would `go build` or `go install`. All flags for the `go` tool are supported and everything works the way you expect, the only difference is your static assets are now bundled in the generated binary. If you want more control over how this happens, looking at the following section on building binaries (the hard way).
-
-## Building a Binary (the hard way)
+## Building a Binary
 
 Before you build your Go binary, run the `packr2` command first. It will look for all the boxes in your code and then generate `.go` files that pack the static files into bytes that can be bundled into the Go binary.
 
