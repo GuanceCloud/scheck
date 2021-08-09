@@ -29,6 +29,8 @@ var (
 		`linux/amd64`,
 		`linux/arm`,
 		`linux/arm64`,
+		`windows/386`,
+		`windows/amd64`,
 	}
 	ReleaseVersion = git.Version
 )

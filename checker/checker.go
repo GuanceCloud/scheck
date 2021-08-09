@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -130,16 +129,18 @@ func (c *Checker) doDelRule(r *Rule) {
 		r.rt.Close()
 	}
 	delete(c.rules, r.File)
-	// delete lua file
-	if err := os.Remove(r.File); err != nil {
-		log.Warnf("删除lua文件错误 err=%v", err)
-	}
-	// delete manifest file
-	index := strings.LastIndex(r.File, ".")
-	manifestFile := r.File[:index] + ".manifest"
-	if err := os.Remove(manifestFile); err != nil {
-		log.Warnf("删除manifestFile文件错误 err=%v", err)
-	}
+
+	/*
+		// delete lua file
+		if err := os.Remove(r.File); err != nil {
+			log.Warnf("删除lua文件错误 err=%v", err)
+		}
+		// delete manifest file
+		index := strings.LastIndex(r.File, ".")
+		manifestFile := r.File[:index] + ".manifest"
+		if err := os.Remove(manifestFile); err != nil {
+			log.Warnf("删除manifestFile文件错误 err=%v", err)
+		}*/
 }
 
 func (c *Checker) addManifest(m *RuleManifest) {
