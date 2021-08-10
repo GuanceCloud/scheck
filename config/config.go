@@ -123,13 +123,13 @@ func DefaultConfig() *Config {
 			},
 			Log: &Log{
 				Enable: false,
-				Output: filepath.Join("file:///var/log/scheck", "event.log"),
+				Output: fmt.Sprintf("file://%s", filepath.Join("/var/log/scheck", "event.log")),
 			},
 			AliSls: &AliSls{},
 		},
 		Logging: &Logging{
 			LogLevel: "info",
-			Log:      filepath.Join("/usr/local/scheck/", "log"),
+			Log:      filepath.Join("/var/log/scheck", "log"),
 		},
 		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0},
 	}
@@ -138,7 +138,7 @@ func DefaultConfig() *Config {
 	if runtime.GOOS == "windows" {
 		c.Logging.Log = filepath.Join(securityChecker.InstallDir, "log")
 		c.System.RuleDir = filepath.Join(securityChecker.InstallDir, "rules.d")
-		c.ScOutput.Log.Output = filepath.Join(securityChecker.InstallDir, "event.log")
+		c.ScOutput.Log.Output = fmt.Sprintf("file://%s", filepath.Join(securityChecker.InstallDir, "event.log"))
 	}
 
 	return c
