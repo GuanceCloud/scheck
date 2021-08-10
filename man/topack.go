@@ -41,34 +41,6 @@ func GetAllName() []string {
 	return rms
 }
 
-/*  todo 两个文件必须同时存在
-for name := range rms {
-		index := strings.LastIndex(name, ".")
-		if index != -1 {
-			continue
-		}
-		// 判断另一个文件
-		switch name[index:] {
-		case ".lua":
-			if _, ok := rms[name[:index]+".manifest"]; !ok {
-				log.Warn("判断文件是否成对存在时 出现问题 不存在manifest： %s.manifest", name[:index])
-				// 不存在
-				continue
-			}
-		case ".manifest":
-			if _, ok := rms[name[:index]+".lua"]; !ok {
-				log.Warn("判断文件是否成对存在时 出现问题 不存在lua： %s.lua", name[:index])
-				continue
-			}
-
-		default:
-
-		}
-
-		rules = append(rules, name)
-	}
-*/
-
 // WalkList 递归加载文件
 func WalkList() {
 	ScriptBox.Walk(func(s string, file packd.File) error {
