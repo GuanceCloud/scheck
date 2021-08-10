@@ -56,13 +56,6 @@ var (
 )
 
 type Config struct {
-	//RuleDir       string    `toml:"rule_dir,omitempty"`
-	//CustomRuleDir string    `toml:"custom_rule_dir,omitempty"` // 用户自定义入口
-	//Output        string    `toml:"output,omitempty"`
-	//Cron          string    `toml:"cron,omitempty"`
-	//DisableLog    bool      `toml:"disable_log,omitempty"`
-	//Log           string    `toml:"log,omitempty"`
-	//LogLevel      string    `toml:"log_level,omitempty"`
 	System   *System   `toml:"system,omitempty"`
 	ScOutput *ScOutput `toml:"scoutput"`
 	Logging  *Logging  `toml:"logging,omitempty"` // 日志配置
@@ -130,7 +123,7 @@ func DefaultConfig() *Config {
 			},
 			Log: &Log{
 				Enable: false,
-				Output: filepath.Join("/var/log/scheck", "event.log"),
+				Output: filepath.Join("file:///var/log/scheck", "event.log"),
 			},
 			AliSls: &AliSls{},
 		},

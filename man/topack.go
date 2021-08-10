@@ -102,7 +102,7 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 				if content, err := ScriptBox.Find(name); err == nil {
 					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
 					name = strings.ReplaceAll(name, "\\", "/")
-					fmt.Println(strings.Split(name, "/"))
+					//fmt.Println(strings.Split(name, "/"))
 					// 处理多级目录
 					paths := strings.Split(name, "/")
 					if len(paths) > 1 {

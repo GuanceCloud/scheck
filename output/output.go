@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -15,6 +14,8 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 
 	log "github.com/sirupsen/logrus"
 
