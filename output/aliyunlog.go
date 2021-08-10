@@ -1,9 +1,9 @@
 package output
 
 import (
-	"fmt"
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/gogo/protobuf/proto"
+	log "github.com/sirupsen/logrus"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"time"
 )
@@ -32,7 +32,7 @@ func (a *AliYunLog) CreateProject() {
 	if err != nil {
 		_, err := a.Client.CreateProject(a.AliSls.ProjectName, a.AliSls.Description)
 		if err != nil {
-			fmt.Errorf("Create project : %s failed %v\n", a.AliSls.Description, err)
+			log.Errorf("Create project : %s failed %v\n", a.AliSls.Description, err)
 		}
 	}
 }
@@ -43,10 +43,9 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 
 	err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName, 3, 2, true, 6)
 	if err != nil {
-		fmt.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
+		log.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
 		return err
 	}
-	//fmt.Printf("Create logstore : %v successfully.\n", a.AliSls.LogStoreName)
 
 	indexKey := map[string]sls.IndexKey{}
 	for i, _ := range fields {
@@ -71,7 +70,7 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 	}
 	err = a.Client.CreateIndex(a.AliSls.ProjectName, a.AliSls.LogStoreName, index)
 	if err != nil {
-		fmt.Errorf("Create Index failed %v\n", err)
+		log.Errorf("Create Index failed %v\n", err)
 		return err
 	}
 	//fmt.Println("CreateIndex success")
@@ -82,17 +81,16 @@ func (a *AliYunLog) PutLogs(fields map[string]interface{}) error {
 	logs := []*sls.Log{}
 	content := []*sls.LogContent{}
 	for i, _ := range fields {
-		fmt.Printf("%v", fields[i])
 		content = append(content, &sls.LogContent{
 			Key:   proto.String(i),
 			Value: proto.String(fields[i].(string)),
 		})
 	}
-	log := &sls.Log{
+	slslog := &sls.Log{
 		Time:     proto.Uint32(uint32(time.Now().Unix())),
 		Contents: content,
 	}
-	logs = append(logs, log)
+	logs = append(logs, slslog)
 	loggroup := &sls.LogGroup{
 		//Topic:  proto.String("test"),
 		//Source: proto.String("10.238.222.116"),
@@ -101,10 +99,10 @@ func (a *AliYunLog) PutLogs(fields map[string]interface{}) error {
 
 	//fmt.Println(err)
 	if err := a.Client.PutLogs(a.AliSls.ProjectName, a.AliSls.LogStoreName, loggroup); err == nil {
-		fmt.Println("PutLogs success")
+		log.Debug("PutLogs success")
 		return nil
 	} else {
-		fmt.Printf("PutLogs failed %v\n", err)
+		log.Errorf("PutLogs failed %v\n", err)
 		return err
 	}
 }

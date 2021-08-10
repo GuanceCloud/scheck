@@ -226,6 +226,7 @@ func (o *DataOutputer) sendSls(datas [][]byte) error {
 			return err
 		}
 		var err error
+		o.Sls.conn(o.scOutPut.AliSls)
 		err = o.Sls.CreateIndex(fields)
 		err = o.Sls.PutLogs(fields)
 		return err
