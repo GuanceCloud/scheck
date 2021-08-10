@@ -127,7 +127,7 @@ func main() {
 			return
 		}
 
-		fmt.Printf("\n")
+		//fmt.Printf("\n")
 
 		// download data
 		//install.CurDownloading = dlData
@@ -195,7 +195,7 @@ Golang Version: %s
 				runtime.GOOS, runtime.GOARCH, DataKitVersion), true, true); err != nil {
 			return
 		}
-		fmt.Printf("\n")
+		//fmt.Printf("\n")
 		/*
 			install.CurDownloading = dlData
 			if err := install.Download(dataUrl, "data.tar.gz", true, true); err != nil {

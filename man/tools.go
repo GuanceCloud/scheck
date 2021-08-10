@@ -234,7 +234,7 @@ func DfTemplate(filesName []string, outputPath string) {
 		CreateFile(meta.GetTemplate(), metaPath)
 		count++
 	}
-	fmt.Printf("模版生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
+	log.Printf("模版生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
 
 }
 
@@ -284,7 +284,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 
 	yuque := Tmp{Path: "summary", Obj: Summary{Category: category}}
 	yuquePath := fmt.Sprintf("%s/%s", outputPath, "summary.md")
-	fmt.Printf("doc文档生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
+	log.Printf("doc文档生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
 
 	CreateFile(yuque.GetTemplate(), yuquePath)
 

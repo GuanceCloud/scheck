@@ -45,7 +45,7 @@ func GetAllName() []string {
 func WalkList() {
 	ScriptBox.Walk(func(s string, file packd.File) error {
 
-		fmt.Println(file.Name()) // 二级目录打印结果：users/0500-mysql-weak-psw.lua
+		//fmt.Println(file.Name()) // 二级目录打印结果：users/0500-mysql-weak-psw.lua
 		return nil
 	})
 	//fmt.Println(ScriptBox.List())
@@ -56,20 +56,20 @@ func WalkList() {
 	重新写入脚本
 */
 func ScheckCoreSyncDisk(ruleDir string) error {
-	fmt.Println("进入ScheckCoreSyncDisk")
+	//fmt.Println("进入ScheckCoreSyncDisk")
 	// 删除目录
 	if _, err := os.Stat(ruleDir); err == nil {
 		if err := os.RemoveAll(ruleDir); err != nil {
 			log.Fatal(err)
 			return nil
 		}
-		fmt.Println("已经全部删除文件。。")
+		//fmt.Println("已经全部删除文件。。")
 	}
 	// 创建目录，将lua 脚本同步到磁盘上
 	if _, err := os.Stat(ruleDir); err != nil {
 		if err := os.Mkdir(ruleDir, 0775); err == nil {
 			// 遍历 lua脚本名称
-			fmt.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
+			log.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
 			for _, name := range ScriptBox.List() {
 				if content, err := ScriptBox.Find(name); err == nil {
 					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
@@ -91,7 +91,7 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 
 				}
 			}
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 

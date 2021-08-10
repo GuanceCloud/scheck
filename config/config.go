@@ -161,10 +161,10 @@ func LoadConfig(p string) error {
 
 // 查看当前的cpu和mem大小 控制cgroup的百分比 从而控制程序运行过程中占用系统资源的情况
 func hostInfo() {
-	cpuMun := runtime.NumCPU()
+	//cpuMun := runtime.NumCPU()
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	fmt.Printf("当前cpu数量是%d 内存是%d", cpuMun, m.TotalAlloc)
+	//fmt.Printf("当前cpu数量是%d 内存是%d", cpuMun, m.TotalAlloc)
 }
 
 func CreateSymlinks() {

@@ -79,7 +79,7 @@ func StartService() error {
 }
 
 func (p *program) Start(s service.Service) error {
-	fmt.Printf("-------进入 start...---- \n")
+	//fmt.Printf("-------进入 start...---- \n")
 	if Entry == nil {
 		return fmt.Errorf("entry not set")
 	}

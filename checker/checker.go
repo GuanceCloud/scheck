@@ -304,7 +304,7 @@ func TestRule(rulepath string) {
 	log.SetReportCaller(true)
 	pwd, _ := os.Getwd()
 
-	fmt.Println(filepath.Join(pwd, filepath.Dir(rulepath)))
+	//fmt.Println(filepath.Join(pwd, filepath.Dir(rulepath)))
 
 	config.Cfg = &config.Config{
 		System: &config.System{RuleDir: filepath.Join(pwd, filepath.Dir(rulepath))},
