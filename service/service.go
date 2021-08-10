@@ -26,15 +26,12 @@ type program struct{}
 func NewService() (service.Service, error) {
 
 	prog := &program{}
-	srvOpts := make(service.KeyValue)
-	srvOpts["config"] = "scheck.conf"
 	scfg := &service.Config{
 		Name:        ServiceName,
 		DisplayName: ServiceName,
 		Description: ServiceDescription,
 		Executable:  ServiceExecutable,
 		Arguments:   ServiceArguments,
-		Option:      srvOpts,
 	}
 
 	if runtime.GOOS == "darwin" {
@@ -93,7 +90,6 @@ func (p *program) Start(s service.Service) error {
 
 func (p *program) Stop(s service.Service) error {
 	close(StopCh)
-
 	// We must wait here:
 	// On windows, we stop datakit in services.msc, if datakit process do not
 	// echo to here, services.msc will complain the datakit process has been

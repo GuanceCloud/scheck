@@ -14,6 +14,7 @@ import (
 
 var (
 	period = uint64(1000000) // 1 second
+
 )
 
 func start() {
@@ -28,12 +29,17 @@ func start() {
 
 	l.Infof("with %d CPU, set CPU limimt %.2f%%", runtime.NumCPU(), float64(quotaLow)/float64(period)*100.0)
 
-	control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/datakit"),
+	control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/scheck"),
 		&specs.LinuxResources{
 			CPU: &specs.LinuxCPU{
 				Period: &period,
 				Quota:  &quotaLow,
-			}})
+			},
+			Memory: &specs.LinuxMemory{
+				Limit: &memLimit,
+				Swap:  &swap,
+			},
+		})
 	if err != nil {
 		l.Errorf("failed of new cgroup: %s", err)
 		return
@@ -49,6 +55,7 @@ func start() {
 
 	level := "low"
 	waitNum := 0
+
 	for {
 		percpu, err := getCPUPercent(time.Second * 3)
 		if err != nil {
@@ -89,6 +96,7 @@ func start() {
 			continue
 		}
 		l.Debugf("switch to quota %.2f%%", float64(q)/float64(period)*100.0)
+
 	}
 }
 

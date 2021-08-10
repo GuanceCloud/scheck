@@ -24,8 +24,6 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
-
 	log "github.com/sirupsen/logrus"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
@@ -67,7 +65,6 @@ func main() {
 		fmt.Printf("加载配置文件错误 err=%v \n", err)
 		log.Fatalf("%s", err)
 	}
-	time.Sleep(time.Second * 3)
 	setupLogger()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
@@ -237,7 +234,7 @@ func run() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 	//内置系统
 	go func() {
 		defer func() {
@@ -247,21 +244,9 @@ func run() {
 		// 测试packd2 20210723 测试通过
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		time.Sleep(time.Second * 5)
-		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.ScOutput)
+		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
-	// 用自定义入口
-	go func() {
-		defer func() {
-			wg.Done()
-		}() //程序退出的时候执行
-		fmt.Printf("用户自定义的路径是%s \n", config.Cfg.System.CustomRuleDir)
-		checker.Start(ctx, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
-	}()
-	// 启动 cgroup 控制cpu
-	go func() {
-		fmt.Printf("当前的配置 cgroup max=%.2f min=%.2f \n", config.Cfg.Cgroup.CPUMax, config.Cfg.Cgroup.CPUMin)
-		cgroup.Run()
-	}()
+
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 
@@ -274,9 +259,9 @@ func run() {
 			cancel()
 		}
 	}()
-
 	wg.Wait()
-	log.Printf("[info] quit")
+	service.Stop()
+
 }
 
 func updateRules() bool {
@@ -361,5 +346,3 @@ func updateRules() bool {
 	fmt.Println("Install rules successfully")
 	return true
 }
-
-// output 发送规则：满100个字节就发送
