@@ -41,34 +41,63 @@ service scheck start/stop/restart
 
 > 注意：Security Checker 目前仅支持 Linux
 
-可配置环境变量`SCHECK_OUTPUT`来设置 Security Checker 安装后的初始 output。  
+可配置环境变量`scoutput`来设置 Security Checker 安装后的初始 output。  
 
-默认安装目录为 `/usr/local/scheck`。安装完成后会同时将可用的规则下载安装到`rules.d`子目录下。Security Checker的更新不会更新规则包，规则包的更新可以用命令`scheck --update-rules`来完成。
+默认安装目录为 `/usr/local/scheck`。
+安装完成后会将可用系统规则安装到`rules.d`子目录下。Security Checker的更新会更新规则包。
 
 ## 配置
 
 进入默认安装目录 `/usr/local/scheck`，打开配置文件 `scheck.conf`，配置文件采用 [TOML](https://toml.io/en/) 格式，说明如下：
 
 ```toml
-# ##(必选) 存放检测脚本的目录
-rule_dir = '/usr/local/scheck/rules.d'
+[system]
+  # ##(必选) 系统存放检测脚本的目录
+  rule_dir = "/usr/local/scheck/rules.d"
+  # ##客户自定义目录
+  custom_dir = "/usr/local/scheck/custom.rules.d"
+  #热更新
+  lua_HotUpdate = ""
+  cron = ""
+  #是否禁用日志
+  disable_log = false
 
-# ##(必选) 将检测结果采集到哪里，支持本地文件或http(s)链接
-# ##本地文件时需要使用前缀 file://， 例：file:///your/file/path
-# ##远程server，例：http(s)://your.url
-output = ''
+[scoutput]
+   # ##远程server，例：http(s)://your.url
+  [scoutput.http]
+    enable = true
+    output = "http://127.0.0.1:9529/v1/write/security"
+  [scoutput.log]
+    enable = false
+    # ##本地文件时需要使用前缀 file://， 例：file:///your/file/path
+    output = "file:///var/log/scheck/event.log"
+  # 阿里云日志系统
+  [scoutput.alisls]
+    enable = false
+    endpoint = ""
+    access_key_id = ""
+    access_key_secret = ""
+    project_name = "zhuyun-scheck"
+    log_store_name = "scheck"
 
-# ##(可选) 程序本身的日志配置
-disable_log = false #是否禁用日志
-log = '/usr/local/scheck/log'
-log_level = 'info'
+[logging]
+  # ##(可选) 程序本身的日志配置
+  log = "/var/log/scheck/log"
+  log_level = "info"
+
+[cgroup]
+  enable = false
+  cpu_max = 30.0
+  cpu_min = 5.0
+  mem = 0
+
 ```
 
 > **主配置文件**的修改**需要重启服务**才生效
 
 ## 检测规则
 
-检测规则放在规则目录中：由配置文件中 `rule_dir` 指定。每项规则对应两个文件：  
+检测规则放在规则目录中：由配置文件中 `rule_dir` 或是自定义用户目录`custom_dir`指定。每项规则对应两个文件：  
 
 1. 脚本文件：使用 [Lua](http://www.lua.org/) 语言来编写，必须以 `.lua` 为后缀名。    
 2. 清单文件：使用 [TOML](https://toml.io/en/) 格式，必须以 `.manifest` 为后缀名，[详情](#清单文件)。  
@@ -119,6 +148,8 @@ desc = ''
 # 配置事件的执行周期（使用 linux crontab 的语法规则）
 cron = ''
 
+# 平台支持
+os_arch = ["Linux", "Windows"]
 # ---------------- 可选字段 ---------------
 
 # 禁用当前规则
@@ -229,16 +260,16 @@ Security Checker 的输出为行协议格式。以规则 ID 为指标名。
 | `title`    | string | 安全事件标题                                   | true     |
 | `category` | string | 事件分类                                       | true     |
 | `level`    | string | 安全事件等级，支持：`info`，`warn`，`critical` | true     |
-| `host`     | string | 事件来源主机名（默认有）                       | false    |
+| `host`     | string | 事件来源主机名（默认有） 
+| `os_arch`  | string | 主机平台                                    | true    |
 | 自定义tags | string | 在清单文件中自定义的tag                        | false    |
 
 目前的几种 `category` 分类
 
 - `network`: 网络相关，主要涉及连接、端口、防火墙等
 - `storage`：存储相关，如磁盘、HDFS 等
-- `database`：各种数据库相关（MySQL/Redis/...）
+- `db`：各种数据库相关（MySQL/Redis/...）
 - `system`：主要是操作系统相关
-- `webserver`：如 Ngxin/Tomcat 这些
 - `container`：包括 Docker 和 Kubernetes
 
 ### 指标列表(fields)
@@ -271,6 +302,7 @@ level    = 'warn'
 title    = '监视文件变动'
 desc     = '文件 {{.File}} 发生了变化'
 cron     = '*/10 * * * *' #表示每10秒执行该lua脚本
+os_arch  = ["CentOS", "Darwin"]
 ```
 
 3. 在清单文件同级目录下新建脚本文件 `files.lua`，编辑如下：
@@ -322,6 +354,7 @@ title      = '监视系统用户变动'
 desc       = '{{.Content}}'
 cron       = '*/10 * * * *'
 instanceId = 'id-xxx'
+os_arch    = ["CentOS", "Darwin"]
 ```
 
 检测代码 `users.lua`：  
@@ -404,6 +437,7 @@ level    = 'warn'
 title    = '监视新端口'
 desc     = '{{.Content}}'
 cron     = '*/10 * * * *'
+os_arch   = ["CentOS", "Darwin"]
 ```
 
 3. 在清单文件同级目录下新建脚本文件 `ports.lua`，编辑如下：

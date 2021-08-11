@@ -37,7 +37,7 @@
 	title: 当前事件的标题（支持模板）
 	desc: 当前事件的内容（支持模板）
 	cron: 配置事件的执行周期（就是 crontab 的语法规则）
-
+    os_arch: 配置脚本支持平台
 	# 可扩展自定义的字段
 	var1: xxx
 	var2: yyy
