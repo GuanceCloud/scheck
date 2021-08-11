@@ -318,7 +318,7 @@ func TestRule(rulepath string) {
 	rulepath = rulepath + ".lua"
 	ruledir := filepath.Dir(rulepath)
 
-	Chk = newChecker(ruledir, "") //todo
+	Chk = newChecker(ruledir, ruledir) //todo
 	ctx, cancelfun := context.WithCancel(context.Background())
 	output.Start(ctx, &config.ScOutput{})
 	defer cancelfun()

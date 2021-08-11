@@ -40,33 +40,12 @@ func GetAllName() []string {
 	return rms
 }
 
-/*  todo 两个文件必须同时存在
-for name := range rms {
-		index := strings.LastIndex(name, ".")
-		if index != -1 {
-			continue
-		}
-		// 判断另一个文件
-		switch name[index:] {
-		case ".lua":
-			if _, ok := rms[name[:index]+".manifest"]; !ok {
-				log.Warn("判断文件是否成对存在时 出现问题 不存在manifest： %s.manifest", name[:index])
-				// 不存在
-				continue
-			}
-		case ".manifest":
-			if _, ok := rms[name[:index]+".lua"]; !ok {
-				log.Warn("判断文件是否成对存在时 出现问题 不存在lua： %s.lua", name[:index])
-				continue
-			}
-
-		default:
-
-		}
-
-		rules = append(rules, name)
-	}
-*/
+// todo 检查 、加载、预编译 都在这里做
+func checkFile(extName string) (luaf, mf string) {
+	luaf, _ = GetLua(extName)
+	mf, _ = GetManifest(extName)
+	return
+}
 
 // WalkList 递归加载文件
 func WalkList() {
@@ -75,15 +54,15 @@ func WalkList() {
 		fmt.Println(file.Name()) // 二级目录打印结果：users/0500-mysql-weak-psw.lua
 		return nil
 	})
-	//fmt.Println(ScriptBox.List())
 }
 
 /*
 	清空系统脚本路径
 	重新写入脚本
+	-- todo 删除rule.d目录 重新写入时 判断os arch
 */
 func ScheckCoreSyncDisk(ruleDir string) error {
-	fmt.Println("进入ScheckCoreSyncDisk")
+	log.Println("进入ScheckCoreSyncDisk")
 	// 删除目录
 	if _, err := os.Stat(ruleDir); err == nil {
 		if err := os.RemoveAll(ruleDir); err != nil {
@@ -96,13 +75,12 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 	if _, err := os.Stat(ruleDir); err != nil {
 		if err := os.Mkdir(ruleDir, 0775); err == nil {
 			// 遍历 lua脚本名称
-			fmt.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
+			log.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
+			exts := make(map[string]string)
 			for _, name := range ScriptBox.List() {
+				// list是 lib/123.lua  001-add.lua
 				if content, err := ScriptBox.Find(name); err == nil {
-					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
 					name = strings.ReplaceAll(name, "\\", "/")
-					//fmt.Println(strings.Split(name, "/"))
-					// 处理多级目录
 					paths := strings.Split(name, "/")
 					if len(paths) > 1 {
 						// 拼接目录
@@ -112,9 +90,21 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 								log.Fatalf("%s create dir : %s", lib_dir, err)
 							}
 						}
+						CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
+					} else { //目录是一级
+						extName := path.Ext(name)
+						if _, ok := exts[extName]; !ok {
+							luaF, mf := checkFile(extName)
+							if luaF != "" && mf != "" {
+								CreateFile(luaF, fmt.Sprintf("%s/%s.%s", ruleDir, extName, "lua"))
+								CreateFile(mf, fmt.Sprintf("%s/%s.%s", ruleDir, extName, "manifest"))
+							}
+						} else {
+							continue
+						}
+						// 写文件
+
 					}
-					// 写文件
-					CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
 
 				}
 			}
