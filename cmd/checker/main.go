@@ -19,13 +19,10 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
-	"text/template"
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
 
 	log "github.com/sirupsen/logrus"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
@@ -65,10 +62,8 @@ func main() {
 	applyFlags()
 
 	if err := config.LoadConfig(*flagConfig); err != nil {
-		fmt.Printf("加载配置文件错误 err=%v \n", err)
-		log.Fatalf("%s", err)
+		log.Fatalf("config loadConfig err=%v", err)
 	}
-	time.Sleep(time.Second * 3)
 	setupLogger()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
@@ -79,15 +74,15 @@ func main() {
 }
 
 func setupLogger() {
-	if config.Cfg.DisableLog {
+	if config.Cfg.System.DisableLog {
 		log.SetLevel(log.PanicLevel)
 	} else {
 		log.SetReportCaller(true)
-		if config.Cfg.Log != "" {
-			lf, err := os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
+		if config.Cfg.Logging.Log != "" {
+			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
-				os.MkdirAll(filepath.Dir(config.Cfg.Log), 0775)
-				lf, err = os.OpenFile(config.Cfg.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
+				os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
 				if err != nil {
 					log.Fatalf("%s", err)
 				}
@@ -96,7 +91,7 @@ func setupLogger() {
 			//log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
 			//log.AddHook() // todo 重写hook接口 就可以实现多端输出
 		}
-		switch config.Cfg.LogLevel {
+		switch config.Cfg.Logging.LogLevel {
 		case "debug":
 			log.SetLevel(log.DebugLevel)
 		case "warn":
@@ -162,24 +157,30 @@ func applyFlags() {
 	}
 
 	if *flagCfgSample {
+		//
+		//defaultOutput := `http://127.0.0.1:9529/v1/write/security`
+		//output := os.Getenv("SCHECK_OUTPUT")
+		//if output == "" {
+		//	output = defaultOutput
+		//}
+		//tmp, err := template.New("cfg").Parse(config.MainConfigSample)
+		//if err != nil {
+		//	log.Fatalf("%s", err)
+		//}
+		//var buf bytes.Buffer
+		//err = tmp.Execute(&buf, map[string]string{
+		//	"Output": output,
+		//})
+		//if err != nil {
+		//	log.Fatalf("%s", err)
+		//}
+		//var buf bytes.Buffer
+		res, err := securityChecker.TomlMarshal(config.DefaultConfig())
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		os.Stdout.WriteString(string(res))
 
-		defaultOutput := `http://127.0.0.1:9529/v1/write/security`
-		output := os.Getenv("SCHECK_OUTPUT")
-		if output == "" {
-			output = defaultOutput
-		}
-		tmp, err := template.New("cfg").Parse(config.MainConfigSample)
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
-		var buf bytes.Buffer
-		err = tmp.Execute(&buf, map[string]string{
-			"Output": output,
-		})
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
-		os.Stdout.WriteString(buf.String())
 		os.Exit(0)
 	}
 
@@ -232,31 +233,17 @@ func run() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 	//内置系统
 	go func() {
 		defer func() {
 			wg.Done()
 		}()
-		fmt.Println("2 check run")
-		// 测试packd2 20210723 测试通过
-		man.ScheckCoreSyncDisk(config.Cfg.RuleDir)
+		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		time.Sleep(time.Second * 5)
-		checker.Start(ctx, config.Cfg.RuleDir, config.Cfg.Output)
+		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
-	// 用自定义入口
-	go func() {
-		defer func() {
-			wg.Done()
-		}() //程序退出的时候执行
-		fmt.Printf("用户自定义的路径是%s \n", config.Cfg.CustomRuleDir)
-		checker.Start(ctx, config.Cfg.CustomRuleDir, config.Cfg.Output)
-	}()
-	// 启动 cgroup 控制cpu
-	go func() {
-		fmt.Printf("当前的配置 cgroup max=%.2f min=%.2f \n", config.Cfg.Cgroup.CPUMax, config.Cfg.Cgroup.CPUMin)
-		cgroup.Run()
-	}()
+
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 
@@ -269,9 +256,9 @@ func run() {
 			cancel()
 		}
 	}()
-
 	wg.Wait()
-	log.Printf("[info] quit")
+	service.Stop()
+
 }
 
 func updateRules() bool {
@@ -356,5 +343,3 @@ func updateRules() bool {
 	fmt.Println("Install rules successfully")
 	return true
 }
-
-// output 发送规则：满100个字节就发送

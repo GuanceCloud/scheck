@@ -9,7 +9,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-os_arch=["CentOS"]
+os_arch=["Linux"]
 description=["核心转储是可执行程序的内存。通常用于确定程序为何中止。它也可以用于从核心文件中收集机密信息。该系统提供了为核心转储设置软限制的功能，但是用户可以忽略此限制。"]
 rationale=["对核心转储设置硬限制可防止用户覆盖软变量。如果需要核心转储，请考虑为用户组设置限制。另外，将fs.suid_dumpable变量设置为0将防止setuid程序转储内核。\n>"]
 riskitems=["限制用户覆盖软变量"]

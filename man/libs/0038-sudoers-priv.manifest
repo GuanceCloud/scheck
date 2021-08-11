@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机文件/etc/sudoers权限是否被修改"]
 rationale=["主机文件/etc/sudoers允许特定用户像root用户一样使用各种各样的命令，而不需要root用户的密码。"]
 riskitems=["功能不可用"]

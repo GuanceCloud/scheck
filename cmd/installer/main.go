@@ -236,9 +236,9 @@ func mvOldDatakit(svc service.Service) {
 	}
 
 	// 如果测试可以 屏蔽重命名操作 避免引起权限问题
-	if err := os.Rename(olddir, securityChecker.InstallDir); err != nil {
+	/*if err := os.Rename(olddir, securityChecker.InstallDir); err != nil {
 		l.Fatalf("move %s -> %s failed: %s", olddir, securityChecker.InstallDir, err.Error())
-	}
+	}*/
 	//move C:\Program Files\dataflux\scheck -> C:\Program Files\scheck failed: rename C:\Program Files\dataflux\scheck C:\Program Files\scheck: Access is denied
 
 }

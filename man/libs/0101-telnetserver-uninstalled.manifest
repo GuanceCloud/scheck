@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["telnet-server软件包包含telnet守护程序，该守护程序通过telnet协议接受来自其他系统的用户的连接，该软件采用的是不安全的传输协议，会有安全风险。"]
 rationale=["telnet协议不安全且未加密。 使用未加密的传输介质可以使有权访问嗅探网络流量的用户能够窃取凭据。 ssh软件包提供了加密的会话和更强的安全性。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

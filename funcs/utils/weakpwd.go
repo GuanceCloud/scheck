@@ -85,7 +85,7 @@ func (c *MySqlChecker) hit(info *MySqlServiceInfo) (bool, error) {
 func (p *provider) checkMysqlWeakPassword(l *lua.LState) int {
 
 	var mysqlChecker MySqlChecker
-	mysqlChecker.dictPath = filepath.Join(config.Cfg.RuleDir, `passwd_dict`, `dict.txt`)
+	mysqlChecker.dictPath = filepath.Join(config.Cfg.System.RuleDir, `passwd_dict`, `dict.txt`)
 
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {

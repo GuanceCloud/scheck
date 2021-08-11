@@ -70,7 +70,7 @@ func newRule(path string) *Rule {
 	}
 }
 
-// load 从文件夹中加载 改成从scriptBox中获取
+// load 从文件夹中加载
 func (r *Rule) load() error {
 
 	r.mux.Lock()
@@ -283,11 +283,10 @@ func (m *RuleManifest) parse() (err error) {
 				rm.Desc = str
 			case "cron":
 				if str == "" {
-					str = config.Cfg.Cron
+					str = config.Cfg.System.Cron
 				}
 				rm.Cron = str
 			case "os_arch":
-				fmt.Printf("-------str=%s \n", str)
 				arr, err := ensureFieldStrings(k, v, &str)
 				if err != nil {
 					log.Warnf("获取os_arch字段失败err = %v", err)

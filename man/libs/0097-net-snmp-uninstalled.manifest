@@ -9,7 +9,7 @@ cron="0 */30 * * *"
 disabled=false
 
 
-os_arch=["CentOS"]
+os_arch=["Linux"]
 description=["SNMP服务器可以使用SNMPv1进行通信，SNMPv1以clear和clear格式传输数据\n    执行命令不需要身份验证。SNMPv3取代了simple/clear\n    SNMPv2中使用的文本密码共享，具有更安全的参数编码。如果的\n    不需要SNMP服务，应删除net-snmp包以减少系统攻击面。"]
 rationale=["SNMP (Simple Network Management Protocol)是一种广泛使用的网络监控协议\n    健康福利网络设备、计算机设备和ups等设备。\n    Net-SNMP是一套用于实现SNMPv1 (rfc1157)、SNMPv2 (RFC . Net-SNMP)的应用程序\n    和同时使用IPv4和IPv6的SNMPv3 (rfc3411 -3418)。\n    对SNMPv2经典版本的支持。“SNMPv2历史性的”(rfc1441 -1452)被丢弃\n    UCD-snmp包4.0版本。\n    SNMP (Simple Network Management Protocol)服务器用于监听SNMP\n    命令，执行命令或收集\n    信息，然后将结果发送回请求系统。SNMP (Simple Network Management Protocol)是一种广泛使用的网络监控协议\n    健康福利网络设备、计算机设备和ups等设备。\n    Net-SNMP是一套用于实现SNMPv1 (rfc1157)、SNMPv2 (RFC . Net-SNMP)的应用程序\n    和同时使用IPv4和IPv6的SNMPv3 (rfc3411 -3418)。\n    对SNMPv2经典版本的支持。“SNMPv2历史性的”(rfc1441 -1452)被丢弃\n    UCD-snmp包4.0版本。\n    SNMP (Simple Network Management Protocol)服务器用于监听SNMP\n    命令，执行命令或收集\n    信息，然后将结果发送回请求系统。"]
 riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]

@@ -9,7 +9,7 @@ disabled=false
 
 
 
-os_arch=["CentOS", "Ubuntu"]
+os_arch=["Linux"]
 description=["监控主机/etc/profile 是否存在"]
 riskitems=["服务不可用"]
 audit='''验证主机/etc/profile。可以执行以下命令验证：
