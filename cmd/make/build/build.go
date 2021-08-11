@@ -48,7 +48,7 @@ var (
 	BuildDir     = "build"
 	PubDir       = "pub"
 	AppName      = "security-checker"
-	AppBin       = "checker"
+	AppBin       = "scheck"
 	OSSPath      = "security-checker"
 	Archs        string
 	Release      string

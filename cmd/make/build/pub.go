@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -42,7 +43,10 @@ func (vd *versionDesc) withoutGitCommit() string {
 }
 
 func tarFiles(goos, goarch string) {
-
+	bin := AppBin
+	if goos == "windows" {
+		bin += ".exe"
+	}
 	gz := filepath.Join(PubDir, Release, fmt.Sprintf("%s-%s-%s-%s.tar.gz",
 		AppName, goos, goarch, git.Version))
 	args := []string{
@@ -50,9 +54,10 @@ func tarFiles(goos, goarch string) {
 		gz,
 		`autostart`,
 		`-C`,
-		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", AppBin, goos, goarch)), AppBin,
+		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", AppBin, goos, goarch)),
+		bin,
 	}
-
+	log.Println(args)
 	cmd := exec.Command("tar", args...)
 
 	cmd.Stdout = os.Stdout
