@@ -1,0 +1,32 @@
+id="0063-shm-nodev"
+category="system"
+level="warn"
+title="确保在/dev/shm分区上设置nodev选项"
+#desc="分区 {{.Content}} 已设置 nodev 挂载选项"
+desc="分区 {{.Content}} 未设置 nodev 挂载选项"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["nodev挂载选项指定文件系统不能包含特殊设备。", "注意：/dev/shm是由systemd自动挂载的。但即使/dev/shm已经在启动时被挂载，它依然需要在/etc/fstab中 添加挂载选项。"]
+rationale=["因为/dev/shm文件系统并非意在用于支持设备，所以设置此选项以确保用户不能尝试在/dev/shm分区中创建特殊的设备"]
+riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]
+audit='''运行如下命令查看是否设置了nodev选项:
+
+```bash
+# mount | grep -E "\s/dev/shm\s" | grep -v nodev
+Nothing should be returned
+```
+'''
+remediation='''编辑/etc/fstab文件，将nodev添加到/dev/shm分区挂载选项中的第四个字段。
+有关更多信息，请参阅fstab(5)手册页。
+执行如下命令重新挂载/dev/shm。
+```bash
+# mount -o remount,noexec,nodev,nosuid /dev/shm
+```
+'''
+impact=["无"]
+CIS=["Version 7\n  **5.1建立安全配置**\n  维护所有授权操作系统和软件的文档化、标准的安全配置标准。\n  **13 数据保护**\n  数据保护"]

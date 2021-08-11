@@ -1,0 +1,31 @@
+id="0089-dhcp-uninstalled"
+category="system"
+level="warn"
+title="DHCP被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["动态主机配置协议(DHCP)是一种允许为计算机动态分配IP地址的服务。"]
+rationale=["除非系统被专门设置为充当DHCP服务器，否则建议删除dhcp软件包，以减少潜在的攻击面"]
+riskitems=["增加被攻击风险"]
+audit='''运行以下命令以验证是否未安装对应组件：
+```bash
+# rpm -q dhcp
+package dhcp is not installed
+```
+'''
+remediation='''运行以下命令以删除对应的包：
+```bash
+# yum remove dhcp
+```
+'''
+impact=["集群内服务器有一定风险无法自动获得服务器分配的IP地址和子网掩码。"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7\n    2.6 地址未经批准的软件\n    确保删除未经授权的软件，或库存及时更新"]

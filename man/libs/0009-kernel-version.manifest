@@ -1,0 +1,26 @@
+id="0009-kernel-version"
+category="system"
+level="critical"
+title="主机内核版本发生改变"
+desc="内核版本发生改变， 版本为{{.Content}}"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["监控内核版本发生改变"]
+rationale=["内核由一系列程序组成，包括负责响应中断的中断服务程序、负责管理多个进程从而分享处理器时间的调度程序、负责管理地址空间的内存管理程序、网络、进程间通信的系统服务程序等。内核负责管理系统的硬件设备。内核版本修改会造成系统服务的不稳定性和安全性。"]
+riskitems=["应用拒绝服务"]
+audit='''验证内核版本发生改变。可以执行以下命令验证：
+
+```bash
+uname -srm
+```
+'''
+remediation='''如果内核版本被非法修改，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

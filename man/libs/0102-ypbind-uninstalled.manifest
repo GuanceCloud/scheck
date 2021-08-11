@@ -1,0 +1,29 @@
+id="0102-ypbind-uninstalled"
+category="system"
+level="warn"
+title="NIS客户端被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["网络信息服务(NIS)，以前称为黄页，是一个客户机-服务器用于分发系统配置文件的目录服务协议。NIS客户端(ypbind)用于将机器绑定到NIS服务器并接收分发的配置文件。"]
+rationale=["NIS服务本质上是一个不安全的系统，容易受到DOS攻击，缓冲区溢出，并且在查询NIS映射时身份验证很差。NIS通常已被轻量级目录访问协议(LDAP)等协议所取代。建议删除该服务。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''执行以下命令，验证是否安装了ypbind。
+
+```bash
+# rpm -q ypbind
+package ypbind is not installed
+```
+'''
+remediation='''运行命令移除ypbind。
+```bash
+# yum remove ypbind
+```
+'''
+impact=["许多不安全的服务客户端被用作故障排除工具和测试环境。卸载它们会抑制测试和故障排除能力。如果他们是要求使用后宜将客户取出，以防意外或故意滥用。"]
+references=["无"]
+CIS=["Version 7<br>\n    确保未经授权的软件要么被删除，要么及时更新。"]

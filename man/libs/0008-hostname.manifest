@@ -1,0 +1,27 @@
+id="0008-hostname"
+category="system"
+level="warn"
+title="主机名被修改"
+desc="主机名改为 {{.Content}}"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["监控主机名发生变化"]
+rationale=["Linux操作系统的hostname是一个kernel变量，可以通过hostname命令来查看本机的hostname。也可以直接cat /proc/sys/kernel/hostname查看。 \n，如果主机名设置错误，可能会引起在线业务或应用不能正常访问，甚至会拒绝提供服务。如果主机名被恶意修改，会影响主机系统正常运行。"]
+riskitems=["应用拒绝服务"]
+audit='''验证主机名是否非法被修改。可以执行以下命令验证：
+
+```bash
+hostname
+```
+'''
+remediation='''如果主机名被非法修改，使用`hostnamectl set-hostname` 恢复主机名，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

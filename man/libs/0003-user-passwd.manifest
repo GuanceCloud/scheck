@@ -1,0 +1,27 @@
+id="0003-user-passwd"
+category="system"
+level="warn"
+title="主机用户密码被修改"
+#desc="文件 {{.File}} 发生了变化"
+desc="主机用户密码， {{.Content}} 文件被修改"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["监控主机用户密码被修改"]
+rationale=["/etc/shadow 文件，用于存储 Linux 系统中用户的密码信息，又称为“影子文件”。/etc/passwd 文件，由于该文件允许所有用户读取，易导致用户密码泄露，因此 Linux 系统将用户的密码信息从 /etc/passwd 文件中分离出来，并单独放到了此文件中。/etc/shadow 文件只有 root 用户拥有读权限，其他用户没有任何权限，这样就保证了用户密码的安全性。如果这个文件的权限发生了改变，则需要注意是否是恶意攻击。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机/etc/shadow 是否非法被修改。可以执行以下命令验证：
+
+```bash
+ls -l /etc/shadow
+```
+'''
+remediation='''如果主机/etc/shadow被非法修改，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

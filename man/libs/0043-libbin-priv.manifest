@@ -1,0 +1,28 @@
+id="0043-libbin-priv"
+category="system"
+level="warn"
+title="/bin目录下有文件权限被修改"
+desc="{{.Content}} 权限发生变化"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["监控主机目录/bin下的文件权限是否被修改"]
+rationale=["bin目录放置的是系统关键命令的可执行文件，如果权限发生改变，可能会导致命令无法执行，对系统造成影响。"]
+riskitems=["功能不可用"]
+audit='''对指定文件运行以下命令，这里以users文件为例，并验证Uid和Gid均为0/ root，权限为755：
+
+```bash
+stat /bin/users
+Access: (0755/-rwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+```
+'''
+remediation='''如果检测到/bin目录下文件权限已被变更，可通过root用户登录该服务器后将该权限进行修复，并审计本次变更。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]
