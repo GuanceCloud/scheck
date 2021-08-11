@@ -125,7 +125,10 @@ func DefaultConfig() *Config {
 				Enable: false,
 				Output: fmt.Sprintf("file://%s", filepath.Join("/var/log/scheck", "event.log")),
 			},
-			AliSls: &AliSls{},
+			AliSls: &AliSls{
+				ProjectName:  "zhuyun-scheck",
+				LogStoreName: "scheck",
+			},
 		},
 		Logging: &Logging{
 			LogLevel: "info",
