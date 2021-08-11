@@ -2,7 +2,6 @@ package checker
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -61,7 +60,7 @@ func (s *Scheduler) countInfo() (cron int, interval int) {
 }
 
 func (s *Scheduler) AddRule(r *Rule) (int, error) {
-	fmt.Printf("添加一个rule  打印结构体 %+v \n", r)
+	//log.Printf("添加一个rule  打印结构体 %+v \n", r)
 	if r.interval > 0 { // 设置时间大于0 按照设置的时间间隔进行执行 否则使用默认的cron
 		s.mux.Lock()
 		defer s.mux.Unlock()
@@ -157,7 +156,7 @@ func (g *intervalGroup) start(ctx context.Context) {
 			default:
 			}
 			start := time.Now()
-			fmt.Printf("run group[%s](%d)\n", g.interval, len(g.runs))
+			//fmt.Printf("run group[%s](%d)\n", g.interval, len(g.runs))
 
 			var keys []int
 			for k := range g.runs {

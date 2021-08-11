@@ -2,11 +2,10 @@ package checker
 
 import (
 	"bytes"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
@@ -46,6 +45,7 @@ func (p *provider) trigger(l *lua.LState) int {
 		l.RaiseError("rule not found")
 		return lua.MultRet
 	}
+
 	var manifestFileName string
 	var templateTable *lua.LTable
 	templateVals := map[string]string{}

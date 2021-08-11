@@ -142,7 +142,8 @@ func TestChecker(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	_ = cancel
-	Start(ctx, ruleDir, &config.ScOutput{})
+	Start(ctx, ruleDir, "", &config.ScOutput{})
+
 }
 
 func TestParse(t *testing.T) {

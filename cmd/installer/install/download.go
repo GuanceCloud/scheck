@@ -4,14 +4,10 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/dustin/go-humanize"
 )
 
 var (
@@ -35,8 +31,8 @@ func (wc *writeCounter) Write(p []byte) (int, error) {
 
 func (wc *writeCounter) PrintProgress() {
 	if wc.last > float64(wc.total)*0.01 || wc.current == wc.total { // update progress-bar each 1%
-		fmt.Printf("\r%s", strings.Repeat(" ", 36))
-		fmt.Printf("\rDownloading(% 7s)... %s/%s", CurDownloading, humanize.Bytes(wc.current), humanize.Bytes(wc.total))
+		//fmt.Printf("\r%s", strings.Repeat(" ", 36))
+		//fmt.Printf("\rDownloading(% 7s)... %s/%s", CurDownloading, humanize.Bytes(wc.current), humanize.Bytes(wc.total))
 		wc.last = 0.0
 	}
 }

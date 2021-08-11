@@ -36,7 +36,7 @@ var (
 
 func readInput(prompt string) string {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(prompt)
+	//fmt.Print(prompt)
 	txt, err := reader.ReadString('\n')
 	if err != nil {
 		l.Fatal(err)

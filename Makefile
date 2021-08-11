@@ -9,9 +9,8 @@ ENTRY = cmd/checker/main.go
 RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker
 
 # 测试环境
-#TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
+TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
 #TEST_DOWNLOAD_ADDR = df-storage-dev.oss-cn-hangzhou.aliyuncs.com/songlongqi/scheck
-TEST_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"security-checker
 
 # 环境变量添加到本机中
 #export LOCAL_OSS_ACCESS_KEY='LTAIxxxxxxxxxxxxxxxxxxxx'
@@ -23,7 +22,7 @@ TEST_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"security-checker
 
 
 LOCAL_ARCHS = "local"
-LOCAL_DOWNLOAD_ADDR = "$(TEST_DOWNLOAD_ADDR)"
+LOCAL_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"security-checker
 DEFAULT_ARCHS = "all"
 
 VERSION := $(shell git describe --always --tags)
@@ -51,8 +50,6 @@ export GIT_INFO
 
 define build
 	@echo "===== $(BIN) $(1) ===="
-	@echo "==git version=== $(VERSION) ===="
-	@echo "=== $(TEST_DOWNLOAD_ADDR) ===="
 	@rm -rf $(PUB_DIR)/$(1)/*
 	@mkdir -p $(BUILD_DIR) $(PUB_DIR)/$(1)
 	@mkdir -p git

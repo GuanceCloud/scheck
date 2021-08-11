@@ -51,9 +51,10 @@ func checkFile(extName string) (luaf, mf string) {
 func WalkList() {
 	ScriptBox.Walk(func(s string, file packd.File) error {
 
-		fmt.Println(file.Name()) // 二级目录打印结果：users/0500-mysql-weak-psw.lua
+		//fmt.Println(file.Name()) // 二级目录打印结果：users/0500-mysql-weak-psw.lua
 		return nil
 	})
+	//fmt.Println(ScriptBox.List())
 }
 
 /*
@@ -62,14 +63,14 @@ func WalkList() {
 	-- todo 删除rule.d目录 重新写入时 判断os arch
 */
 func ScheckCoreSyncDisk(ruleDir string) error {
-	log.Println("进入ScheckCoreSyncDisk")
+	//fmt.Println("进入ScheckCoreSyncDisk")
 	// 删除目录
 	if _, err := os.Stat(ruleDir); err == nil {
 		if err := os.RemoveAll(ruleDir); err != nil {
 			log.Fatal(err)
 			return nil
 		}
-		fmt.Println("已经全部删除文件。。")
+		//fmt.Println("已经全部删除文件。。")
 	}
 	// 创建目录，将lua 脚本同步到磁盘上
 	if _, err := os.Stat(ruleDir); err != nil {
@@ -92,20 +93,17 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 						}
 						CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
 					} else { //目录是一级
-						extName := path.Ext(name)
+						i := strings.LastIndex(name, ".")
+						extName := name[:i]
 						if _, ok := exts[extName]; !ok {
 							luaF, mf := checkFile(extName)
 							if luaF != "" && mf != "" {
 								CreateFile(luaF, fmt.Sprintf("%s/%s.%s", ruleDir, extName, "lua"))
 								CreateFile(mf, fmt.Sprintf("%s/%s.%s", ruleDir, extName, "manifest"))
 							}
-						} else {
-							continue
+							exts[extName] = ""
 						}
-						// 写文件
-
 					}
-
 				}
 			}
 			fmt.Println(err)

@@ -209,8 +209,8 @@ func PubDatakit() {
 			// }
 
 		} else {
-			installerExe = "install.sh"
-
+			//installerExe = "install.sh"
+			installerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
 			// if curVd != nil && curVd.Version != git.Version {
 			// 	renameOssFiles[path.Join(OSSPath, installerExe)] =
 			// 		path.Join(OSSPath, fmt.Sprintf("installer-%s-%s-%s", goos, goarch, curVd.Version))

@@ -308,7 +308,7 @@ func TestRule(rulepath string) {
 	log.SetReportCaller(true)
 	pwd, _ := os.Getwd()
 
-	fmt.Println(filepath.Join(pwd, filepath.Dir(rulepath)))
+	//fmt.Println(filepath.Join(pwd, filepath.Dir(rulepath)))
 
 	config.Cfg = &config.Config{
 		System: &config.System{RuleDir: filepath.Join(pwd, filepath.Dir(rulepath))},
@@ -318,7 +318,7 @@ func TestRule(rulepath string) {
 	rulepath = rulepath + ".lua"
 	ruledir := filepath.Dir(rulepath)
 
-	Chk = newChecker(ruledir, ruledir) //todo
+	Chk = newChecker(ruledir, "") //todo
 	ctx, cancelfun := context.WithCancel(context.Background())
 	output.Start(ctx, &config.ScOutput{})
 	defer cancelfun()

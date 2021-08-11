@@ -108,8 +108,8 @@ func (r *Rule) load() error {
 	}
 
 	if err = manifest.load(); err != nil {
-		err = fmt.Errorf("fail to load %s, %s", manifestPath, err)
-		log.Errorf("%s", err)
+		//err = fmt.Errorf("fail to load %s, %s", manifestPath, err)
+		log.Errorf("fail to load %s, %s", manifestPath, err)
 		return err
 	}
 	reschedule := false
