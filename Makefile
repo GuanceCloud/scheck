@@ -11,7 +11,7 @@ RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.
 # 测试环境
 #TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
 #TEST_DOWNLOAD_ADDR = df-storage-dev.oss-cn-hangzhou.aliyuncs.com/songlongqi/scheck
-TEST_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"$(shell hostname)"/scheck"
+TEST_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"security-checker
 
 # 环境变量添加到本机中
 #export LOCAL_OSS_ACCESS_KEY='LTAIxxxxxxxxxxxxxxxxxxxx'

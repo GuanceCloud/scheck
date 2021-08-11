@@ -48,7 +48,7 @@ func tarFiles(goos, goarch string) {
 		bin += ".exe"
 	}
 	gz := filepath.Join(PubDir, Release, fmt.Sprintf("%s-%s-%s-%s.tar.gz",
-		AppName, goos, goarch, git.Version))
+		AppBin, goos, goarch, git.Version))
 	args := []string{
 		`czf`,
 		gz,
@@ -192,9 +192,9 @@ func PubDatakit() {
 
 		tarFiles(parts[0], parts[1])
 
-		gzName := fmt.Sprintf("%s-%s-%s.tar.gz", AppName, goos+"-"+goarch, git.Version)
+		gzName := fmt.Sprintf("%s-%s-%s.tar.gz", AppBin, goos+"-"+goarch, git.Version)
 
-		gzNameNoVer := fmt.Sprintf("%s-%s.tar.gz", AppName, goos+"-"+goarch)
+		gzNameNoVer := fmt.Sprintf("%s-%s.tar.gz", AppBin, goos+"-"+goarch)
 
 		ossfiles[path.Join(PubDir, Release, gzName)] = path.Join(OSSPath, gzName)
 

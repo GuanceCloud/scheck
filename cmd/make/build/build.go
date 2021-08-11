@@ -45,9 +45,9 @@ func runEnv(args, env []string) ([]byte, error) {
 var (
 	l = logger.DefaultSLogger("build")
 
-	BuildDir     = "build"
-	PubDir       = "pub"
-	AppName      = "security-checker"
+	BuildDir = "build"
+	PubDir   = "pub"
+	//AppName      = "security-checker"
 	AppBin       = "scheck"
 	OSSPath      = "security-checker"
 	Archs        string

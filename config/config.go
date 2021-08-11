@@ -64,8 +64,8 @@ type Config struct {
 
 type System struct {
 	RuleDir       string `toml:"rule_dir"`
-	CustomRuleDir string `toml:"custom"`        // 用户自定义入口
-	LuaHotUpdate  string `toml:"lua_HotUpdate"` // lua热更开关
+	CustomRuleDir string `toml:"custom_dir"`    // 用户自定义入口
+	LuaHotUpdate  bool   `toml:"lua_HotUpdate"` // lua热更开关
 	Cron          string `toml:"cron"`
 	DisableLog    bool   `toml:"disable_log"`
 }
@@ -116,7 +116,7 @@ func DefaultConfig() *Config {
 			RuleDir:       "/usr/local/scheck/rules.d",
 			CustomRuleDir: "/usr/local/scheck/custom.rules.d",
 			Cron:          "",
-			//DisableLog:    true,
+			DisableLog:    true,
 		},
 		ScOutput: &ScOutput{
 			Http: &Http{

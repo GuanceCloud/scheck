@@ -220,12 +220,24 @@ func applyFlags() {
 		os.Exit(0)
 	}
 	if *flagConfig == "" {
+
 		confPath := "/usr/local/scheck"
 		//*flagConfig = "scheck.conf"
 		if runtime.GOOS == "windows" { // 设置路径
 			confPath = "C:\\Program Files\\scheck"
 		}
 		*flagConfig = filepath.Join(confPath, "scheck.conf")
+		// 查看本地是否有配置文件
+		_, err := os.Stat(*flagConfig)
+		if err != nil {
+			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
+			if err != nil {
+				log.Fatalf("%s", err)
+			}
+			if err = ioutil.WriteFile(*flagConfig, res, 0775); err != nil {
+				log.Fatalf("%s", err)
+			}
+		}
 	}
 }
 
