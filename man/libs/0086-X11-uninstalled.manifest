@@ -1,0 +1,30 @@
+id="0086-X11-uninstalled"
+category="system"
+level="warn"
+title="X11被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["X windows系统提供了一个图形用户界面(Gui)，其中用户可以有多个窗口来运行程序和各种添加。X Windows系统通常用于用户登录的工作站，但不适用于用户通常不登录的服务器上。"]
+rationale=["除非您的组织特别需要通过XWindows访问图形登录，否则请删除它以减少潜在的攻击面。"]
+riskitems=["黑客渗透", "数据泄露"]
+audit='''运行以下命令以验证是否未安装x11包：
+```bash
+# rpm -q x11
+# rpm -qa xorg-x11-server*
+```
+'''
+remediation='''运行以下命令以删除openldap clients包：
+```bash
+# yum remove xorg-x11-server*
+```
+'''
+impact=["许多Linux系统运行需要Java运行时的应用程序。一些LinuxJava包依赖于特定的X Windows xorg-x11字体。避免这种依赖关系的一个解决方法是为特定的Java运行时使用“无头”Java包。"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7\n    2.6 地址未经批准的软件\n    确保删除未经授权的软件，或库存及时更新", "9.2 确保只有已批准的端口、协议和服务在运行\n    确保在具有已验证业务需求的系统上只有网络端口、协议和服务在每个系统上运行。"]

@@ -1,0 +1,10 @@
+id="0026-ssh-directory"
+category="system"
+level="warn"
+title="sshd 文件是否被修改"
+desc="/etc/ssh目录{.Content} 被修改"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+os_arch=["Linux"]
+

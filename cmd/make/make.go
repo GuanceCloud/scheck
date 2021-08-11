@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/make/build"
 )
 

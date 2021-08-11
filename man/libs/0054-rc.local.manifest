@@ -1,0 +1,26 @@
+id="0054-rc.local"
+category="system"
+level="warn"
+title="rc.local 文件被修改"
+desc="敏感文件 {{.File}} 被修改"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["监控主机启动加载文件，对否被篡改"]
+rationale=["在linux下要把一个程序加入开机启动，一般可以通过修改rc.local来完成，但linux下通常有两个rc.local文件。分别是/etc/rc.local(连接文件)和/etc/init.d/rc.local(真实文件)。使用MD5sum求文件MD5校验值，对比新老校验值可以发现文件被修改。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机/etc/rc.local是否非法被修改。可以执行一下命令验证：
+```bash
+md5sum /etc/rc.local
+```
+'''
+remediation='''如果主机/etc/rc.local被非法修改，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["开机异常，启用异常进程，篡改系统环境变量，执行高危命令"]
+defaultvalue=["不一致，根据环境更改"]
+references=["无"]
+CIS=["无"]

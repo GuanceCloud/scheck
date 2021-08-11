@@ -1,0 +1,70 @@
+id="0072-coredumps-restricted"
+category="system"
+level="warn"
+title="堆芯转储受到限制"
+#desc="文件 {{.File}} 发生了变化"
+desc="文件{{.Content}} 发生了变化"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["核心转储是可执行程序的内存。通常用于确定程序为何中止。它也可以用于从核心文件中收集机密信息。该系统提供了为核心转储设置软限制的功能，但是用户可以忽略此限制。"]
+rationale=["对核心转储设置硬限制可防止用户覆盖软变量。如果需要核心转储，请考虑为用户组设置限制。另外，将fs.suid_dumpable变量设置为0将防止setuid程序转储内核。\n>"]
+riskitems=["限制用户覆盖软变量"]
+audit='''运行以下命令并验证输出是否匹配：
+
+```bash
+# grep -E "^\s*\*\s+hard\s+core" /etc/security/limits.conf /etc/security/limits.d/*
+* hard core 0
+# sysctl fs.suid_dumpable
+fs.suid_dumpable = 0
+# grep "fs\.suid_dumpable" /etc/sysctl.conf /etc/sysctl.d/*
+fs.suid_dumpable = 0
+```
+
+运行以下命令，检查是否安装了systemd-coredump：
+
+``` bash
+# systemctl is-enabled coredump.service
+```
+
+如果返回启用或禁用，则安装systemd-coredump
+'''
+remediation='''将以下行添加到/etc/security/limits.conf或/etc/security/limits.d/*文件中：
+
+``` bash
+* hard core 0
+```
+在/etc/sysctl.conf或/etc/sysctl.d/*文件中设置以下参数：
+>
+
+``` bash
+fs.suid_dumpable = 0
+```
+运行以下命令来设置活动内核参数：
+>
+
+``` bash
+# sysctl -w fs.suid_dumpable=0
+```
+如果已安装systemd-coredump：
+>
+编辑/etc/systemd/coredump.conf并添加/修改以下行：
+
+``` bash
+Storage=none
+ProcessSizeMax=0
+```
+
+> 运行命令：
+
+``` bash
+systemctl daemon-reload
+```
+'''
+impact=["对核心转储设置硬限制可防止用户覆盖软变量"]
+defaultvalue=["默认情况下，没有配置。"]
+references=["无"]
+CIS=["Version 7\n>   5.1 Establish Secure Configurations \n>\n>   Maintain documented, standard security configuration standards for all authorized operating systems and software."]

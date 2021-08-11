@@ -1,7 +1,6 @@
 package build
 
 import (
-	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -12,7 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"text/template"
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
@@ -29,7 +27,10 @@ var (
 		`linux/amd64`,
 		`linux/arm`,
 		`linux/arm64`,
+		`windows/386`,
+		`windows/amd64`,
 	}
+	ReleaseVersion = git.Version
 )
 
 func runEnv(args, env []string) ([]byte, error) {
@@ -135,15 +136,14 @@ func Compile() {
 		compileArch(AppBin, goos, goarch, dir, vd.Version)
 
 		if goos == "windows" {
-			installerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
+			installerExe = fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, ReleaseVersion)
 		} else {
-			installerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
+			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, ReleaseVersion)
 		}
 
+		// build installer 将install/main.go 编译成exe文件 (slq:outdir随意填的 后面改 20210805P)
+		buildInstaller(dir, goos, goarch)
 	}
-
-	buildInstaller(strings.TrimSpace(git.Version), DownloadAddr)
-
 	l.Infof("Done!(elapsed %v)", time.Since(start))
 }
 
@@ -208,8 +208,8 @@ type installInfo struct {
 	Version      string
 }
 
-func buildInstaller(version, download string) {
-
+func buildInstaller(outdir, goos, goarch string) {
+	/*// -------------生成sh文件------------
 	data, err := ioutil.ReadFile("install.sh.template")
 	if err != nil {
 		l.Fatal(err)
@@ -230,4 +230,25 @@ func buildInstaller(version, download string) {
 	if err != nil {
 		l.Fatal(err)
 	}
+	*/
+
+	// ------------ 生成系统的install文件------------
+	args := []string{
+		"go", "build",
+		"-o", filepath.Join(outdir, installerExe),
+		"-ldflags",
+		fmt.Sprintf("-w -s -X main.DataKitBaseURL=%s -X main.DataKitVersion=%s", DownloadAddr, ReleaseVersion),
+		"cmd/installer/main.go",
+	}
+
+	env := []string{
+		"GOOS=" + goos,
+		"GOARCH=" + goarch,
+	}
+
+	msg, err := runEnv(args, env)
+	if err != nil {
+		l.Fatalf("failed to run %v, envs: %v: %v, msg: %s", args, env, err, string(msg))
+	}
+	l.Infof("build installer to %s", filepath.Join(outdir, installerExe))
 }

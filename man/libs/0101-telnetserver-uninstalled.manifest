@@ -1,0 +1,31 @@
+id="0101-telnetserver-uninstalled"
+category="system"
+level="warn"
+title="telnet服务端被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+cron="* * */1 * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["telnet-server软件包包含telnet守护程序，该守护程序通过telnet协议接受来自其他系统的用户的连接，该软件采用的是不安全的传输协议，会有安全风险。"]
+rationale=["telnet协议不安全且未加密。 使用未加密的传输介质可以使有权访问嗅探网络流量的用户能够窃取凭据。 ssh软件包提供了加密的会话和更强的安全性。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''执行以下命令，验证是否安装了telnet-server。
+
+```bash
+# rpm -q telnet-server
+package telnet-server is not installed
+```
+'''
+remediation='''运行命令移除ypserv。
+```bash
+# yum remove telnet-server
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7<br>", "2.6 处理未经批准的软件<br>\n  确保未经授权的软件被删除或目录被及时更新", "9.2 确保只运行审批通过的端口、协议和业务<br>\n    确保只有网络端口、协议和服务在系统上监听经过验证的业务需求，正在每个系统上运行。"]

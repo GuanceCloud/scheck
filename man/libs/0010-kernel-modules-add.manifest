@@ -1,0 +1,31 @@
+id="0010-kernel-modules-add"
+category="system"
+level="warn"
+title="内核模块被添加"
+desc="内核模块添加了 {{.Content}}"
+cron="1 */1 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["监控主机内核模块被添加"]
+rationale=["内核由一系列程序组成，包括负责响应中断的中断服务程序、负责管理多个进程从而分享处理器时间的调度程序、负责管理地址空间的内存管理程序、网络、进程间通信的系统服务程序等。内核负责管理系统的硬件设备。内核模块被添加会造成系统服务的不稳定性和安全性，有恶意代码注入的机率。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机内核模块被添加。可以执行以下命令验证：
+
+```bash
+lsmod
+```
+'''
+remediation='''如果主机内核模块被添加，可以执行以下命令查看并移除模块：
+> ```bash
+> lsmod
+> rmmod hello
+> ```
+>请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["[黑客入侵应急排查思路&&流程（非官方）](https://www.sohu.com/a/236820450_99899618)", "[记录一次真实的挖矿 入侵排查分析（非官方）](https://www.cnblogs.com/zsl-find/articles/11688640.html)"]
+CIS=["无"]

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
 
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
@@ -26,9 +28,10 @@ var (
 
 type (
 	Checker struct {
-		rulesDir  string
-		rules     map[string]*Rule
-		manifests map[string]*RuleManifest
+		rulesDir      string
+		customRuleDir string //用户自定义的路径
+		rules         map[string]*Rule
+		manifests     map[string]*RuleManifest
 
 		ruleGroups map[int64][]*Rule
 
@@ -42,23 +45,24 @@ type (
 )
 
 // Start
-func Start(ctx context.Context, rulesDir, outputpath string) {
+func Start(ctx context.Context, rulesDir, customRuleDir string, outputpath *config.ScOutput) {
 
-	log.Debugf("output: %s", outputpath)
+	log.Debugf("output: %v", outputpath)
 	log.Debugf("rule dir: %s", rulesDir)
 
-	Chk = newChecker(rulesDir)
+	Chk = newChecker(rulesDir, customRuleDir)
 
 	output.Start(ctx, outputpath)
 	Chk.start(ctx)
 }
 
-func newChecker(rulesDir string) *Checker {
+func newChecker(rulesDir, customRuleDir string) *Checker {
 	c := &Checker{
-		rulesDir:  rulesDir,
-		rules:     map[string]*Rule{},
-		manifests: map[string]*RuleManifest{},
-		scheduler: NewScheduler(),
+		rulesDir:      rulesDir,
+		customRuleDir: customRuleDir,
+		rules:         map[string]*Rule{},
+		manifests:     map[string]*RuleManifest{},
+		scheduler:     NewScheduler(),
 	}
 
 	lua.LuaPathDefault = filepath.Join(rulesDir, "/lib/?.lua")
@@ -84,7 +88,7 @@ func (c *Checker) addRule(r *Rule) {
 
 	scheduleID, err := c.scheduler.AddRule(r)
 	if err != nil {
-		log.Errorf("%s", err)
+		log.Errorf("path=%s r.cron=%s err=%s", r.File, r.cron, err)
 		return
 	}
 	r.scheduleID = scheduleID
@@ -122,12 +126,25 @@ func (c *Checker) delRules() {
 	}
 }
 
+// doDelRule 从checker中删除规则 也应当从文件列表中删除
 func (c *Checker) doDelRule(r *Rule) {
 	c.scheduler.DelRule(r)
 	if r.rt != nil {
 		r.rt.Close()
 	}
 	delete(c.rules, r.File)
+
+	/*
+		// delete lua file
+		if err := os.Remove(r.File); err != nil {
+			log.Warnf("删除lua文件错误 err=%v", err)
+		}
+		// delete manifest file
+		index := strings.LastIndex(r.File, ".")
+		manifestFile := r.File[:index] + ".manifest"
+		if err := os.Remove(manifestFile); err != nil {
+			log.Warnf("删除manifestFile文件错误 err=%v", err)
+		}*/
 }
 
 func (c *Checker) addManifest(m *RuleManifest) {
@@ -172,8 +189,11 @@ func (c *Checker) start(ctx context.Context) {
 
 	if err := c.loadRules(ctx, c.rulesDir); err != nil {
 		return
+	} else {
+		c.loadRules(ctx, c.customRuleDir)
 	}
 
+	log.Warnf("------------调度启动------")
 	c.scheduler.Start()
 
 	select {
@@ -188,7 +208,7 @@ func (c *Checker) start(ctx context.Context) {
 
 	go func() {
 		for {
-			sleepContext(ctx, time.Second*10)
+			_ = sleepContext(ctx, time.Second*10)
 
 			select {
 			case <-ctx.Done():
@@ -196,14 +216,22 @@ func (c *Checker) start(ctx context.Context) {
 			default:
 			}
 
-			c.loadRules(ctx, c.rulesDir)
+			_ = c.loadRules(ctx, c.customRuleDir)
 		}
 	}()
-
+	go cgroup.Run() //所有规则加载完成后 启动cgroup 控制cpu和mem
+	/*go func() {
+		// 设置一个入口 可以控制程序的cpu和内存大小
+		config.RunCGroupForTest()
+	}()*/
 	<-ctx.Done()
 	c.scheduler.Stop()
 }
 
+/*
+	todo 修改加载逻辑 1：lua&manifest同时存在 并且manifest中arch中有当前系统的配置，
+				2：预加载并执行
+*/
 func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 
 	if atomic.LoadInt32(&c.loading) > 0 {
@@ -213,7 +241,7 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 	defer atomic.StoreInt32(&c.loading, 0)
 	files, err := ioutil.ReadDir(ruleDir)
 	if err != nil {
-		log.Errorf("%s", err)
+		log.Errorf("loadRules error ：filepath=%s err=%v", ruleDir, err)
 		return err
 	}
 
@@ -245,14 +273,14 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 			exist.load()
 			continue
 		}
-
+		//fmt.Printf("初始化 一个rule  参数path=%s \n", path)
 		r := newRule(path)
 		if err := r.load(); err == nil {
 			c.addRule(r)
 		}
 	}
 
-	c.delRules()
+	c.delRules() // ? 删除的目的是什么
 
 	cronNum, intervalNum := c.scheduler.countInfo()
 	log.Debugf("cronNum=%d, intervalNum=%d", cronNum, intervalNum)
@@ -278,18 +306,21 @@ func sleepContext(ctx context.Context, duration time.Duration) error {
 func TestRule(rulepath string) {
 
 	log.SetReportCaller(true)
+	pwd, _ := os.Getwd()
+
+	//fmt.Println(filepath.Join(pwd, filepath.Dir(rulepath)))
 
 	config.Cfg = &config.Config{
-		RuleDir: `/usr/local/scheck/rules.d`,
+		System: &config.System{RuleDir: filepath.Join(pwd, filepath.Dir(rulepath))},
 	}
 
 	rulepath, _ = filepath.Abs(rulepath)
 	rulepath = rulepath + ".lua"
 	ruledir := filepath.Dir(rulepath)
 
-	Chk = newChecker(ruledir)
+	Chk = newChecker(ruledir, "") //todo
 	ctx, cancelfun := context.WithCancel(context.Background())
-	output.Start(ctx, "")
+	output.Start(ctx, &config.ScOutput{})
 	defer cancelfun()
 
 	r := newRule(rulepath)

@@ -1,0 +1,31 @@
+id="0069-sudo-logfile"
+category="system"
+level="warn"
+title="sudo日志未配置或被删除"
+desc="sudo.log 未配置或被删除"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["sudo可以使用自定义日志文件，用来记录各用户都运行了那些命令。\n>   注意：visudo以类似于vipw（8）的安全方式编辑sudoers文件。 visudo锁定sudoers文件以防止同时进行多次编辑，提供基本的完整性检查并检查解析错误。如果当前用户正在编辑sudoers文件，您将收到一条提示消息，稍后再试。"]
+rationale=["用来记录用户运行的命令"]
+riskitems=["无法发现哪个用户执行的非法命令"]
+audit='''验证sudo是否配置了自定义日志文件。运行以下命令：
+
+``` bash
+grep -Ei "^\s*Defaults\s+([^#;]+,\s*)?logfile\s*=\s*(")?[^#;]+(")?" /etc/sudoers
+logfile ="/var/log/sudo.log"
+```
+'''
+remediation='''使用visudo或visudo -f <PATH TO FILE>编辑文件/etc/sudoers
+
+``` bash
+logfile="/var/log/sudo.log"
+```
+'''
+impact=["配置sudo日志后，可以详细的查看用户执行了那些命令，包括执行的时间，登录的时间，登录点。"]
+defaultvalue=["默认情况下没有配置"]
+references=["[sudo命令用法及日志管理（非官方）](https://blog.51cto.com/lifeng/976879) "]
+CIS=["Version 7\n   6.3 Enable Detailed Logging\n   Enable system logging to include detailed information such as an event source, date, user, timestamp, source addresses, destination addresses, and other useful elements."]

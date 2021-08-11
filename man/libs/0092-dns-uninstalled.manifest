@@ -1,0 +1,31 @@
+id="0092-dns-uninstalled"
+category="system"
+level="warn"
+title="dns被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+#desc="{{.Content}} 未安装，建议检查后进行安装"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["域名系统(DNS)是一种层次结构命名系统，它将名称映射到连接到网络的计算机、服务和其他资源的IP地址。"]
+rationale=["除非一个系统被专门指定为DNS服务器，否则建议删除该软件包，以减少潜在的攻击面。"]
+riskitems=["增加被攻击风险"]
+audit='''运行以下命令以验证是否未安装对应组件：
+```bash
+# rpm -q bind
+package bind is not installed
+```
+'''
+remediation='''运行以下命令以删除对应的包：
+```bash
+# yum remove bind
+```
+'''
+impact=["您的如果正在使用该服务器做dns，可能集群会失去域名解析能力。"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7\n  9.2确保仅经批准的端口、协议和服务正在运行  \n  确保每个系统上仅监听具有已验证的业务需求的系统的网络端口、协议和服务在运行。"]

@@ -1,0 +1,30 @@
+id="0500-mysql-weak-psw"
+category="db"
+level="warn"
+title="存在mysql弱密码"
+desc="mysql 存在弱密码，用户名为 {{ .User }}，端口号 {{ .Port }}, 进程id为 {{ .Pid }} "
+cron="1 1 1 * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["MySQL是最好的关系型数据库管理系统，是最流行的关系型数据库管理系统之一，在web应用方面MySQL是最好的RDBMS应用软件。由于MySQL root账户的password设置简单，很容易被爆破成功，从而很容易被入侵者获得密码，并获得高权限"]
+rationale=["MySQL的root账户的密码过于简单，复杂度不够，很容易被破解。如果，不及时发现和处理，会造成数据泄露等问题。"]
+riskitems=["数据泄露", "数据勒索"]
+audit='''运行以下命令以验证：
+```bash
+mysql -u root -p
+```
+'''
+remediation='''运行以下命令修改密码：
+```bash
+mysql -u root
+mysql> SET PASSWORD FOR "root"@"localhost" = PASSWORD("newpass");
+```
+'''
+impact=["无。"]
+defaultvalue=["无"]
+references=["[MySQL弱口令漏洞的重现和利用](https://www.freebuf.com/162036.html)", "[提升登录口令安全最佳实践](https://tech.antfin.com/docs/2/184613)"]
+CIS=["无"]
