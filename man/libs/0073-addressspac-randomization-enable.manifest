@@ -1,0 +1,40 @@
+id="0073-addressspac-randomization-enable"
+category="system"
+level="warn"
+title="确保已启用地址空间布局随机化（ASLR）"
+#desc="文件 {{.File}} 发生了变化"
+desc="文件{{.Content}} 发生了变化"
+cron="0 */30 * * *" #表示每1分钟执行该lua脚本
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["地址空间布局随机化（ASLR）是一种利用漏洞缓解技术，它将进程中关键数据区域的地址空间进行随机排列。"]
+rationale=["随机放置虚拟内存区域将使写入内存页攻击变得困难，因为内存位置将不断变化。\n>"]
+riskitems=["服务不可用"]
+audit='''运行以下命令并验证输出是否匹配：
+
+```bash
+# sysctl kernel.randomize_va_space
+kernel.randomize_va_space = 2
+# grep "kernel\.randomize_va_space" /etc/sysctl.conf /etc/sysctl.d/*
+kernel.randomize_va_space = 2
+```
+
+'''
+remediation='''将以下行添加到/etc/security/limits.conf或/etc/security/limits.d/*文件中：
+
+``` bash
+kernel.randomize_va_space = 2
+```
+运行以下命令设置活动内核参数：
+``` bash
+sysctl -w kernel.randomize_va_space=2
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7\n>   8.3启用操作系统反攻击功能/部署反攻击技术\n    启用操作系统中可用的反攻击功能，如数据执行预防（DEP）或地址空间布局随机化（ASLR），或部署适当的工具包，这些工具包可配置为对更广泛的应用程序和可执行文件集应用保护。"]

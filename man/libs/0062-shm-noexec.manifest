@@ -1,0 +1,33 @@
+id="0062-shm-noexec"
+category="system"
+level="warn"
+title="/dev/shm分区没有上设置noexec选项"
+#desc="分区 {{.Content}} 已设置 noexec 挂载选项"
+desc="分区 {{.Content}} 未设置 noexec 挂载选项"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["noexec挂载选项指定文件系统不能包含可执行二进制文件\n>", "注意：/dev/shm是由systemd自动挂载的。但即使/dev/shm已经在启动时被挂载，它依然需要在\n    >\n    >   /etc/fstab中 添加挂载选项。"]
+rationale=["在文件系统上设置此选项将阻止用户从共享内存中执行程序。\n    >\n    >   这可以阻止用户在系统上引入潜在的恶意软件"]
+riskitems=["黑客渗透", "数据泄露", "挖矿风险", "肉机风险"]
+audit='''运行如下命令查看是否设置了noexec选项:
+
+```bash
+# mount | grep -E "\s/dev/shm\s" | grep -v noexec
+Nothing should be returned
+```
+'''
+remediation='''编辑/etc/fstab文件，将noexec添加到/dev/shm分区挂载选项中的第四个字段。
+有关更多信息，请参阅fstab(5)手册页。
+执行如下命令重新挂载/dev/shm。
+```bash
+# mount -o remount,noexec,nodev,nosuid /dev/shm
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+CIS=["Version 7\n\n> 2.6 处理未经批准的软件\n>\n> 确保未经授权的软件被删除或目录被及时更新\n>\n> 13 数据保护\n>\n> 数据保护"]

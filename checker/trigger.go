@@ -2,6 +2,7 @@ package checker
 
 import (
 	"bytes"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"path/filepath"
 	"strings"
 	"time"
@@ -35,6 +36,7 @@ func (p *provider) trigger(l *lua.LState) int {
 	var rule *Rule
 
 	cfg := funcs.GetScriptGlobalConfig(l)
+
 	if cfg != nil {
 		rule = Chk.findRule(cfg.RulePath)
 	}
@@ -93,6 +95,7 @@ func (p *provider) trigger(l *lua.LState) int {
 	tags["title"] = manifest.Title
 	tags["level"] = manifest.Level
 	tags["category"] = manifest.Category
+	tags["version"] = git.Version
 	for k, v := range manifest.tags {
 		if _, ok := tags[k]; !ok {
 			tags[k] = v

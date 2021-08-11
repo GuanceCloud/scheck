@@ -3,7 +3,6 @@ package system
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -245,44 +243,45 @@ func (p *provider) ulimitInfo(l *lua.LState) int {
 
 	var result lua.LTable
 
-	limitsResourceMap := []struct {
-		name string
-		id   int
-	}{
-		{"cpu", syscall.RLIMIT_CPU},
-		{"fsize", syscall.RLIMIT_FSIZE},
-		{"data", syscall.RLIMIT_DATA},
-		{"stack", syscall.RLIMIT_STACK},
-		{"core", syscall.RLIMIT_CORE},
-		{"nofile", syscall.RLIMIT_NOFILE},
-		{"as", syscall.RLIMIT_AS},
-	}
-
-	for _, r := range limitsResourceMap {
-		var rLimit syscall.Rlimit
-		err := syscall.Getrlimit(r.id, &rLimit)
-		if err == nil {
-			var item lua.LTable
-			item.RawSetString("type", lua.LString(r.name))
-			v := ""
-			if int(rLimit.Cur) == syscall.RLIM_INFINITY {
-				v = "unlimited"
-			} else {
-				v = fmt.Sprintf("%v", rLimit.Cur)
-			}
-			item.RawSetString("soft_limit", lua.LString(v))
-
-			if int(rLimit.Max) == syscall.RLIM_INFINITY {
-				v = "unlimited"
-			} else {
-				v = fmt.Sprintf("%v", rLimit.Max)
-			}
-			item.RawSetString("hard_limit", lua.LString(v))
-			result.Append(&item)
-		} else {
-			log.Errorf("fail ot getrlimit, %s", err)
+	/*	limitsResourceMap := []struct {
+			name string
+			id   int
+		}{
+			{"cpu", syscall.RLIMIT_CPU},
+			{"fsize", syscall.RLIMIT_FSIZE},
+			{"data", syscall.RLIMIT_DATA},
+			{"stack", syscall.RLIMIT_STACK},
+			{"core", syscall.RLIMIT_CORE},
+			{"nofile", syscall.RLIMIT_NOFILE},
+			{"as", syscall.RLIMIT_AS},
+			{"as", syscall.rli},
 		}
-	}
+
+		for _, r := range limitsResourceMap {
+			var rLimit syscall.Rlimit
+			err := syscall.Getrlimit(r.id, &rLimit)
+			if err == nil {
+				var item lua.LTable
+				item.RawSetString("type", lua.LString(r.name))
+				v := ""
+				if int(rLimit.Cur) == syscall.RLIM_INFINITY {
+					v = "unlimited"
+				} else {
+					v = fmt.Sprintf("%v", rLimit.Cur)
+				}
+				item.RawSetString("soft_limit", lua.LString(v))
+
+				if int(rLimit.Max) == syscall.RLIM_INFINITY {
+					v = "unlimited"
+				} else {
+					v = fmt.Sprintf("%v", rLimit.Max)
+				}
+				item.RawSetString("hard_limit", lua.LString(v))
+				result.Append(&item)
+			} else {
+				log.Errorf("fail ot getrlimit, %s", err)
+			}
+		}*/
 	l.Push(&result)
 	return 1
 }

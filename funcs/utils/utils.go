@@ -16,7 +16,6 @@ func (p *provider) Funcs() []securityChecker.Func {
 		{Name: `json_decode`, Fn: p.jsonDecode},
 		{Name: `mysql_weak_psw`, Fn: p.checkMysqlWeakPassword},
 		{Name: `mysql_ports_list`, Fn: p.mysqlPortsList},
-
 	}
 	return funcs
 }
