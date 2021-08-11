@@ -64,7 +64,8 @@ type Config struct {
 
 type System struct {
 	RuleDir       string `toml:"rule_dir"`
-	CustomRuleDir string `toml:"custom"` // 用户自定义入口
+	CustomRuleDir string `toml:"custom"`        // 用户自定义入口
+	LuaHotUpdate  string `toml:"lua_HotUpdate"` // lua热更开关
 	Cron          string `toml:"cron"`
 	DisableLog    bool   `toml:"disable_log"`
 }
@@ -105,6 +106,7 @@ type Cgroup struct {
 	Enable bool    `toml:"enable"`
 	CPUMax float64 `toml:"cpu_max"`
 	CPUMin float64 `toml:"cpu_min"`
+	MEM    int     `toml:"mem"`
 }
 
 func DefaultConfig() *Config {

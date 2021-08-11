@@ -36,7 +36,6 @@ func GetAllName() []string {
 		}
 		rms = append(rms, strings.TrimSuffix(name, ".manifest"))
 	}
-	//fmt.Println(rms)
 
 	return rms
 }

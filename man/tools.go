@@ -173,7 +173,6 @@ func ScheckList(dir_path string) []string {
 	for _, f := range files {
 		scId := strings.Split(f.Name(), ".manifest")
 		if path.Ext(f.Name()) == ".manifest" {
-			//fmt.Println(f.Name())
 			if IsAppand(fmt.Sprintf("%s%s", dir_path, f.Name())) {
 				manifest = append(manifest, scId[0])
 			}
@@ -183,10 +182,7 @@ func ScheckList(dir_path string) []string {
 }
 
 func CreateFile(content string, file string) error {
-	//fmt.Printf("当前的路径是 base之前 %s \n", file)
 	file = doFilepath(file)
-	//fmt.Printf("当前的路径是  %s \n", file)
-
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		log.Fatalf("打开文件失败err=%v", err)

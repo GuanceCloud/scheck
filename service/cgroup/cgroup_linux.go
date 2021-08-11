@@ -24,7 +24,8 @@ func start() {
 
 	quotaHigh := int64(float64(period) * high)
 	quotaLow := int64(float64(period) * low)
-
+	memLimit := int64(config.Cfg.Cgroup.MEM) * MB
+	swap := memLimit
 	pid := os.Getpid()
 
 	l.Infof("with %d CPU, set CPU limimt %.2f%%", runtime.NumCPU(), float64(quotaLow)/float64(period)*100.0)

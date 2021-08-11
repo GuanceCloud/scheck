@@ -210,8 +210,6 @@ func run() {
 		defer func() {
 			wg.Done()
 		}()
-		log.Println("2 check run")
-		// 测试packd2 20210723 测试通过
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		time.Sleep(time.Second * 5)
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
