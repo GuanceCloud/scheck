@@ -1,8 +1,9 @@
 package config
 
 import (
-	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 )
@@ -13,7 +14,7 @@ const (
 
 func toTestMem() {
 	blocks := make([][MB]byte, 0)
-	//fmt.Println("Child pid is", os.Getpid())
+	log.Println("Child pid is", os.Getpid())
 
 	for i := 0; ; i++ {
 		blocks = append(blocks, [MB]byte{})
@@ -62,10 +63,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		blocks = append(blocks, [MB]byte{})
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
-		fmt.Println("------ReadMemStats(&m)")
-		fmt.Printf("Alloc = %v MiB \n", bToMb(m.Alloc))
-		fmt.Printf("Sys = %v MiB \n", bToMb(m.Sys))
-		fmt.Println("----http-----")
+		//fmt.Println("------ReadMemStats(&m)")
+		//fmt.Printf("Alloc = %v MiB \n", bToMb(m.Alloc))
+		//fmt.Printf("Sys = %v MiB \n", bToMb(m.Sys))
+		//fmt.Println("----http-----")
 		time.Sleep(time.Second)
 	}
 }

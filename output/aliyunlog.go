@@ -3,9 +3,13 @@ package output
 import (
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/gogo/protobuf/proto"
-	log "github.com/sirupsen/logrus"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 	"time"
+)
+
+var (
+	l = logger.DefaultSLogger("output")
 )
 
 type AliYunLog struct {
@@ -32,7 +36,7 @@ func (a *AliYunLog) CreateProject() {
 	if err != nil {
 		_, err := a.Client.CreateProject(a.AliSls.ProjectName, a.AliSls.Description)
 		if err != nil {
-			log.Errorf("Create project : %s failed %v\n", a.AliSls.Description, err)
+			l.Errorf("Create project : %s failed %v\n", a.AliSls.Description, err)
 		}
 	}
 }
@@ -43,7 +47,7 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 
 	err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName, 3, 2, true, 6)
 	if err != nil {
-		log.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
+		l.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
 		return err
 	}
 
@@ -70,7 +74,7 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 	}
 	err = a.Client.CreateIndex(a.AliSls.ProjectName, a.AliSls.LogStoreName, index)
 	if err != nil {
-		log.Errorf("Create Index failed %v\n", err)
+		l.Errorf("Create Index failed %v\n", err)
 		return err
 	}
 	//fmt.Println("CreateIndex success")
@@ -99,10 +103,10 @@ func (a *AliYunLog) PutLogs(fields map[string]interface{}) error {
 
 	//fmt.Println(err)
 	if err := a.Client.PutLogs(a.AliSls.ProjectName, a.AliSls.LogStoreName, loggroup); err == nil {
-		log.Debug("PutLogs success")
+		l.Debug("PutLogs success")
 		return nil
 	} else {
-		log.Errorf("PutLogs failed %v\n", err)
+		l.Errorf("PutLogs failed %v\n", err)
 		return err
 	}
 }

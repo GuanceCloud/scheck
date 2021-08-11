@@ -228,6 +228,10 @@ func (c *Checker) start(ctx context.Context) {
 	c.scheduler.Stop()
 }
 
+/*
+	todo 修改加载逻辑 1：lua&manifest同时存在 并且manifest中arch中有当前系统的配置，
+				2：预加载并执行
+*/
 func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 
 	if atomic.LoadInt32(&c.loading) > 0 {

@@ -1,7 +1,6 @@
 package build
 
 import (
-	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -12,7 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"text/template"
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
@@ -47,10 +45,10 @@ func runEnv(args, env []string) ([]byte, error) {
 var (
 	l = logger.DefaultSLogger("build")
 
-	BuildDir     = "build"
-	PubDir       = "pub"
-	AppName      = "security-checker"
-	AppBin       = "checker"
+	BuildDir = "build"
+	PubDir   = "pub"
+	//AppName      = "security-checker"
+	AppBin       = "scheck"
 	OSSPath      = "security-checker"
 	Archs        string
 	Release      string
@@ -142,11 +140,10 @@ func Compile() {
 		} else {
 			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, ReleaseVersion)
 		}
+
+		// build installer 将install/main.go 编译成exe文件 (slq:outdir随意填的 后面改 20210805P)
+		buildInstaller(dir, goos, goarch)
 	}
-
-	// build installer 将install/main.go 编译成exe文件和sh文件 (slq:outdir随意填的 后面改 20210805P)
-	buildInstaller("build/install/", strings.TrimSpace(git.Version), DownloadAddr)
-
 	l.Infof("Done!(elapsed %v)", time.Since(start))
 }
 
@@ -211,8 +208,8 @@ type installInfo struct {
 	Version      string
 }
 
-func buildInstaller(outdir, version, download string) {
-	// -------------生成sh文件------------
+func buildInstaller(outdir, goos, goarch string) {
+	/*// -------------生成sh文件------------
 	data, err := ioutil.ReadFile("install.sh.template")
 	if err != nil {
 		l.Fatal(err)
@@ -233,11 +230,9 @@ func buildInstaller(outdir, version, download string) {
 	if err != nil {
 		l.Fatal(err)
 	}
+	*/
 
-	// ------------ 生成windows的exe文件------------
-	goos, goarch := runtime.GOOS, runtime.GOARCH
-	l.Debugf("building %s-%s/installer...", goos, goarch)
-
+	// ------------ 生成系统的install文件------------
 	args := []string{
 		"go", "build",
 		"-o", filepath.Join(outdir, installerExe),

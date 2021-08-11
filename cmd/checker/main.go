@@ -191,12 +191,23 @@ func applyFlags() {
 		os.Exit(0)
 	}
 	if *flagConfig == "" {
-		confPath := "/usr/local/scheck"
-		//*flagConfig = "scheck.conf"
-		if runtime.GOOS == "windows" { // 设置路径
-			confPath = "C:\\Program Files\\scheck"
+		//confPath := "/usr/local/scheck"
+		////*flagConfig = "scheck.conf"
+		//if runtime.GOOS == "windows" { // 设置路径
+		//	confPath = "C:\\Program Files\\scheck"
+		//}
+		*flagConfig = "scheck.conf"
+		// 查看本地是否有配置文件
+		_, err := os.Stat(*flagConfig)
+		if err != nil {
+			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
+			if err != nil {
+				log.Fatalf("%s", err)
+			}
+			if err = ioutil.WriteFile(*flagConfig, res, 0775); err != nil {
+				log.Fatalf("%s", err)
+			}
 		}
-		*flagConfig = filepath.Join(confPath, "scheck.conf")
 	}
 }
 
@@ -210,8 +221,6 @@ func run() {
 		defer func() {
 			wg.Done()
 		}()
-		log.Println("2 check run")
-		// 测试packd2 20210723 测试通过
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		time.Sleep(time.Second * 5)
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
