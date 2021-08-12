@@ -21,7 +21,8 @@ import (
 )
 
 var (
-	installerExe string
+	installerExe      string
+	noVerInstallerExe string
 )
 
 type versionDesc struct {
@@ -201,8 +202,8 @@ func PubDatakit() {
 		renameOssFiles[path.Join(OSSPath, gzName)] = path.Join(OSSPath, gzNameNoVer)
 
 		if goos == "windows" {
-			installerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
-
+			installerExe = fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, git.Version)
+			noVerInstallerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
 			// if curVd != nil && curVd.Version != git.Version {
 			// 	renameOssFiles[path.Join(OSSPath, installerExe)] =
 			// 		path.Join(OSSPath, fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, curVd.Version))
@@ -210,14 +211,16 @@ func PubDatakit() {
 
 		} else {
 			//installerExe = "install.sh"
-			installerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
+			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, git.Version)
+			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
 			// if curVd != nil && curVd.Version != git.Version {
 			// 	renameOssFiles[path.Join(OSSPath, installerExe)] =
 			// 		path.Join(OSSPath, fmt.Sprintf("installer-%s-%s-%s", goos, goarch, curVd.Version))
 			// }
 		}
 
-		ossfiles["install.sh"] = path.Join(OSSPath, installerExe)
+		ossfiles[path.Join(BuildInstallDir, installerExe)] = path.Join(OSSPath, installerExe)
+		ossfiles[path.Join(BuildInstallDir, noVerInstallerExe)] = path.Join(OSSPath, noVerInstallerExe)
 	}
 
 	// test if all file ok before uploading

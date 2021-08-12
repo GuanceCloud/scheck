@@ -76,7 +76,10 @@ func setupLogger() {
 		if config.Cfg.Logging.Log != "" {
 			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
-				os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				err = os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				if err != nil {
+					log.Printf("err=%v \n", err)
+				}
 				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
 				if err != nil {
 					log.Fatalf("%s", err)
