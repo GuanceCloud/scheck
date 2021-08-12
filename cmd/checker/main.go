@@ -15,7 +15,6 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
-	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
@@ -77,7 +76,10 @@ func setupLogger() {
 		if config.Cfg.Logging.Log != "" {
 			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
-				os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				err = os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				if err != nil {
+					log.Printf("err=%v \n", err)
+				}
 				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
 				if err != nil {
 					log.Fatalf("%s", err)
@@ -223,7 +225,7 @@ func run() {
 			wg.Done()
 		}()
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
-		time.Sleep(time.Second * 5)
+		//time.Sleep(time.Second * 5)
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
 

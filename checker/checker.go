@@ -46,7 +46,7 @@ type (
 
 // Start
 func Start(ctx context.Context, rulesDir, customRuleDir string, outputpath *config.ScOutput) {
-
+	log.Println("start schecker...")
 	log.Debugf("output: %v", outputpath)
 	log.Debugf("rule dir: %s", rulesDir)
 
@@ -186,7 +186,7 @@ func (c *Checker) start(ctx context.Context) {
 		output.Outputer.Close()
 		log.Info("checker exit")
 	}()
-
+	log.Println("start to load files...")
 	if err := c.loadRules(ctx, c.rulesDir); err != nil {
 		return
 	} else {
