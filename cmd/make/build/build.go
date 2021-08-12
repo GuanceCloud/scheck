@@ -45,16 +45,16 @@ func runEnv(args, env []string) ([]byte, error) {
 var (
 	l = logger.DefaultSLogger("build")
 
-	BuildDir     = "build"
-	PubDir       = "pub"
-	AppName      = "security-checker"
-	AppBin       = "checker"
-	OSSPath      = "security-checker"
-	Archs        string
-	Release      string
-	MainEntry    string
-	DownloadAddr string
-	ReleaseType  string
+	BuildDir        = "build"
+	BuildInstallDir = "build/install"
+	PubDir          = "pub"
+	AppBin          = "scheck"
+	OSSPath         = "security-checker"
+	Archs           string
+	Release         string
+	MainEntry       string
+	DownloadAddr    string
+	ReleaseType     string
 )
 
 func prepare() *versionDesc {
@@ -137,12 +137,14 @@ func Compile() {
 
 		if goos == "windows" {
 			installerExe = fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, ReleaseVersion)
+			noVerInstallerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
 		} else {
 			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, ReleaseVersion)
+			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
 		}
 
 		// build installer 将install/main.go 编译成exe文件 (slq:outdir随意填的 后面改 20210805P)
-		buildInstaller(dir, goos, goarch)
+		buidAllInstaller(BuildInstallDir, goos, goarch)
 	}
 	l.Infof("Done!(elapsed %v)", time.Since(start))
 }
@@ -208,34 +210,16 @@ type installInfo struct {
 	Version      string
 }
 
-func buildInstaller(outdir, goos, goarch string) {
-	/*// -------------生成sh文件------------
-	data, err := ioutil.ReadFile("install.sh.template")
-	if err != nil {
-		l.Fatal(err)
-	}
-	tmp, err := template.New("install").Parse(string(data))
-	if err != nil {
-		l.Fatal(err)
-	}
-	buf := bytes.NewBufferString("")
-	err = tmp.Execute(buf, map[string]string{
-		"Version":     version,
-		"DownloadUrl": download,
-	})
-	if err != nil {
-		l.Fatal(err)
-	}
-	err = ioutil.WriteFile("install.sh", buf.Bytes(), 0664)
-	if err != nil {
-		l.Fatal(err)
-	}
-	*/
+func buidAllInstaller(outdir, goos, goarch string) {
+	buildInstaller(outdir, goos, goarch, installerExe)
+	buildInstaller(outdir, goos, goarch, noVerInstallerExe)
+}
+func buildInstaller(outdir, goos, goarch, installerName string) {
 
 	// ------------ 生成系统的install文件------------
 	args := []string{
 		"go", "build",
-		"-o", filepath.Join(outdir, installerExe),
+		"-o", filepath.Join(outdir, installerName),
 		"-ldflags",
 		fmt.Sprintf("-w -s -X main.DataKitBaseURL=%s -X main.DataKitVersion=%s", DownloadAddr, ReleaseVersion),
 		"cmd/installer/main.go",
@@ -250,5 +234,5 @@ func buildInstaller(outdir, goos, goarch string) {
 	if err != nil {
 		l.Fatalf("failed to run %v, envs: %v: %v, msg: %s", args, env, err, string(msg))
 	}
-	l.Infof("build installer to %s", filepath.Join(outdir, installerExe))
+	l.Infof("build installer to %s", filepath.Join(outdir, installerName))
 }

@@ -281,7 +281,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 	yuque := Tmp{Path: "summary", Obj: Summary{Category: category}}
 	yuquePath := fmt.Sprintf("%s/%s", outputPath, "summary.md")
 	log.Printf("doc文档生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
-
+	ScheckDocSyncDisk(outputPath)
 	CreateFile(yuque.GetTemplate(), yuquePath)
 
 }
