@@ -1,4 +1,4 @@
-.PHONY: build pub aaa man
+.PHONY: build pub man
 
 BIN = "scheck"
 BUILD_DIR = build
@@ -10,19 +10,10 @@ RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.
 
 # 测试环境
 TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
-#TEST_DOWNLOAD_ADDR = df-storage-dev.oss-cn-hangzhou.aliyuncs.com/security-checker
-
-# 环境变量添加到本机中
-#export LOCAL_OSS_ACCESS_KEY='LTAIxxxxxxxxxxxxxxxxxxxx'
-#export LOCAL_OSS_SECRET_KEY='nRr1xxxxxxxxxxxxxxxxxxxxxxxxxx'
-#export LOCAL_OSS_BUCKET='df-storage-dev'
-#export LOCAL_OSS_HOST='oss-cn-hangzhou.aliyuncs.com'
-#export LOCAL_OSS_ADDR='df-storage-dev.oss-cn-hangzhou.aliyuncs.com/xxx/scheck'
-#export USER='xxx'
 
 
 LOCAL_ARCHS = "local"
-LOCAL_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/songlongqi/"security-checker
+LOCAL_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"$(hostname)"/"security-checker
 DEFAULT_ARCHS = "all"
 
 VERSION := $(shell git describe --always --tags)
@@ -74,11 +65,11 @@ local: gofmt man
 	$(call build,local, $(LOCAL_ARCHS), $(LOCAL_DOWNLOAD_ADDR))
 
 
-testing: man
+testing: gofmt man
 	$(call build,test, $(DEFAULT_ARCHS), $(TEST_DOWNLOAD_ADDR))
 
 
-release: man
+release: gofmt man
 	$(call build,release, $(DEFAULT_ARCHS), $(RELEASE_DOWNLOAD_ADDR))
 
 

@@ -204,19 +204,11 @@ func PubDatakit() {
 		if goos == "windows" {
 			installerExe = fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, git.Version)
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
-			// if curVd != nil && curVd.Version != git.Version {
-			// 	renameOssFiles[path.Join(OSSPath, installerExe)] =
-			// 		path.Join(OSSPath, fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, curVd.Version))
-			// }
 
 		} else {
 			//installerExe = "install.sh"
 			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, git.Version)
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
-			// if curVd != nil && curVd.Version != git.Version {
-			// 	renameOssFiles[path.Join(OSSPath, installerExe)] =
-			// 		path.Join(OSSPath, fmt.Sprintf("installer-%s-%s-%s", goos, goarch, curVd.Version))
-			// }
 		}
 
 		ossfiles[path.Join(BuildInstallDir, installerExe)] = path.Join(OSSPath, installerExe)

@@ -48,14 +48,13 @@ var (
 	BuildDir        = "build"
 	BuildInstallDir = "build/install"
 	PubDir          = "pub"
-	//AppName      = "security-checker"
-	AppBin       = "scheck"
-	OSSPath      = "security-checker"
-	Archs        string
-	Release      string
-	MainEntry    string
-	DownloadAddr string
-	ReleaseType  string
+	AppBin          = "scheck"
+	OSSPath         = "security-checker"
+	Archs           string
+	Release         string
+	MainEntry       string
+	DownloadAddr    string
+	ReleaseType     string
 )
 
 func prepare() *versionDesc {
