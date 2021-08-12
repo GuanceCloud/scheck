@@ -224,7 +224,7 @@ func run() {
 			wg.Done()
 		}()
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
-		//time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 5)
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
 
