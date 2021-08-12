@@ -61,6 +61,7 @@ func WalkList() {
 	清空系统脚本路径
 	重新写入脚本
 	-- todo 删除rule.d目录 重新写入时 判断os arch
+
 */
 func ScheckCoreSyncDisk(ruleDir string) error {
 	//fmt.Println("进入ScheckCoreSyncDisk")

@@ -50,6 +50,8 @@ export GIT_INFO
 
 define build
 	@echo "===== $(BIN) $(1) ===="
+	@echo "==git version=== $(VERSION) ===="
+	@echo "=== $(TEST_DOWNLOAD_ADDR) ===="
 	@rm -rf $(PUB_DIR)/$(1)/*
 	@mkdir -p $(BUILD_DIR) $(PUB_DIR)/$(1)
 	@mkdir -p git
