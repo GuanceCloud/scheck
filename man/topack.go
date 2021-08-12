@@ -13,6 +13,7 @@ import (
 
 var (
 	ScriptBox   = packr.New("libs", "./libs")
+	DocBox      = packr.New("doc", "./doc")
 	TemplateBox = packr.New("template", "./template")
 	Others      = map[string]interface{}{
 		"apis": "man/manuals/apis.md", //...
@@ -53,6 +54,7 @@ func WalkList() {
 /*
 	清空系统脚本路径
 	重新写入脚本
+
 */
 func ScheckCoreSyncDisk(ruleDir string) error {
 	//fmt.Println("进入ScheckCoreSyncDisk")
@@ -94,6 +96,37 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 		}
 	}
 
+	return nil
+}
+
+func ScheckDocSyncDisk(path string) error {
+
+	// 创建目录，将lua 脚本同步到磁盘上
+	if _, err := os.Stat(path); err != nil {
+		if err := os.Mkdir(path, 0775); err == nil {
+			// 遍历 lua脚本名称
+			log.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
+			fmt.Println(err)
+		}
+	}
+	for _, name := range DocBox.List() {
+		if content, err := DocBox.Find(name); err == nil {
+			name = strings.ReplaceAll(name, "\\", "/")
+			// 处理多级目录
+			paths := strings.Split(name, "/")
+			if len(paths) > 1 {
+				// 拼接目录
+				lib_dir := fmt.Sprintf("%s/%s", path, strings.Join(paths[0:len(paths)-1], "/"))
+				if _, err := os.Stat(lib_dir); err != nil {
+					if err := os.MkdirAll(lib_dir, 0775); err != nil {
+						log.Fatalf("%s create dir : %s", lib_dir, err)
+					}
+				}
+			}
+			// 写文件
+			CreateFile(string(content), fmt.Sprintf("%s/%s", path, name))
+		}
+	}
 	return nil
 }
 
