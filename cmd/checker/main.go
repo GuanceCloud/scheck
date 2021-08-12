@@ -38,8 +38,6 @@ var (
 
 	flagTestRule = flag.String("test", ``, `the name of a rule, without file extension`)
 
-	flagUpdateRules = flag.Bool("update-rules", false, `update rules`)
-
 	flagRulesToDoc      = flag.Bool("doc", false, `Generate doc document from manifest file`)
 	flagRulesToTemplate = flag.Bool("tpl", false, `Generate doc document from template file`)
 	flagOutDir          = flag.String("dir", "", `document Exported directory`)
@@ -57,7 +55,8 @@ func main() {
 	applyFlags()
 
 	if err := config.LoadConfig(*flagConfig); err != nil {
-		log.Fatalf("config loadConfig err=%v", err)
+		//fmt.Printf("加载配置文件错误 err=%v \n", err)
+		log.Fatalf("%s", err)
 	}
 	setupLogger()
 	service.Entry = run
@@ -225,7 +224,7 @@ func run() {
 			wg.Done()
 		}()
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
-		//time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 5)
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
 

@@ -64,13 +64,13 @@ func memTest() {
 	for {
 		var m1 runtime.MemStats
 		runtime.ReadMemStats(&m1)
-		fmt.Println("------ReadMemStats(&m)")
-		alloc := fmt.Sprintf("Alloc = %v MiB ", bToMb(m1.Alloc))
-		totalloc := fmt.Sprintf("totAlloc = %v MiB ", bToMb(m1.TotalAlloc))
+		//fmt.Println("------ReadMemStats(&m)")
+		//alloc := fmt.Sprintf("Alloc = %v MiB ", bToMb(m1.Alloc))
+		//totalloc := fmt.Sprintf("totAlloc = %v MiB ", bToMb(m1.TotalAlloc))
 		//fmt.Println(alloc)
-		sys := fmt.Sprintf("Sys = %v MiB ", bToMb(m1.Sys))
-		fmt.Println("group read mem", alloc, "------", sys, "---", totalloc)
-		fmt.Println(os.Getpid())
+		//sys := fmt.Sprintf("Sys = %v MiB ", bToMb(m1.Sys))
+		//fmt.Println("group read mem", alloc, "------", sys, "---", totalloc)
+		//fmt.Println(os.Getpid())
 		if m1.Alloc > uint64(1024*1024*30) { // 30M
 			fmt.Println("内存超出 程序退出")
 			os.Exit(0)

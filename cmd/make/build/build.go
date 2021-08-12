@@ -216,28 +216,6 @@ func buidAllInstaller(outdir, goos, goarch string) {
 	buildInstaller(outdir, goos, goarch, noVerInstallerExe)
 }
 func buildInstaller(outdir, goos, goarch, installerName string) {
-	/*// -------------生成sh文件------------
-	data, err := ioutil.ReadFile("install.sh.template")
-	if err != nil {
-		l.Fatal(err)
-	}
-	tmp, err := template.New("install").Parse(string(data))
-	if err != nil {
-		l.Fatal(err)
-	}
-	buf := bytes.NewBufferString("")
-	err = tmp.Execute(buf, map[string]string{
-		"Version":     version,
-		"DownloadUrl": download,
-	})
-	if err != nil {
-		l.Fatal(err)
-	}
-	err = ioutil.WriteFile("install.sh", buf.Bytes(), 0664)
-	if err != nil {
-		l.Fatal(err)
-	}
-	*/
 
 	// ------------ 生成系统的install文件------------
 	args := []string{

@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -39,7 +38,7 @@ func (wc *writeCounter) PrintProgress() {
 }
 
 func Download(from, to string, progress, downloadOnly bool) error {
-	log.Println(from)
+
 	// disable SSL verify for some bad client
 	cli := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 

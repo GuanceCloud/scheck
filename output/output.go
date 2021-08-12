@@ -85,28 +85,6 @@ func NewOutputer(scOutPut *config.ScOutput) *DataOutputer {
 		o.outputFile = os.Stdout
 	}
 
-	//if o.outputPath == "" {
-	//	o.outputFile = os.Stdout
-	//} else if strings.HasPrefix(o.outputPath, "file://") {
-	//	path := strings.TrimPrefix(o.outputPath, "file://")
-	//	f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	//	if err != nil {
-	//		os.MkdirAll(filepath.Dir(path), 0775)
-	//		f, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	//		if err != nil {
-	//			log.Errorf("%s", err)
-	//		}
-	//	} else {
-	//		o.outputFile = f
-	//	}
-	//} else if strings.HasPrefix(o.outputPath, "http://") || strings.HasPrefix(o.outputPath, "https://") {
-	//	o.httpCli = &http.Client{
-	//		Timeout: 30 * time.Second,
-	//	}
-	//} else {
-	//	log.Warnf("invalid output: %s", output)
-	//}
-
 	Outputer = o
 
 	return o
@@ -157,20 +135,23 @@ func (o *DataOutputer) Close() {
 func SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
 	var data []byte
 	var err error
-	// 阿里云日志处理
-	if Outputer.scOutPut.AliSls.Enable {
-		sls := make(map[string]interface{})
-		sls["RuleID"] = measurement
-		for k, v := range tags {
-			sls[k] = v
-		}
-		for k, v := range fields {
-			sls[k] = v
-		}
-		sls["timestamp"] = time.Now().UTC()
-		data, err = json.Marshal(sls)
-		if err != nil {
-			return err
+	//invalid memory address 处理
+	if Outputer.scOutPut.AliSls != nil {
+		// 阿里云日志处理
+		if Outputer.scOutPut.AliSls.Enable {
+			sls := make(map[string]interface{})
+			sls["ruleid"] = measurement
+			for k, v := range tags {
+				sls[k] = v
+			}
+			for k, v := range fields {
+				sls[k] = v
+			}
+			sls["timestamp"] = time.Now().UTC()
+			data, err = json.Marshal(sls)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		data, err = makeMetric(measurement, tags, fields, t...)

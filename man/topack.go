@@ -62,7 +62,7 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 			log.Fatal(err)
 			return nil
 		}
-		log.Println("已经全部删除文件。。")
+		//fmt.Println("已经全部删除文件。。")
 	}
 	// 创建目录，将lua 脚本同步到磁盘上
 	if _, err := os.Stat(ruleDir); err != nil {
@@ -89,8 +89,8 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 					CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
 
 				}
-
 			}
+			log.Println(err)
 		}
 	}
 
