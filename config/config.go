@@ -116,7 +116,7 @@ func DefaultConfig() *Config {
 			RuleDir:       "/usr/local/scheck/rules.d",
 			CustomRuleDir: "/usr/local/scheck/custom.rules.d",
 			Cron:          "",
-			DisableLog:    true,
+			DisableLog:    false,
 		},
 		ScOutput: &ScOutput{
 			Http: &Http{
@@ -136,7 +136,7 @@ func DefaultConfig() *Config {
 			LogLevel: "info",
 			Log:      filepath.Join("/var/log/scheck", "log"),
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 50},
 	}
 
 	// windows 下，日志继续跟 datakit 放在一起

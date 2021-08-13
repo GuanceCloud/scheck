@@ -196,7 +196,10 @@ func applyFlags() {
 		os.Exit(0)
 	}
 	if *flagConfig == "" {
-		*flagConfig = "scheck.conf"
+		*flagConfig = "/usr/local/scheck/scheck.conf"
+		if runtime.GOOS == "windows" {
+			*flagConfig = "C:\\Program Files\\scheck\\scheck.conf"
+		}
 		// 查看本地是否有配置文件
 		_, err := os.Stat(*flagConfig)
 		if err != nil {

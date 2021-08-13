@@ -136,23 +136,22 @@ func SendMetric(measurement string, tags map[string]string, fields map[string]in
 	var data []byte
 	var err error
 	//invalid memory address 处理
-	if Outputer.scOutPut.AliSls != nil {
+	if Outputer.scOutPut.AliSls != nil && Outputer.scOutPut.AliSls.Enable {
 		// 阿里云日志处理
-		if Outputer.scOutPut.AliSls.Enable {
-			sls := make(map[string]interface{})
-			sls["ruleid"] = measurement
-			for k, v := range tags {
-				sls[k] = v
-			}
-			for k, v := range fields {
-				sls[k] = v
-			}
-			sls["timestamp"] = time.Now().UTC()
-			data, err = json.Marshal(sls)
-			if err != nil {
-				return err
-			}
+		sls := make(map[string]interface{})
+		sls["ruleid"] = measurement
+		for k, v := range tags {
+			sls[k] = v
 		}
+		for k, v := range fields {
+			sls[k] = v
+		}
+		sls["timestamp"] = time.Now().UTC()
+		data, err = json.Marshal(sls)
+		if err != nil {
+			return err
+		}
+
 	} else {
 		data, err = makeMetric(measurement, tags, fields, t...)
 		if err != nil {

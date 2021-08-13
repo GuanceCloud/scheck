@@ -18,7 +18,7 @@
 *安装*：  
 
 ```Shell
-bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)"
+sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/installer-linux-amd64 -o installer && chmod +x ./installer && ./installer && rm -rf ./installer'
 ```
 
 *更新*：  
@@ -39,7 +39,7 @@ systemctl start/stop/restart scheck
 service scheck start/stop/restart
 ```
 
-> 注意：Security Checker 目前仅支持 Linux
+> 注意：Security Checker 支持 Linux、Windows amd64/386/arm64
 
 可配置环境变量`scoutput`来设置 Security Checker 安装后的初始 output。  
 
