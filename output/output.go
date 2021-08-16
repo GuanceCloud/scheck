@@ -239,7 +239,7 @@ func (o *DataOutputer) sendData(data []byte) error {
 
 	l.Debugf("body:  %s", string(body))
 
-	req, err := http.NewRequest("POST", o.outputPath, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", o.scOutPut.Http.Output, bytes.NewBuffer(body))
 	if err != nil {
 		l.Errorf("%s", err)
 		return err
