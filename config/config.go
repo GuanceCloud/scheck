@@ -3,15 +3,14 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
-
 	"github.com/influxdata/toml"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 )
 
 const (
@@ -99,6 +98,7 @@ type Logging struct {
 	Log      string  `toml:"log"`
 	LogLevel string  `toml:"log_level"`
 	Cgroup   *Cgroup `toml:"cgroup"` // 动态控制cpu和Mem
+	Rotate   int     `toml:"rotate"`
 }
 
 // Cgroup cpu&mem 控制量
@@ -135,6 +135,7 @@ func DefaultConfig() *Config {
 		Logging: &Logging{
 			LogLevel: "info",
 			Log:      filepath.Join("/var/log/scheck", "log"),
+			Rotate:   0, //10M
 		},
 		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 50},
 	}
@@ -157,11 +158,44 @@ func LoadConfig(p string) error {
 
 	c := &Config{}
 	if err := toml.Unmarshal(cfgdata, c); err != nil {
+		log.Printf("marshall was error and now struct config is= %+v \n", c)
 		return err
 	}
 	Cfg = c
-
+	// to init logging
+	c.setLogging()
 	return nil
+}
+func (c *Config) setLogging() {
+
+	// set global log root
+	if c.Logging.Log == "stdout" || c.Logging.Log == "" { // set log to disk file
+
+		l.Info("set log to stdout, rotate disabled")
+
+		optflags := logger.OPT_DEFAULT | logger.OPT_STDOUT
+
+		if err := logger.InitRoot(
+			&logger.Option{
+				Level: c.Logging.LogLevel,
+				Flags: optflags}); err != nil {
+			l.Errorf("set root log faile: %s", err.Error())
+		}
+
+	} else {
+
+		if c.Logging.Rotate > 0 {
+			logger.MaxSize = c.Logging.Rotate
+		}
+		if err := logger.InitRoot(&logger.Option{
+			Path:  c.Logging.Log,
+			Level: c.Logging.LogLevel,
+			Flags: logger.OPT_DEFAULT}); err != nil {
+			l.Errorf("set root log faile: %s", err.Error())
+		}
+
+	}
+	l = logger.DefaultSLogger("config")
 }
 
 // 查看当前的cpu和mem大小 控制cgroup的百分比 从而控制程序运行过程中占用系统资源的情况

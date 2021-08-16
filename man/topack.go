@@ -2,7 +2,6 @@ package man
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -61,7 +60,7 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 	// 删除目录
 	if _, err := os.Stat(ruleDir); err == nil {
 		if err := os.RemoveAll(ruleDir); err != nil {
-			log.Fatal(err)
+			l.Fatal(err)
 			return nil
 		}
 		//fmt.Println("已经全部删除文件。。")
@@ -70,7 +69,7 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 	if _, err := os.Stat(ruleDir); err != nil {
 		if err := os.Mkdir(ruleDir, 0775); err == nil {
 			// 遍历 lua脚本名称
-			log.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
+			l.Debugf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
 			for _, name := range ScriptBox.List() {
 				if content, err := ScriptBox.Find(name); err == nil {
 					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
@@ -83,7 +82,7 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 						lib_dir := fmt.Sprintf("%s/%s", ruleDir, strings.Join(paths[0:len(paths)-1], "/"))
 						if _, err := os.Stat(lib_dir); err != nil {
 							if err := os.MkdirAll(lib_dir, 0775); err != nil {
-								log.Fatalf("%s create dir : %s", lib_dir, err)
+								l.Fatalf("%s create dir : %s", lib_dir, err)
 							}
 						}
 					}
@@ -92,7 +91,6 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 
 				}
 			}
-			log.Println(err)
 		}
 	}
 
@@ -105,8 +103,7 @@ func ScheckDocSyncDisk(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if err := os.Mkdir(path, 0775); err == nil {
 			// 遍历 lua脚本名称
-			log.Printf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
-			fmt.Println(err)
+			l.Debug("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
 		}
 	}
 	for _, name := range DocBox.List() {
@@ -119,7 +116,7 @@ func ScheckDocSyncDisk(path string) error {
 				lib_dir := fmt.Sprintf("%s/%s", path, strings.Join(paths[0:len(paths)-1], "/"))
 				if _, err := os.Stat(lib_dir); err != nil {
 					if err := os.MkdirAll(lib_dir, 0775); err != nil {
-						log.Fatalf("%s create dir : %s", lib_dir, err)
+						l.Fatalf("%s create dir : %s", lib_dir, err)
 					}
 				}
 			}

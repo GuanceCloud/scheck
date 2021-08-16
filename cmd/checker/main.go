@@ -11,20 +11,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"sync"
 	"syscall"
-	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
-
-	log "github.com/sirupsen/logrus"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
 )
 
 var (
@@ -57,9 +53,10 @@ func main() {
 
 	if err := config.LoadConfig(*flagConfig); err != nil {
 		//fmt.Printf("加载配置文件错误 err=%v \n", err)
-		log.Fatalf("%s", err)
+		l.Fatalf("%s", err)
 	}
-	setupLogger()
+	// setupLogger()
+	l = logger.DefaultSLogger("main")
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())
@@ -68,42 +65,43 @@ func main() {
 	//	run()
 }
 
+/*
 func setupLogger() {
 	if config.Cfg.System.DisableLog {
-		log.SetLevel(log.PanicLevel)
+		l.SetLevel(l.PanicLevel)
 	} else {
-		log.SetReportCaller(true)
+		l.SetReportCaller(true)
 		if config.Cfg.Logging.Log != "" {
 			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
 				err = os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
 				if err != nil {
-					log.Fatalf("err=%v \n", err)
+					l.Fatalf("err=%v \n", err)
 					os.Exit(1)
 				}
 				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
 				if err != nil {
-					log.Fatalf("%s", err)
+					l.Fatalf("%s", err)
 					os.Exit(1)
 				}
 			}
-			log.SetOutput(lf)
-			//log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
-			//log.AddHook() // todo 重写hook接口 就可以实现多端输出
+			l.SetOutput(lf)
+			//l.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
+			//l.AddHook() // todo 重写hook接口 就可以实现多端输出
 		}
 		switch config.Cfg.Logging.LogLevel {
 		case "debug":
-			log.SetLevel(log.DebugLevel)
+			l.SetLevel(l.DebugLevel)
 		case "warn":
-			log.SetLevel(log.WarnLevel)
+			l.SetLevel(l.WarnLevel)
 		case "error":
-			log.SetLevel(log.ErrorLevel)
+			l.SetLevel(l.ErrorLevel)
 		default:
-			log.SetLevel(log.InfoLevel)
+			l.SetLevel(l.InfoLevel)
 		}
 	}
 }
-
+*/
 func applyFlags() {
 
 	if *flagVersion {
@@ -114,7 +112,8 @@ func applyFlags() {
 			}
 			var verSt versionSt
 			if json.Unmarshal(data, &verSt) == nil {
-				log.Printf("rules: %s\n", verSt.Version)
+				l.Errorf("rules: %s\n", verSt.Version)
+
 			}
 		}
 		os.Exit(0)
@@ -130,18 +129,18 @@ func applyFlags() {
 		url := fmt.Sprintf("https://%s/scheck-%s-%s-%s.md5", urls[ReleaseType], runtime.GOOS, runtime.GOARCH, Version)
 		resp, err := http.Get(url)
 		if err != nil {
-			log.Fatal(err)
+			l.Fatal(err)
 		}
 		defer resp.Body.Close()
 		remoteVal, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			l.Fatal(err)
 		}
 
 		bin := `/usr/local/scheck/scheck`
 		data, err := ioutil.ReadFile(bin)
 		if err != nil {
-			log.Fatalf("%s", err)
+			l.Fatalf("%s", err)
 		}
 		md5 := md5.New()
 		md5.Write(data)
@@ -159,7 +158,7 @@ func applyFlags() {
 	if *flagCfgSample {
 		res, err := securityChecker.TomlMarshal(config.DefaultConfig())
 		if err != nil {
-			log.Fatalf("%s", err)
+			l.Fatalf("%s", err)
 		}
 		os.Stdout.WriteString(string(res))
 
@@ -172,7 +171,6 @@ func applyFlags() {
 	}
 
 	if *flagTestRule != "" {
-		log.SetLevel(log.DebugLevel)
 		checker.TestRule(*flagTestRule)
 		os.Exit(0)
 	}
@@ -205,10 +203,10 @@ func applyFlags() {
 		if err != nil {
 			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
 			if err != nil {
-				log.Fatalf("%s", err)
+				l.Fatalf("%s", err)
 			}
 			if err = ioutil.WriteFile(*flagConfig, res, 0775); err != nil {
-				log.Fatalf("%s", err)
+				l.Fatalf("%s", err)
 			}
 		}
 	}
@@ -224,8 +222,9 @@ func run() {
 		defer func() {
 			wg.Done()
 		}()
+		man.SetLog()
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
-		time.Sleep(time.Second * 5)
+
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
 
@@ -236,7 +235,7 @@ func run() {
 		select {
 		case sig := <-signals:
 			if sig == syscall.SIGHUP {
-				log.Debugf("reload config")
+				l.Debugf("reload config")
 			}
 			cancel()
 		}

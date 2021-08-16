@@ -14,9 +14,18 @@ import (
 	"strings"
 	"text/template"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+
 	"github.com/BurntSushi/toml"
-	log "github.com/sirupsen/logrus"
 )
+
+var (
+	l *logger.Logger
+)
+
+func SetLog() {
+	l = logger.DefaultSLogger("tool")
+}
 
 type Tmp struct {
 	Path string
@@ -82,13 +91,13 @@ func (t *Tmp) GetTemplate() string {
 	tpl, err := GetTpl(t.Path)
 	tmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
 	if err != nil {
-		log.Fatalf("parsing: %s", err)
+		l.Fatalf("parsing: %s", err)
 	}
 	buf := new(bytes.Buffer)
 	// 运行模板，出入数据参数
 	err = tmpl.Execute(buf, t.Obj)
 	if err != nil {
-		log.Fatalf("execution: %s", err)
+		l.Fatalf("execution: %s", err)
 	}
 	return buf.String()
 }
@@ -119,11 +128,11 @@ type Markdown struct {
 func (m *Markdown) TemplateDecodeFile() error {
 	fileStr, err := GetManifest(m.path)
 	if err != nil {
-		log.Warnf("没有此manifest文件 name=%s", m.path)
+		l.Warnf("没有此manifest文件 name=%s", m.path)
 		return err
 	}
 	if err = toml.Unmarshal([]byte(fileStr), m); err != nil {
-		log.Warnf("反序列化错误 err=%v", err)
+		l.Warnf("反序列化错误 err=%v", err)
 		return err
 	}
 	return nil
@@ -154,7 +163,7 @@ func ScheckDir(id string, outputPath string) {
 	if !bool {
 		err := os.Mkdir(path, os.ModePerm)
 		if err != nil {
-			log.Fatalf("%s 创建失败", path)
+			l.Fatalf("%s 创建失败", path)
 		}
 	}
 }
@@ -185,14 +194,14 @@ func CreateFile(content string, file string) error {
 	file = doFilepath(file)
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		log.Fatalf("打开文件失败err=%v", err)
+		l.Fatalf("打开文件失败err=%v", err)
 		return err
 	}
 	defer f.Close()
 	_, err = f.Write([]byte(content))
 	//err := ioutil.WriteFile(file, []byte(content), 0777)
 	if err != nil {
-		log.Fatalf("写入文件失败err=%v", err)
+		l.Fatalf("写入文件失败err=%v", err)
 		return err
 	}
 	return nil
@@ -209,7 +218,7 @@ type Summary struct {
 func DfTemplate(filesName []string, outputPath string) {
 	if _, err := os.Stat(outputPath); err != nil {
 		if err := os.MkdirAll(outputPath, 0775); err != nil {
-			log.Fatalf("%s create dir : %s", outputPath, err)
+			l.Fatalf("%s create dir : %s", outputPath, err)
 		}
 	}
 	count := 0
@@ -230,7 +239,7 @@ func DfTemplate(filesName []string, outputPath string) {
 		CreateFile(meta.GetTemplate(), metaPath)
 		count++
 	}
-	log.Printf("模版生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
+	l.Debugf("模版生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
 
 }
 
@@ -238,7 +247,7 @@ func DfTemplate(filesName []string, outputPath string) {
 func ToMakeMdFile(filesName []string, outputPath string) {
 	if _, err := os.Stat(outputPath); err != nil {
 		if err := os.MkdirAll(outputPath, 0775); err != nil {
-			log.Fatalf("%s create dir : %s", outputPath, err)
+			l.Fatalf("%s create dir : %s", outputPath, err)
 		}
 	}
 	category := map[string]map[string]string{
@@ -254,7 +263,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		id := strings.Split(v, "-")[0]
 		md := Markdown{path: v, Id: id}
 		if err := md.TemplateDecodeFile(); err != nil {
-			log.Fatalf("err:%s", err)
+			l.Fatalf("err:%s", err)
 		}
 		// 去除不要生成的
 		if len(md.Description) < 1 {
@@ -267,20 +276,20 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		yuquemd := Tmp{Path: "yuquemd", Obj: md}
 		if _, err := os.Stat(outputPath); err != nil {
 			if err := os.MkdirAll(outputPath, 0775); err != nil {
-				log.Fatalf("%s create dir : %s", outputPath, err)
+				l.Fatalf("%s create dir : %s", outputPath, err)
 			}
 		}
 		yuqueMdPath := fmt.Sprintf("%s/%s.md", outputPath, md.RuleID)
 		err := CreateFile(yuquemd.GetTemplate(), yuqueMdPath)
 		if err != nil {
-			log.Fatalf("写入文件失败 err=%v \n", err)
+			l.Fatalf("写入文件失败 err=%v \n", err)
 		}
 		count++
 	}
 
 	yuque := Tmp{Path: "summary", Obj: Summary{Category: category}}
 	yuquePath := fmt.Sprintf("%s/%s", outputPath, "summary.md")
-	log.Printf("doc文档生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
+	l.Debugf("doc文档生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
 	ScheckDocSyncDisk(outputPath)
 	CreateFile(yuque.GetTemplate(), yuquePath)
 

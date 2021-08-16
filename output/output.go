@@ -15,11 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-
-	log "github.com/sirupsen/logrus"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 
 	ifxcli "github.com/influxdata/influxdb1-client/v2"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 )
 
 type (
@@ -39,6 +38,7 @@ type (
 
 var (
 	Outputer *DataOutputer
+	l        *logger.Logger
 )
 
 func NewOutputer(scOutPut *config.ScOutput) *DataOutputer {
@@ -63,7 +63,7 @@ func NewOutputer(scOutPut *config.ScOutput) *DataOutputer {
 				os.MkdirAll(filepath.Dir(path), 0775)
 				f, err = os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 				if err != nil {
-					log.Errorf("%s", err)
+					l.Errorf("%s", err)
 				}
 			} else {
 				o.outputFile = f
@@ -72,7 +72,7 @@ func NewOutputer(scOutPut *config.ScOutput) *DataOutputer {
 	} else if o.scOutPut.AliSls.Enable {
 		// Todo 阿里云sls 对接
 		if o.scOutPut.AliSls.AccessKeyID == "" || o.scOutPut.AliSls.AccessKeySecret == "" || o.scOutPut.AliSls.EndPoint == "" {
-			log.Errorf("%s", "access_key_id or access_key_secret or endpoint cannot be empty ")
+			l.Errorf("%s", "access_key_id or access_key_secret or endpoint cannot be empty ")
 		}
 
 		var sls AliYunLog
@@ -91,7 +91,7 @@ func NewOutputer(scOutPut *config.ScOutput) *DataOutputer {
 }
 
 func Start(ctx context.Context, scOutPut *config.ScOutput) {
-
+	l = logger.DefaultSLogger("output")
 	Outputer = NewOutputer(scOutPut)
 
 	go func() {
@@ -126,7 +126,7 @@ func Start(ctx context.Context, scOutPut *config.ScOutput) {
 func (o *DataOutputer) Close() {
 	if o.outputFile != nil && o.outputFile != os.Stdout {
 		if err := o.outputFile.Close(); err != nil {
-			log.Errorf("%s", err)
+			l.Errorf("%s", err)
 		}
 		o.outputFile = nil
 	}
@@ -171,7 +171,7 @@ func SendMetric(measurement string, tags map[string]string, fields map[string]in
 func buildBody(data []byte) (body []byte, gzon bool, err error) {
 	if len(data) > 1024 { // should not gzip on file output
 		if body, err = gzipCompress(data); err != nil {
-			log.Errorf("%s", err.Error())
+			l.Errorf("%s", err.Error())
 			return
 		}
 		gzon = true
@@ -203,7 +203,7 @@ func (o *DataOutputer) sendSls(datas [][]byte) error {
 	for _, i := range datas {
 		fields := make(map[string]interface{})
 		if err := json.Unmarshal(i, &fields); err != nil {
-			log.Fatalf("data 序列号失败 %s", err)
+			l.Fatalf("data 序列号失败 %s", err)
 			return err
 		}
 		var err error
@@ -222,7 +222,7 @@ func (o *DataOutputer) sendData(data []byte) error {
 
 	if o.outputFile != nil {
 		if _, err := o.outputFile.Write(append(data, '\n')); err != nil {
-			log.Errorf("%s", err)
+			l.Errorf("%s", err)
 			return err
 		}
 		return nil
@@ -237,11 +237,11 @@ func (o *DataOutputer) sendData(data []byte) error {
 		return err
 	}
 
-	log.Debugf("body:  %s", string(body))
+	l.Debugf("body:  %s", string(body))
 
 	req, err := http.NewRequest("POST", o.outputPath, bytes.NewBuffer(body))
 	if err != nil {
-		log.Printf("%s", err)
+		l.Errorf("%s", err)
 		return err
 	}
 
@@ -253,29 +253,29 @@ func (o *DataOutputer) sendData(data []byte) error {
 
 	resp, err := o.httpCli.Do(req)
 	if err != nil {
-		log.Printf("%s", err)
+		l.Errorf("%s", err)
 		return err
 	}
 
 	defer resp.Body.Close()
 	respbody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("%s", err)
+		l.Errorf("%s", err)
 		return err
 	}
 
 	switch resp.StatusCode / 100 {
 	case 2:
-		log.Debugf("post %d to %s ok(gz: %v), cost %v, response: %s",
+		l.Debugf("post %d to %s ok(gz: %v), cost %v, response: %s",
 			len(body), o.outputPath, gz, time.Since(postbeg), string(respbody))
 		return nil
 
 	case 4:
-		log.Errorf("post %d to %s failed(HTTP: %d): %s, cost %v, data dropped", len(body), o.outputPath, resp.StatusCode, string(respbody), time.Since(postbeg))
+		l.Errorf("post %d to %s failed(HTTP: %d): %s, cost %v, data dropped", len(body), o.outputPath, resp.StatusCode, string(respbody), time.Since(postbeg))
 		return fmt.Errorf("4xx error")
 
 	case 5:
-		log.Errorf("post %d to %s failed(HTTP: %s): %s, cost %v",
+		l.Errorf("post %d to %s failed(HTTP: %s): %s, cost %v",
 			len(body), o.outputPath, resp.Status, string(respbody), time.Since(postbeg))
 		return fmt.Errorf("5xx error")
 	}
@@ -301,14 +301,14 @@ func makeMetric(name string, tags map[string]string, fields map[string]interface
 		switch v.(type) {
 		case uint64:
 			if v.(uint64) > uint64(math.MaxInt64) {
-				log.Printf("on input `%s', filed %s, get uint64 %d > MaxInt64(%d), dropped", name, k, v.(uint64), uint64(math.MaxInt64))
+				l.Warnf("on input `%s', filed %s, get uint64 %d > MaxInt64(%d), dropped", name, k, v.(uint64), uint64(math.MaxInt64))
 				delete(fields, k)
 			} else { // convert uint64 -> int64
 				fields[k] = int64(v.(uint64))
 			}
 		case int, uint32, uint16, uint8, int64, int32, int16, int8, bool, string, float32, float64:
 		default:
-			log.Printf("invalid filed type `%s', from `%s', on filed `%s', got value `%+#v'", reflect.TypeOf(v).String(), name, k, fields[k])
+			l.Warnf("invalid filed type `%s', from `%s', on filed `%s', got value `%+#v'", reflect.TypeOf(v).String(), name, k, fields[k])
 			return nil, fmt.Errorf("invalid field type")
 		}
 	}

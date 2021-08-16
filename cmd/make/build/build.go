@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 )
 
 var (

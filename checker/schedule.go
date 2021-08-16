@@ -7,8 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	cron "github.com/robfig/cron/v3"
 )
 
@@ -93,7 +91,7 @@ func (s *Scheduler) DelRule(r *Rule) {
 func (s *Scheduler) Start() {
 	s.cron.Start()
 	for _, g := range s.intervalGroups {
-		log.Infof("调度启动for循环启动  当前的runId=%d ", g.runid)
+		l.Infof("调度启动for循环启动  当前的runId=%d ", g.runid)
 		g.start(s.ctx)
 	}
 }
@@ -171,7 +169,7 @@ func (g *intervalGroup) start(ctx context.Context) {
 				}
 				run := g.runs[id]
 				if run != nil {
-					log.Infof("当前执行的runId=%d funcID=%d", g.runid, id)
+					l.Infof("当前执行的runId=%d funcID=%d", g.runid, id)
 					run()
 				}
 				time.Sleep(time.Millisecond * 100)

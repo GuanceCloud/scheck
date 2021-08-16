@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/mem"
-
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 )
 
 var (
-	l  = logger.DefaultSLogger("cgroup")
+	l  *logger.Logger
 	MB = int64(1024 * 1024)
 )
 

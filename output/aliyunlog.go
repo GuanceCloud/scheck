@@ -1,15 +1,11 @@
 package output
 
 import (
+	"time"
+
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/gogo/protobuf/proto"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
-	"time"
-)
-
-var (
-	l = logger.DefaultSLogger("output")
 )
 
 type AliYunLog struct {

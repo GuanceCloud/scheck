@@ -8,9 +8,11 @@ a.out
 doc
 dist/
 build/
+packrd/
 !/cmd/make/build
 old/
 examples/
+*.tar
 *.tar.gz
 git/git.go
 *.log

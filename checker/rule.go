@@ -14,12 +14,10 @@ import (
 	"text/template"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
-
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 )
 
 // Rule corresponding to a lua script file
@@ -78,18 +76,18 @@ func (r *Rule) load() error {
 
 	fi, err := os.Stat(r.File)
 	if err != nil {
-		log.Errorf("%s", err)
+		l.Errorf("%s", err)
 		return err
 	}
 
 	if fi.ModTime().Unix() > r.lastModify {
 		if r.lastModify > 0 {
-			log.Debugf("%s changed, reload it", r.File)
+			l.Debugf("%s changed, reload it", r.File)
 		}
 
 		bcode, err := funcs.CompilesScript(r.File)
 		if err != nil {
-			log.Errorf("%s", err)
+			l.Errorf("%s", err)
 			return err
 		}
 		r.byteCode = bcode
@@ -109,12 +107,12 @@ func (r *Rule) load() error {
 
 	if err = manifest.load(); err != nil {
 		//err = fmt.Errorf("fail to load %s, %s", manifestPath, err)
-		log.Errorf("fail to load %s, %s", manifestPath, err)
+		l.Errorf("fail to load %s, %s", manifestPath, err)
 		return err
 	}
 	reschedule := false
 	if r.cron != "" && manifest.Cron != r.cron {
-		log.Debugf("cron change from %s to %s", r.cron, manifest.Cron)
+		l.Debugf("cron change from %s to %s", r.cron, manifest.Cron)
 		Chk.scheduler.DelRule(r) //
 		reschedule = true
 	}
@@ -122,12 +120,12 @@ func (r *Rule) load() error {
 	runLua := false
 	for _, localOS := range manifest.OSArch {
 		if strings.Contains(strings.ToUpper(localOS), strings.ToUpper(runtime.GOOS)) {
-			//log.Warnf("有相同的操作系统匹配到。。。 localos=%s", localOS)
+			//l.Warnf("有相同的操作系统匹配到。。。 localos=%s", localOS)
 			runLua = true
 		}
 	}
 	if !runLua {
-		//log.Warnf("manifest中不支持当前操作系统 当前的os=%s", strings.ToUpper(runtime.GOOS))
+		//l.Warnf("manifest中不支持当前操作系统 当前的os=%s", strings.ToUpper(runtime.GOOS))
 		Chk.doDelRule(r) // 删除当前规则 删除lua文件
 		return fmt.Errorf("manifest中不支持当前操作系统")
 	}
@@ -155,7 +153,7 @@ func (r *Rule) run() {
 
 	defer func() {
 		if e := recover(); e != nil {
-			log.Errorf("panic, %v", e)
+			l.Errorf("panic, %v", e)
 		}
 		atomic.AddInt32(&r.running, -1)
 		close(r.stopch)
@@ -168,19 +166,19 @@ func (r *Rule) run() {
 		if r.rt, err = funcs.GetScriptRuntime(&funcs.ScriptGlobalCfg{
 			RulePath: r.File,
 		}); err != nil {
-			log.Errorf("%s", err)
+			l.Errorf("%s", err)
 			return
 		}
 	}
 
-	log.Debugf("start run %s", filepath.Base(r.File))
+	l.Debugf("start run %s", filepath.Base(r.File))
 	r.mux.Lock()
 	err = r.rt.PCall(r.byteCode)
 	r.mux.Unlock()
 	if err != nil {
-		log.Errorf("run %s failed, %s", filepath.Base(r.File), err)
+		l.Errorf("run %s failed, %s", filepath.Base(r.File), err)
 	} else {
-		log.Debugf("run %s ok", filepath.Base(r.File))
+		l.Debugf("run %s ok", filepath.Base(r.File))
 	}
 }
 
@@ -194,19 +192,19 @@ func (m *RuleManifest) load() error {
 
 	fi, err := os.Stat(m.path)
 	if err != nil {
-		log.Errorf("%s", err)
+		l.Errorf("%s", err)
 		return err
 	}
 
 	if fi.ModTime().Unix() > m.lastModify {
 		if m.lastModify > 0 {
-			log.Debugf("%s changed, reload it", m.path)
+			l.Debugf("%s changed, reload it", m.path)
 		} else {
-			log.Debugf("load manifest: %s", m.path)
+			l.Debugf("load manifest: %s", m.path)
 		}
 		err := m.parse()
 		if err != nil {
-			log.Errorf("%s", err)
+			l.Errorf("%s", err)
 			return err
 		}
 		m.lastModify = time.Now().Unix()
@@ -220,7 +218,7 @@ func (m *RuleManifest) parse() (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("parse panic, %v", e)
-			log.Errorf("%s", err)
+			l.Errorf("%s", err)
 		}
 	}()
 
@@ -230,13 +228,13 @@ func (m *RuleManifest) parse() (err error) {
 	var tbl *ast.Table
 	contents, err = ioutil.ReadFile(rm.path)
 	if err != nil {
-		log.Warnf("read file err=%v", err)
+		l.Warnf("read file err=%v", err)
 		return
 	}
 	contents = bytes.TrimPrefix(contents, []byte("\xef\xbb\xbf"))
 	tbl, err = toml.Parse(contents)
 	if err != nil {
-		log.Warnf("toml.Parse err=%v", err)
+		l.Warnf("toml.Parse err=%v", err)
 		return
 	}
 
@@ -289,7 +287,7 @@ func (m *RuleManifest) parse() (err error) {
 			case "os_arch":
 				arr, err := ensureFieldStrings(k, v, &str)
 				if err != nil {
-					log.Warnf("获取os_arch字段失败err = %v", err)
+					l.Warnf("获取os_arch字段失败err = %v", err)
 				}
 				rm.OSArch = arr
 

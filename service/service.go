@@ -10,7 +10,7 @@ import (
 var (
 	ServiceName        = "scheck"
 	ServiceDisplayName = "scheck"
-	ServiceDescription = `Collects data and upload it to DataFlux.`
+	ServiceDescription = `security check host`
 	ServiceExecutable  string
 	ServiceArguments   []string
 
@@ -60,7 +60,7 @@ func StartService() error {
 		return err
 	}
 
-	if err := slogger.Info("datakit set service logger ok, starting..."); err != nil {
+	if err := slogger.Info("scheck set service logger ok, starting..."); err != nil {
 		return err
 	}
 
@@ -71,7 +71,7 @@ func StartService() error {
 		return err
 	}
 
-	if err := slogger.Info("datakit service exited"); err != nil {
+	if err := slogger.Info("scheck service exited"); err != nil {
 		return err
 	}
 
