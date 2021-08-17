@@ -55,13 +55,12 @@ func WalkList() {
 	重新写入脚本
 
 */
-func ScheckCoreSyncDisk(ruleDir string) error {
+func ScheckCoreSyncDisk(ruleDir string) {
 	//fmt.Println("进入ScheckCoreSyncDisk")
 	// 删除目录
 	if _, err := os.Stat(ruleDir); err == nil {
 		if err := os.RemoveAll(ruleDir); err != nil {
 			l.Fatal(err)
-			return nil
 		}
 		//fmt.Println("已经全部删除文件。。")
 	}
@@ -94,7 +93,6 @@ func ScheckCoreSyncDisk(ruleDir string) error {
 		}
 	}
 
-	return nil
 }
 
 func ScheckDocSyncDisk(path string) error {
