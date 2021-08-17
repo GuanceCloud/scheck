@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	bstoml "github.com/BurntSushi/toml"
 	"github.com/influxdata/toml"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
@@ -98,7 +99,7 @@ type Logging struct {
 	Log      string  `toml:"log"`
 	LogLevel string  `toml:"log_level"`
 	Cgroup   *Cgroup `toml:"cgroup"` // 动态控制cpu和Mem
-	Rotate   int     `toml:"rotate"`
+	Rotate   int     `toml:"rotate"` // 日志分片大小 单位M 默认30M
 }
 
 // Cgroup cpu&mem 控制量
@@ -135,9 +136,9 @@ func DefaultConfig() *Config {
 		Logging: &Logging{
 			LogLevel: "info",
 			Log:      filepath.Join("/var/log/scheck", "log"),
-			Rotate:   0, //10M
+			Rotate:   0, //默认32M
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 50},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 200},
 	}
 
 	// windows 下，日志继续跟 datakit 放在一起
@@ -150,40 +151,81 @@ func DefaultConfig() *Config {
 	return c
 }
 
-func LoadConfig(p string) error {
-	cfgdata, err := ioutil.ReadFile(p)
+// try load old config
+func TryLoadConfig(filePath string) bool {
+	type Conf struct {
+		RuleDir       string `toml:"rule_dir"`
+		CustomRuleDir string `toml:"custom_rule_dir"`
+		Output        string `toml:"output"`
+		Cron          string `toml:"cron"`
+		Log           string `toml:"log"`
+		LogLevel      string `toml:"log_level"`
+		DisableLog    bool   `toml:"disable_log"`
+	}
+	oldConf := new(Conf)
+	cfgData, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return err
+		log.Fatalf("ReadFile err %v", err)
 	}
 
+	if err = bstoml.Unmarshal(cfgData, oldConf); err != nil {
+		return true
+	}
+	newConf := DefaultConfig()
+	if oldConf.CustomRuleDir != newConf.System.CustomRuleDir {
+		newConf.System.CustomRuleDir = oldConf.CustomRuleDir
+	}
+	if oldConf.Cron != "" {
+		if oldConf.Cron != newConf.System.Cron {
+			newConf.System.Cron = oldConf.Cron
+		}
+	}
+	if oldConf.Log != newConf.Logging.Log {
+		newConf.Logging.Log = oldConf.Log
+	}
+	if oldConf.LogLevel != newConf.Logging.LogLevel {
+		newConf.Logging.LogLevel = oldConf.LogLevel
+	}
+	// 将新的配置写到配置文件中 O_TRUNC 覆盖写
+	f, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	en := toml.NewEncoder(f)
+	err = en.Encode(newConf)
+	if err != nil {
+		log.Fatalf("err:=%v", err)
+	}
+	Cfg = newConf
+	return false
+}
+func LoadConfig(p string) {
+	cfgData, _ := ioutil.ReadFile(p)
 	c := &Config{}
-	if err := toml.Unmarshal(cfgdata, c); err != nil {
-		log.Printf("marshall was error and now struct config is= %+v \n", c)
-		return err
+	if err := toml.Unmarshal(cfgData, c); err != nil {
+		log.Fatalf("marshall  error and now struct config is= %+v \n", c)
 	}
 	Cfg = c
+}
+
+// Init config init
+func (c *Config) Init() {
 	// to init logging
 	c.setLogging()
-	return nil
+	//  CustomRuleDir file & rule.d file
+	initDir()
 }
-func (c *Config) setLogging() {
 
+//init log
+func (c *Config) setLogging() {
 	// set global log root
 	if c.Logging.Log == "stdout" || c.Logging.Log == "" { // set log to disk file
-
-		l.Info("set log to stdout, rotate disabled")
-
-		optflags := logger.OPT_DEFAULT | logger.OPT_STDOUT
-
+		l.Info("set log to stdout")
+		optFlags := logger.OPT_DEFAULT | logger.OPT_STDOUT
 		if err := logger.InitRoot(
 			&logger.Option{
 				Level: c.Logging.LogLevel,
-				Flags: optflags}); err != nil {
-			l.Errorf("set root log faile: %s", err.Error())
+				Flags: optFlags}); err != nil {
+			l.Errorf("set root log fatal: %s", err.Error())
 		}
-
 	} else {
-
 		if c.Logging.Rotate > 0 {
 			logger.MaxSize = c.Logging.Rotate
 		}
@@ -193,9 +235,22 @@ func (c *Config) setLogging() {
 			Flags: logger.OPT_DEFAULT}); err != nil {
 			l.Errorf("set root log faile: %s", err.Error())
 		}
-
 	}
 	l = logger.DefaultSLogger("config")
+}
+
+// 初始化配置中的rule文件和用户自定义rules文件
+func initDir() {
+	_, err := os.Stat(Cfg.System.CustomRuleDir)
+	if err != nil {
+		_ = os.MkdirAll(Cfg.System.CustomRuleDir, 0644)
+	}
+
+	_, err = os.Stat(Cfg.System.RuleDir)
+	if err != nil {
+		_ = os.MkdirAll(Cfg.System.RuleDir, 0644)
+	}
+
 }
 
 // 查看当前的cpu和mem大小 控制cgroup的百分比 从而控制程序运行过程中占用系统资源的情况

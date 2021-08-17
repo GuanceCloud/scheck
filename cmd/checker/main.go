@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -50,12 +49,10 @@ var (
 func main() {
 	flag.Parse()
 	applyFlags()
-
-	if err := config.LoadConfig(*flagConfig); err != nil {
-		//fmt.Printf("加载配置文件错误 err=%v \n", err)
-		l.Fatalf("%s", err)
+	if config.TryLoadConfig(*flagConfig) {
+		config.LoadConfig(*flagConfig)
 	}
-	// setupLogger()
+	config.Cfg.Init()
 	l = logger.DefaultSLogger("main")
 	service.Entry = run
 	if err := service.StartService(); err != nil {
@@ -106,15 +103,20 @@ func applyFlags() {
 
 	if *flagVersion {
 		//fmt.Printf("scheck(%s): %s\n", ReleaseType, Version)
-		if data, err := ioutil.ReadFile(`/usr/local/scheck/rules.d/version`); err == nil {
-			type versionSt struct {
-				Version string `json:"version"`
+		if data, err := ioutil.ReadFile(`/usr/local/scheck/version`); err == nil {
+			/*type versionSt struct {
+				Version  string `json:"version"`
+				BuildAt  string `json:"date_utc"`
+				Uploader string `json:"uploader"`
+				Branch   string `json:"branch"`
+				Commit   string `json:"commit"`
+				Golang   string `json:"go"`
 			}
 			var verSt versionSt
 			if json.Unmarshal(data, &verSt) == nil {
 				l.Errorf("rules: %s\n", verSt.Version)
-
-			}
+			}*/
+			fmt.Println(string(data))
 		}
 		os.Exit(0)
 	}
@@ -224,7 +226,6 @@ func run() {
 		}()
 		man.SetLog()
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
-
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
 

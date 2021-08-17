@@ -52,7 +52,7 @@ func Start(ctx context.Context, rulesDir, customRuleDir string, outputpath *conf
 
 	Chk = newChecker(rulesDir, customRuleDir)
 
-	output.Start(ctx, outputpath)
+	output.Start(outputpath)
 	Chk.start(ctx)
 }
 
@@ -183,7 +183,7 @@ func (c *Checker) start(ctx context.Context) {
 			l.Errorf("%s", string(buf[:n]))
 
 		}
-		output.Outputer.Close()
+		output.Close()
 		l.Info("checker exit")
 	}()
 	if err := c.loadRules(ctx, c.rulesDir); err != nil {
@@ -317,9 +317,7 @@ func TestRule(rulepath string) {
 	ruledir := filepath.Dir(rulepath)
 
 	Chk = newChecker(ruledir, "") //todo
-	ctx, cancelfun := context.WithCancel(context.Background())
-	output.Start(ctx, &config.ScOutput{})
-	defer cancelfun()
+	output.Start(&config.ScOutput{})
 
 	r := newRule(rulepath)
 

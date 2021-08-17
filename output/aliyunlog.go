@@ -1,6 +1,7 @@
 package output
 
 import (
+	"encoding/json"
 	"time"
 
 	sls "github.com/aliyun/aliyun-log-go-sdk"
@@ -9,8 +10,11 @@ import (
 )
 
 type AliYunLog struct {
-	AliSls *config.AliSls
-	Client sls.ClientInterface
+	AliSls       *config.AliSls
+	Client       sls.ClientInterface
+	pending      []*sample
+	maxPending   int
+	lastSendTime int64
 }
 
 func (a *AliYunLog) conn(aliSls *config.AliSls) {
@@ -104,5 +108,62 @@ func (a *AliYunLog) PutLogs(fields map[string]interface{}) error {
 	} else {
 		l.Errorf("PutLogs failed %v\n", err)
 		return err
+	}
+}
+func newSls(aliSls *config.AliSls, maxpending int) *AliYunLog {
+	ali := &AliYunLog{
+		AliSls:     aliSls,
+		maxPending: maxpending,
+	}
+	ali.conn(aliSls)
+	ali.CreateProject()
+	return ali
+}
+func (ali *AliYunLog) Stop() {
+
+}
+func (ali *AliYunLog) ReadMsg(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) {
+	var data []byte
+	var err error
+	// 阿里云日志处理
+	sls := make(map[string]interface{})
+	sls["ruleid"] = measurement
+	for k, v := range tags {
+		sls[k] = v
+	}
+	for k, v := range fields {
+		sls[k] = v
+	}
+	sls["timestamp"] = time.Now().UTC()
+	data, err = json.Marshal(sls)
+	if err != nil {
+		return
+	}
+
+	ali.pending = append(ali.pending, &sample{data: data})
+	timenow := time.Now().Unix()
+	if len(ali.pending) >= ali.maxPending || (timenow-ali.lastSendTime) > 10 {
+		ali.ToUpstream(ali.pending...)
+		ali.pending = make([]*sample, 0)
+		ali.lastSendTime = timenow
+		return
+	}
+}
+
+func (ali *AliYunLog) ToUpstream(sams ...*sample) {
+	for _, s := range sams {
+		fields := make(map[string]interface{})
+		if err := json.Unmarshal(s.data, &fields); err != nil {
+			l.Fatalf("data 序列号失败 %s", err)
+
+		}
+		ali.conn(ali.AliSls)
+		if err := ali.CreateIndex(fields); err != nil {
+			l.Errorf("CreateIndex err %v", err)
+		}
+		if err := ali.PutLogs(fields); err != nil {
+			l.Errorf("CreateIndex err %v", err)
+		}
+
 	}
 }
