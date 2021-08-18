@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+/*
+ send Msg to datakit
+*/
 type DatakitWriter struct {
 	httpURL      string
 	pending      []*sample

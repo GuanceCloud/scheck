@@ -52,7 +52,7 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 	}
 
 	indexKey := map[string]sls.IndexKey{}
-	for i, _ := range fields {
+	for i := range fields {
 		indexKey[i] = sls.IndexKey{
 			Token:         []string{""},
 			CaseSensitive: false,
@@ -84,7 +84,7 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 func (a *AliYunLog) PutLogs(fields map[string]interface{}) error {
 	logs := []*sls.Log{}
 	content := []*sls.LogContent{}
-	for i, _ := range fields {
+	for i := range fields {
 		content = append(content, &sls.LogContent{
 			Key:   proto.String(i),
 			Value: proto.String(fields[i].(string)),
@@ -119,49 +119,51 @@ func newSls(aliSls *config.AliSls, maxpending int) *AliYunLog {
 	ali.CreateProject()
 	return ali
 }
-func (ali *AliYunLog) Stop() {
+func (a *AliYunLog) Stop() {
 
 }
-func (ali *AliYunLog) ReadMsg(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) {
+
+//
+func (a *AliYunLog) ReadMsg(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) {
 	var data []byte
 	var err error
 	// 阿里云日志处理
-	sls := make(map[string]interface{})
-	sls["ruleid"] = measurement
+	slsBody := make(map[string]interface{})
+	slsBody["ruleid"] = measurement
 	for k, v := range tags {
-		sls[k] = v
+		slsBody[k] = v
 	}
 	for k, v := range fields {
-		sls[k] = v
+		slsBody[k] = v
 	}
-	sls["timestamp"] = time.Now().UTC()
-	data, err = json.Marshal(sls)
+	slsBody["timestamp"] = time.Now().UTC()
+	data, err = json.Marshal(slsBody)
 	if err != nil {
 		return
 	}
 
-	ali.pending = append(ali.pending, &sample{data: data})
+	a.pending = append(a.pending, &sample{data: data})
 	timenow := time.Now().Unix()
-	if len(ali.pending) >= ali.maxPending || (timenow-ali.lastSendTime) > 10 {
-		ali.ToUpstream(ali.pending...)
-		ali.pending = make([]*sample, 0)
-		ali.lastSendTime = timenow
+	if len(a.pending) >= a.maxPending || (timenow-a.lastSendTime) > 10 {
+		a.ToUpstream(a.pending...)
+		a.pending = make([]*sample, 0)
+		a.lastSendTime = timenow
 		return
 	}
 }
 
-func (ali *AliYunLog) ToUpstream(sams ...*sample) {
+func (a *AliYunLog) ToUpstream(sams ...*sample) {
 	for _, s := range sams {
 		fields := make(map[string]interface{})
 		if err := json.Unmarshal(s.data, &fields); err != nil {
 			l.Fatalf("data 序列号失败 %s", err)
 
 		}
-		ali.conn(ali.AliSls)
-		if err := ali.CreateIndex(fields); err != nil {
+		a.conn(a.AliSls)
+		if err := a.CreateIndex(fields); err != nil {
 			l.Errorf("CreateIndex err %v", err)
 		}
-		if err := ali.PutLogs(fields); err != nil {
+		if err := a.PutLogs(fields); err != nil {
 			l.Errorf("CreateIndex err %v", err)
 		}
 

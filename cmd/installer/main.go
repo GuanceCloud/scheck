@@ -118,15 +118,13 @@ func main() {
 			_ = install.ExtractDatakit(f, securityChecker.InstallDir)
 		}
 	} else {
-		l.Debugf("进入下载")
 		install.CurDownloading = dlDatakit
 		if err := install.Download(datakitUrl, securityChecker.InstallDir, true, true, false); err != nil {
 			l.Errorf("err = %v", err)
 			return
 		}
 		// download version
-		l.Debugf("download version...")
-		vUrl := "https://" + path.Join(DataKitBaseURL, "Version")
+		vUrl := "https://" + path.Join(DataKitBaseURL, "version")
 		if err := install.Download(vUrl, filepath.Join(securityChecker.InstallDir, "version"), false, true, true); err != nil {
 			l.Errorf("err = %v", err)
 			return
