@@ -103,6 +103,7 @@ func GetScriptGlobalConfig(l *lua.LState) *ScriptGlobalCfg {
 	return nil
 }
 
+// 将go函数注册进lua.LGFunction中 相当于注册回调函数
 func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
 	if err := LoadLuaLibs(ls); err != nil {

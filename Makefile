@@ -1,4 +1,6 @@
-.PHONY: build pub aaa
+.PHONY: build pub man
+
+default: local
 
 BIN = "scheck"
 BUILD_DIR = build
@@ -9,21 +11,11 @@ ENTRY = cmd/checker/main.go
 RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker
 
 # 测试环境
-#TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
-#TEST_DOWNLOAD_ADDR = df-storage-dev.oss-cn-hangzhou.aliyuncs.com/songlongqi/scheck
-TEST_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"$(shell hostname)"/scheck"
-
-# 环境变量添加到本机中
-#export LOCAL_OSS_ACCESS_KEY='LTAIxxxxxxxxxxxxxxxxxxxx'
-#export LOCAL_OSS_SECRET_KEY='nRr1xxxxxxxxxxxxxxxxxxxxxxxxxx'
-#export LOCAL_OSS_BUCKET='df-storage-dev'
-#export LOCAL_OSS_HOST='oss-cn-hangzhou.aliyuncs.com'
-#export LOCAL_OSS_ADDR='df-storage-dev.oss-cn-hangzhou.aliyuncs.com/xxx/scheck'
-#export USER='xxx'
+TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
 
 
 LOCAL_ARCHS = "local"
-LOCAL_DOWNLOAD_ADDR = "$(TEST_DOWNLOAD_ADDR)"
+LOCAL_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"$(hostname)"/"security-checker
 DEFAULT_ARCHS = "all"
 
 VERSION := $(shell git describe --always --tags)
@@ -51,12 +43,6 @@ export GIT_INFO
 
 define build
 	@echo "===== $(BIN) $(1) ===="
-	@echo "==git version=== $(VERSION) ===="
-	@echo "=== $(TEST_DOWNLOAD_ADDR) ===="
-	@rm -rf $(PUB_DIR)/$(1)/*
-	@mkdir -p $(BUILD_DIR) $(PUB_DIR)/$(1)
-	@mkdir -p git
-	@echo "$$GIT_INFO" > git/git.go
 	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/make.go -main $(ENTRY) -binary $(BIN) -build-dir $(BUILD_DIR) \
 		 -env $(1) -pub-dir $(PUB_DIR) -archs $(2) -download-addr $(3)
 
@@ -71,15 +57,15 @@ endef
 gofmt:
 	@GO111MODULE=off go fmt ./...
 
-local: gofmt
-	$(call build,local, $(LOCAL_ARCHS), $(LOCAL_DOWNLOAD_ADDR))
+local: deps
+	$(call build, local, $(LOCAL_ARCHS), $(LOCAL_DOWNLOAD_ADDR))
 
 
-testing:
+testing: deps
 	$(call build,test, $(DEFAULT_ARCHS), $(TEST_DOWNLOAD_ADDR))
 
 
-release:
+release: deps
 	$(call build,release, $(DEFAULT_ARCHS), $(RELEASE_DOWNLOAD_ADDR))
 
 
@@ -97,6 +83,15 @@ pub_release:
 man:
 	@packr2 clean
 	@packr2
+
+vet: prepare
+	@go vet ./...
+
+prepare:
+	@mkdir -p git
+	@echo "$$GIT_INFO" > git/git.go
+
+deps: man gofmt vet
 
 # local:
 # 	$(call build,linux,amd64)

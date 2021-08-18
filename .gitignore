@@ -5,6 +5,7 @@ iploc.bin
 .orig
 pub
 a.out
+doc
 dist/
 build/
 !/cmd/make/build
@@ -22,3 +23,4 @@ git/git.go
 *.zip
 install.sh
 /install.sh.template
+.docs

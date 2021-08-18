@@ -76,10 +76,15 @@ func setupLogger() {
 		if config.Cfg.Logging.Log != "" {
 			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
 			if err != nil {
-				os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				err = os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
+				if err != nil {
+					log.Fatalf("err=%v \n", err)
+					os.Exit(1)
+				}
 				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
 				if err != nil {
 					log.Fatalf("%s", err)
+					os.Exit(1)
 				}
 			}
 			log.SetOutput(lf)
@@ -191,12 +196,21 @@ func applyFlags() {
 		os.Exit(0)
 	}
 	if *flagConfig == "" {
-		confPath := "/usr/local/scheck"
-		//*flagConfig = "scheck.conf"
-		if runtime.GOOS == "windows" { // 设置路径
-			confPath = "C:\\Program Files\\scheck"
+		*flagConfig = "/usr/local/scheck/scheck.conf"
+		if runtime.GOOS == "windows" {
+			*flagConfig = "C:\\Program Files\\scheck\\scheck.conf"
 		}
-		*flagConfig = filepath.Join(confPath, "scheck.conf")
+		// 查看本地是否有配置文件
+		_, err := os.Stat(*flagConfig)
+		if err != nil {
+			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
+			if err != nil {
+				log.Fatalf("%s", err)
+			}
+			if err = ioutil.WriteFile(*flagConfig, res, 0775); err != nil {
+				log.Fatalf("%s", err)
+			}
+		}
 	}
 }
 
