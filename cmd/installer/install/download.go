@@ -158,6 +158,4 @@ func doExtract(r io.Reader, to string) error {
 			l.Warnf("unexpected file %s", target)
 		}
 	}
-
-	return nil
 }
