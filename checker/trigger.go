@@ -132,7 +132,7 @@ func firstTrigger() {
 	cronNum, intervalNum := Chk.scheduler.countInfo()
 	luas := cronNum + intervalNum
 	formatTime := time.Now().Format("2006-01-02 15:04:05")
-	message := fmt.Sprintf("scheck 程序启动在%s上 \n 当前共%d个lua进入巡检队列 时间：%s", luas, formatTime)
+	message := fmt.Sprintf("scheck 程序启动 \n 当前共%d个lua进入巡检队列 时间：%s", luas, formatTime)
 	fields["message"] = message
 	_ = output.SendMetric("0000-scheck-start", tags, fields, tm)
 
