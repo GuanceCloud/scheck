@@ -8,45 +8,55 @@ import (
 	"path/filepath"
 	"runtime"
 
-	bstoml "github.com/BurntSushi/toml"
 	"github.com/influxdata/toml"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 )
 
 const (
+	// todo 覆盖写配置文件时 要想带上注释 必须用模版。。。
 	MainConfigSample = `[system]
-  # ##(required) directory contains script
-  # The system path, rules cannot be modified
+  # ##(必选) 系统存放检测脚本的目录
+  rule_dir = "/usr/local/scheck/rules.d"
+  # ##客户自定义目录
+  custom_dir = "/usr/local/scheck/custom.rules.d"
+  #热更新
+  lua_HotUpdate = false
+  cron = ""
+  #是否禁用日志
+  disable_log = false
 
-  rule_dir='/usr/local/scheck/rules.d'
-
-  # custom_rule_dir is a user-defined directory，You can modify the path
-
-  custom_rule_dir='/usr/local/scheck/custom.rules.d'
-
-  # ##(optional)global cron, default is every 10 seconds
-  #cron='*/10 * * * *'
-  #disable_log=false
 [scoutput]
-  # ##(required) output of the check result, support local file or remote http server or aliyun sls
-  # ##remote:  http(s)://your.url
-  [http]
-     enable = true
-     output='{{.Output}}'
-  # ##localfile: file:///your/file/path
-  [log]
-     enable = false
-     output='{{.Output}}'
-  [alisls]
-     enable = false
-     endpoint = ''
-     access_key_id = ''
-     access_key_secret = ''
-[logging]
-  log='/usr/local/scheck/log'
-  log_level='info'	
+    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
+   # ##远程server，例：http(s)://your.url
+  [scoutput.http]
+    enable = true
+    output = "http://127.0.0.1:9529/v1/write/security"
+  [scoutput.log]
+    # ##可配置本地存储
+    enable = false
+    output = "/var/log/scheck/event.log"
+  # 阿里云日志系统
+  [scoutput.alisls]
+    enable = false
+    endpoint = ""
+    access_key_id = ""
+    access_key_secret = ""
+    project_name = "zhuyun-scheck"
+    log_store_name = "scheck"
 
+[logging]
+  # ##(可选) 程序运行过程中产生的日志存储位置
+  log = "/var/log/scheck/log"
+  log_level = "info"
+  rotate = 0
+
+[cgroup]
+    # 可选 默认关闭 可控制cpu和mem
+  enable = false
+  cpu_max = 30.0
+  cpu_min = 5.0
+  mem = 0
 `
 )
 
@@ -168,11 +178,11 @@ func TryLoadConfig(filePath string) bool {
 		log.Fatalf("ReadFile err %v", err)
 	}
 
-	if err = bstoml.Unmarshal(cfgData, oldConf); err != nil {
+	if err = toml.Unmarshal(cfgData, oldConf); err != nil {
 		return true
 	}
 	newConf := DefaultConfig()
-	if oldConf.CustomRuleDir != newConf.System.CustomRuleDir {
+	if oldConf.CustomRuleDir != "" && oldConf.CustomRuleDir != newConf.System.CustomRuleDir {
 		newConf.System.CustomRuleDir = oldConf.CustomRuleDir
 	}
 	if oldConf.Cron != "" {
@@ -180,27 +190,35 @@ func TryLoadConfig(filePath string) bool {
 			newConf.System.Cron = oldConf.Cron
 		}
 	}
-	if oldConf.Log != newConf.Logging.Log {
-		newConf.Logging.Log = oldConf.Log
+	if oldConf.Log != "" {
+		if oldConf.Log != newConf.Logging.Log {
+			newConf.Logging.Log = oldConf.Log
+		}
 	}
-	if oldConf.LogLevel != newConf.Logging.LogLevel {
-		newConf.Logging.LogLevel = oldConf.LogLevel
+	if oldConf.LogLevel != "" {
+		if oldConf.LogLevel != newConf.Logging.LogLevel {
+			newConf.Logging.LogLevel = oldConf.LogLevel
+		}
 	}
 	// 将新的配置写到配置文件中 O_TRUNC 覆盖写
 	f, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	en := toml.NewEncoder(f)
-	err = en.Encode(newConf)
+	res, _ := securityChecker.TomlMarshal(newConf)
+	// bug:将bytes写到文件时 没有格式化。转换成string后就格式化
+	_, err = f.WriteString(string(res))
 	if err != nil {
 		log.Fatalf("err:=%v", err)
 	}
+
 	Cfg = newConf
 	return false
 }
+
+// LoadConfig
 func LoadConfig(p string) {
 	cfgData, _ := ioutil.ReadFile(p)
 	c := &Config{}
 	if err := toml.Unmarshal(cfgData, c); err != nil {
-		log.Fatalf("marshall  error and now struct config is= %+v \n", c)
+		log.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
 	}
 	Cfg = c
 }

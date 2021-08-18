@@ -30,7 +30,7 @@ func applyFlags() {
 	build.MainEntry = *flagMain
 	build.DownloadAddr = *flagDownloadAddr
 	// slq 本地测试make testing 临时修改
-	//build.DownloadAddr = "df-storage-dev.oss-cn-hangzhou.aliyuncs.com/security-checker"
+	// build.DownloadAddr = "df-storage-dev.oss-cn-hangzhou.aliyuncs.com/security-checker"
 	// switch *flagEnv {
 	// case "release":
 	// 	log.Printf("under release, only checked inputs released")

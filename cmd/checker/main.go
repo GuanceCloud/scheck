@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
@@ -54,6 +55,7 @@ func main() {
 	}
 	config.Cfg.Init()
 	l = logger.DefaultSLogger("main")
+	//go pprof()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())
@@ -62,43 +64,10 @@ func main() {
 	//	run()
 }
 
-/*
-func setupLogger() {
-	if config.Cfg.System.DisableLog {
-		l.SetLevel(l.PanicLevel)
-	} else {
-		l.SetReportCaller(true)
-		if config.Cfg.Logging.Log != "" {
-			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
-			if err != nil {
-				err = os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
-				if err != nil {
-					l.Fatalf("err=%v \n", err)
-					os.Exit(1)
-				}
-				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
-				if err != nil {
-					l.Fatalf("%s", err)
-					os.Exit(1)
-				}
-			}
-			l.SetOutput(lf)
-			//l.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
-			//l.AddHook() // todo 重写hook接口 就可以实现多端输出
-		}
-		switch config.Cfg.Logging.LogLevel {
-		case "debug":
-			l.SetLevel(l.DebugLevel)
-		case "warn":
-			l.SetLevel(l.WarnLevel)
-		case "error":
-			l.SetLevel(l.ErrorLevel)
-		default:
-			l.SetLevel(l.InfoLevel)
-		}
-	}
+func pprof() {
+	_ = http.ListenAndServe("0.0.0.0:6060", nil)
 }
-*/
+
 func applyFlags() {
 
 	if *flagVersion {
@@ -207,9 +176,15 @@ func applyFlags() {
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
-			if err = ioutil.WriteFile(*flagConfig, res, 0775); err != nil {
+			fmt.Println(string(res))
+			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, 0644)
+			if err != nil {
 				l.Fatalf("%s", err)
 			}
+			f.WriteString(string(res))
+			/*if err = ioutil.WriteFile(*flagConfig, res, 0644); err != nil {
+				l.Fatalf("%s", err)
+			}*/
 		}
 	}
 }

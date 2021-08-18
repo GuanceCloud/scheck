@@ -24,7 +24,7 @@ sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs
 *更新*：  
 
 ```Shell
-bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh) --upgrade"
+sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/installer-linux-amd64 -o installer && chmod +x ./installer && ./installer --upgrade && rm -rf ./installer'
 ```
 
 安装完成后即以服务的方式运行，服务名为`scheck`，使用服务管理工具来控制程序的启动/停止：  
@@ -39,7 +39,7 @@ systemctl start/stop/restart scheck
 service scheck start/stop/restart
 ```
 
-> 注意：Security Checker 支持 Linux、Windows amd64/386/arm64
+> 注意：Security Checker 支持 Linux/Windows amd64/arm64
 
 可配置环境变量`scoutput`来设置 Security Checker 安装后的初始 output。  
 
@@ -63,14 +63,15 @@ service scheck start/stop/restart
   disable_log = false
 
 [scoutput]
+    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
    # ##远程server，例：http(s)://your.url
   [scoutput.http]
     enable = true
     output = "http://127.0.0.1:9529/v1/write/security"
   [scoutput.log]
+    # ##可配置本地存储
     enable = false
-    # ##本地文件时需要使用前缀 file://， 例：file:///your/file/path
-    output = "file:///var/log/scheck/event.log"
+    output = "/var/log/scheck/event.log"
   # 阿里云日志系统
   [scoutput.alisls]
     enable = false
@@ -81,11 +82,13 @@ service scheck start/stop/restart
     log_store_name = "scheck"
 
 [logging]
-  # ##(可选) 程序本身的日志配置
+  # ##(可选) 程序运行过程中产生的日志存储位置
   log = "/var/log/scheck/log"
   log_level = "info"
+  rotate = 0
 
 [cgroup]
+    # 可选 默认关闭 可控制cpu和mem
   enable = false
   cpu_max = 30.0
   cpu_min = 5.0

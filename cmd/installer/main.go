@@ -61,7 +61,6 @@ var (
 const (
 	datakitBin = "scheck"
 	dlDatakit  = "scheck"
-	dlData     = "data"
 )
 
 func main() {
@@ -107,7 +106,7 @@ func main() {
 	mvOldDatakit(svc)
 
 	applyFlags()
-	l.Infof("打印系统参数 DataKitBaseURL=%s  Version:=%s", DataKitBaseURL, DataKitVersion)
+	//l.Infof("打印系统参数 DataKitBaseURL=%s  Version:=%s", DataKitBaseURL, DataKitVersion)
 	// create install dir if not exists
 	if err := os.MkdirAll(securityChecker.InstallDir, 0775); err != nil {
 		l.Warnf("makeDirAll %v", err)
