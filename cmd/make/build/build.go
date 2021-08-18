@@ -23,11 +23,11 @@ var (
 	to get current os/arch list */
 
 	OSArches = []string{ // supported os/arch list
-		//`linux/386`,
+		`linux/386`,
 		`linux/amd64`,
-		//`linux/arm`,
-		//`linux/arm64`,
-		//`windows/386`,
+		`linux/arm`,
+		`linux/arm64`,
+		`windows/386`,
 		`windows/amd64`,
 	}
 	ReleaseVersion = git.Version
