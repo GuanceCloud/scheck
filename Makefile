@@ -1,5 +1,7 @@
 .PHONY: build pub man
 
+default: local
+
 BIN = "scheck"
 BUILD_DIR = build
 PUB_DIR = pub
@@ -41,12 +43,6 @@ export GIT_INFO
 
 define build
 	@echo "===== $(BIN) $(1) ===="
-	@echo "==git version=== $(VERSION) ===="
-	@echo "=== $(TEST_DOWNLOAD_ADDR) ===="
-	@rm -rf $(PUB_DIR)/$(1)/*
-	@mkdir -p $(BUILD_DIR) $(PUB_DIR)/$(1)
-	@mkdir -p git
-	@echo "$$GIT_INFO" > git/git.go
 	@GO111MODULE=off CGO_ENABLED=0 go run cmd/make/make.go -main $(ENTRY) -binary $(BIN) -build-dir $(BUILD_DIR) \
 		 -env $(1) -pub-dir $(PUB_DIR) -archs $(2) -download-addr $(3)
 
@@ -61,15 +57,16 @@ endef
 gofmt:
 	@GO111MODULE=off go fmt ./...
 
-local: gofmt man
-	$(call build,local, $(LOCAL_ARCHS), $(LOCAL_DOWNLOAD_ADDR))
+
+local: deps
+	$(call build, local, $(LOCAL_ARCHS), $(LOCAL_DOWNLOAD_ADDR))
 
 
-testing: gofmt man
+testing: deps
 	$(call build,test, $(DEFAULT_ARCHS), $(TEST_DOWNLOAD_ADDR))
 
 
-release: gofmt man
+release: deps
 	$(call build,release, $(DEFAULT_ARCHS), $(RELEASE_DOWNLOAD_ADDR))
 
 
@@ -87,6 +84,15 @@ pub_release:
 man:
 	@packr2 clean
 	@packr2
+
+vet: prepare
+	@go vet ./...
+
+prepare:
+	@mkdir -p git
+	@echo "$$GIT_INFO" > git/git.go
+
+deps: man gofmt vet
 
 # local:
 # 	$(call build,linux,amd64)
