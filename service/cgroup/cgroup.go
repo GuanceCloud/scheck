@@ -1,7 +1,6 @@
 package cgroup
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 	"time"
@@ -12,7 +11,7 @@ import (
 )
 
 var (
-	l  *logger.Logger
+	l  = logger.DefaultSLogger("cgroup")
 	MB = int64(1024 * 1024)
 )
 
@@ -35,16 +34,15 @@ func Run() {
 	}
 	if config.Cfg.Cgroup.MEM != -1 {
 		if config.Cfg.Cgroup.MEM == 0 {
-			// 设置默认值 50M
 			config.Cfg.Cgroup.MEM = 200
 		}
-		//判断mem参数的合法性
+
 		vm, err := mem.VirtualMemory()
 		if err != nil {
-			l.Warn("读内存出现错误 err=%v", err)
+			l.Warn("MEM VirtualMemory err=%v", err)
 			return
 		}
-		//	total := vm.Total / M
+
 		available := vm.Available / uint64(MB)
 		if uint64(config.Cfg.Cgroup.MEM) > available {
 			l.Errorf("MEM should less than Available")
@@ -52,7 +50,6 @@ func Run() {
 		}
 	}
 
-	//go memTest()
 	start()
 }
 
@@ -63,15 +60,8 @@ func memTest() {
 	for {
 		var m1 runtime.MemStats
 		runtime.ReadMemStats(&m1)
-		//fmt.Println("------ReadMemStats(&m)")
-		//alloc := fmt.Sprintf("Alloc = %v MiB ", bToMb(m1.Alloc))
-		//totalloc := fmt.Sprintf("totAlloc = %v MiB ", bToMb(m1.TotalAlloc))
-		//fmt.Println(alloc)
-		//sys := fmt.Sprintf("Sys = %v MiB ", bToMb(m1.Sys))
-		//fmt.Println("group read mem", alloc, "------", sys, "---", totalloc)
-		//fmt.Println(os.Getpid())
-		if m1.Alloc > uint64(1024*1024*30) { // 30M
-			fmt.Println("内存超出 程序退出")
+
+		if m1.Alloc > uint64(1024*1024*30) {
 			os.Exit(0)
 		} else {
 			blocks = append(blocks, [1024 * 512]byte{})

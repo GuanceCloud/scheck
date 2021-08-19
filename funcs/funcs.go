@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
@@ -103,7 +104,6 @@ func GetScriptGlobalConfig(l *lua.LState) *ScriptGlobalCfg {
 	return nil
 }
 
-// 将go函数注册进lua.LGFunction中 相当于注册回调函数
 func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
 	if err := LoadLuaLibs(ls); err != nil {
@@ -144,4 +144,37 @@ func LoadLuaLibs(ls *lua.LState) error {
 		ls.Pop(1)
 	}
 	return nil
+}
+
+// testLua
+func TestLua(rulepath string) {
+	rulepath, _ = filepath.Abs(rulepath)
+	rulepath = rulepath + ".lua"
+	byteCode, err := CompilesScript(rulepath)
+	if err != nil {
+		fmt.Printf("Compile lua scripterr=%v \n", err)
+		return
+	}
+	lua.LuaPathDefault = "./rules.d/lib/?.lua"
+
+	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
+	if err := LoadLuaLibs(ls); err != nil {
+		ls.Close()
+		fmt.Printf("LoadLuaLibs err=%v \n ", err)
+		return
+	}
+	SetScriptGlobalConfig(ls, &ScriptGlobalCfg{RulePath: rulepath})
+	luajson.Preload(ls)
+	for _, p := range checker.FuncProviders {
+		for _, f := range p.Funcs() {
+			ls.Register(f.Name, lua.LGFunction(f.Fn))
+		}
+	}
+
+	lfunc := ls.NewFunctionFromProto(byteCode.Proto)
+	ls.Push(lfunc)
+	if err = ls.PCall(0, lua.MultRet, nil); err != nil {
+		fmt.Printf("testLua err=%v \n", err)
+	}
+
 }

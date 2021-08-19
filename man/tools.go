@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	l *logger.Logger
+	l = logger.SLogger("tool")
 )
 
 func SetLog() {
@@ -86,15 +86,14 @@ func (t *Tmp) GetTemplate() string {
 		"inc":     t.arrayTostring,
 		"htmlUrl": t.htmlUrl,
 	}
-	//pahtList := strings.Split(t.Path, "/")
-	// 创建模板, 添加模板函数,添加解析模板文本.
+
 	tpl, err := GetTpl(t.Path)
 	tmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
 	if err != nil {
 		l.Fatalf("parsing: %s", err)
 	}
 	buf := new(bytes.Buffer)
-	// 运行模板，出入数据参数
+
 	err = tmpl.Execute(buf, t.Obj)
 	if err != nil {
 		l.Fatalf("execution: %s", err)
@@ -103,14 +102,13 @@ func (t *Tmp) GetTemplate() string {
 }
 
 type Markdown struct {
-	RuleID   string `toml:"id"`
-	Category string `toml:"category"`
-	Level    string `toml:"level"`
-	Title    string `toml:"title"`
-	Desc     string `toml:"desc"`
-	Cron     string `toml:"cron"`
-	Disabled bool   `toml:"disabled"`
-	//Fitos        []string `toml:"fitos"`
+	RuleID       string   `toml:"id"`
+	Category     string   `toml:"category"`
+	Level        string   `toml:"level"`
+	Title        string   `toml:"title"`
+	Desc         string   `toml:"desc"`
+	Cron         string   `toml:"cron"`
+	Disabled     bool     `toml:"disabled"`
 	OSArch       []string `toml:"os_arch"`
 	Description  []string `toml:"description"`
 	Rationale    []string `toml:"rationale"`
@@ -138,12 +136,6 @@ func (m *Markdown) TemplateDecodeFile() error {
 	return nil
 }
 
-/*
-   判断文件或文件夹是否存在
-   如果返回的错误为nil,说明文件或文件夹存在
-   如果返回的错误类型使用os.IsNotExist()判断为true,说明文件或文件夹不存在
-   如果返回的错误为其它类型,则不确定是否在存在
-*/
 func PathExists(path string) (bool, error) {
 
 	_, err := os.Stat(path)
@@ -194,14 +186,13 @@ func CreateFile(content string, file string) error {
 	file = doFilepath(file)
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		l.Fatalf("打开文件失败err=%v", err)
+		l.Fatalf("open file err=%v", err)
 		return err
 	}
 	defer f.Close()
 	_, err = f.Write([]byte(content))
-	//err := ioutil.WriteFile(file, []byte(content), 0777)
 	if err != nil {
-		l.Fatalf("写入文件失败err=%v", err)
+		l.Fatalf("write to file err=%v", err)
 		return err
 	}
 	return nil
@@ -228,7 +219,6 @@ func DfTemplate(filesName []string, outputPath string) {
 		id := strings.Split(v, "-")[0]
 		md := Markdown{path: v, Id: id}
 		md.TemplateDecodeFile()
-		// 去除不要生成的
 		if len(md.Description) < 1 {
 			continue
 		}
@@ -239,11 +229,10 @@ func DfTemplate(filesName []string, outputPath string) {
 		CreateFile(meta.GetTemplate(), metaPath)
 		count++
 	}
-	l.Debugf("模版生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
+	l.Debugf("模版生成  manifest数量=%d , 在%s 目录下", count, outputPath)
 
 }
 
-// 参数是文件list 不带文件后缀名
 func ToMakeMdFile(filesName []string, outputPath string) {
 	if _, err := os.Stat(outputPath); err != nil {
 		if err := os.MkdirAll(outputPath, 0775); err != nil {
@@ -265,7 +254,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		if err := md.TemplateDecodeFile(); err != nil {
 			l.Fatalf("err:%s", err)
 		}
-		// 去除不要生成的
+
 		if len(md.Description) < 1 {
 			continue
 		}
@@ -282,14 +271,14 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		yuqueMdPath := fmt.Sprintf("%s/%s.md", outputPath, md.RuleID)
 		err := CreateFile(yuquemd.GetTemplate(), yuqueMdPath)
 		if err != nil {
-			l.Fatalf("写入文件失败 err=%v \n", err)
+			l.Fatalf("createFile err=%v \n", err)
 		}
 		count++
 	}
 
 	yuque := Tmp{Path: "summary", Obj: Summary{Category: category}}
 	yuquePath := fmt.Sprintf("%s/%s", outputPath, "summary.md")
-	l.Debugf("doc文档生成  mf数量=%d , 在%s 目录下 \n", count, outputPath)
+	l.Debugf("doc文档生成  manifest数量=%d , 在%s 目录下 \n", count, outputPath)
 	ScheckDocSyncDisk(outputPath)
 	CreateFile(yuque.GetTemplate(), yuquePath)
 

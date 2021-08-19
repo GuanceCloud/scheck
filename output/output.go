@@ -15,9 +15,10 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 )
 
-/*
-	output： 接受trigger函数传递出来的数据并发送到上游服务器 或者本地log。。。
-*/
+var (
+	l       = logger.DefaultSLogger("output")
+	uploads map[string]outPuterInterface
+)
 
 type outPuterInterface interface {
 	ReadMsg(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time)
@@ -28,11 +29,6 @@ type outPuterInterface interface {
 type sample struct {
 	data []byte
 }
-
-var (
-	l       *logger.Logger
-	uploads map[string]outPuterInterface
-)
 
 func newOutputer(scOutPut *config.ScOutput) {
 
@@ -50,9 +46,11 @@ func newOutputer(scOutPut *config.ScOutput) {
 	if scOutPut.AliSls != nil && scOutPut.AliSls.Enable {
 		if scOutPut.AliSls.AccessKeyID == "" || scOutPut.AliSls.AccessKeySecret == "" || scOutPut.AliSls.EndPoint == "" {
 			l.Errorf("%s", "access_key_id or access_key_secret or endpoint cannot be empty ")
+		} else {
+			uploads["sls"] = newSls(scOutPut.AliSls, 100)
+			flag = true
 		}
-		uploads["sls"] = newSls(scOutPut.AliSls, 100)
-		flag = true
+
 	}
 	if !flag {
 		uploads["stdout"] = newLocalLog(scOutPut.Log.Output)
@@ -61,15 +59,25 @@ func newOutputer(scOutPut *config.ScOutput) {
 }
 
 func Start(scOutPut *config.ScOutput) {
-	l = logger.DefaultSLogger("output")
+	l = logger.SLogger("output")
 	newOutputer(scOutPut)
-	// 发送一次消息：程序已启动 内容：（scheck启动：当前hostname、ip、加载的lua数量、scheck版本等）
 
 }
 func Close() {
-	// todo close
+	for _, upload := range uploads {
+		upload.Stop()
+	}
 }
+
+// SendMetric lua.trigger callback
 func SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
+	if uploads == nil {
+		uploads = make(map[string]outPuterInterface)
+	}
+	if len(uploads) == 0 {
+		// when:test/lua.CompileLua/  the uploads.len == 0 , use os.stdout
+		uploads["stdout"] = newLocalLog("stdout")
+	}
 	for _, writer := range uploads {
 		writer.ReadMsg(measurement, tags, fields, t...)
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -58,7 +57,7 @@ func tarFiles(goos, goarch string) {
 		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", AppBin, goos, goarch)),
 		bin,
 	}
-	log.Println(args)
+	l.Debug(args)
 	cmd := exec.Command("tar", args...)
 
 	cmd.Stdout = os.Stdout
@@ -206,7 +205,6 @@ func PubDatakit() {
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
 
 		} else {
-			//installerExe = "install.sh"
 			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, git.Version)
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
 		}

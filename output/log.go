@@ -21,7 +21,7 @@ func newLocalLog(filePath string) *localLog {
 
 	if filePath == "stdout" {
 		local.outputFile = os.Stdout
-		l.Info("初始化 stdout 成功")
+		l.Info("init stdout success")
 		return local
 	}
 
@@ -35,7 +35,7 @@ func newLocalLog(filePath string) *localLog {
 	}
 
 	local.outputFile = f
-	l.Infof("初始化 本地日志 成功 path=%s", filePath)
+	l.Infof("init log ok! path=%s", filePath)
 	return local
 }
 func (log *localLog) Stop() {

@@ -29,16 +29,8 @@ func applyFlags() {
 	build.ReleaseType = build.Release
 	build.MainEntry = *flagMain
 	build.DownloadAddr = *flagDownloadAddr
-	// slq 本地测试make testing 临时修改
+	// slq make testing
 	// build.DownloadAddr = "df-storage-dev.oss-cn-hangzhou.aliyuncs.com/security-checker"
-	// switch *flagEnv {
-	// case "release":
-	// 	log.Printf("under release, only checked inputs released")
-	// 	build.ReleaseType = "checked"
-	// default:
-	// 	log.Printf("under non-release, all inputs released")
-	// 	build.ReleaseType = "all"
-	// }
 
 	if *flagPub {
 		build.PubDatakit()

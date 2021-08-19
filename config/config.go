@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -68,14 +67,14 @@ var (
 type Config struct {
 	System   *System   `toml:"system,omitempty"`
 	ScOutput *ScOutput `toml:"scoutput"`
-	Logging  *Logging  `toml:"logging,omitempty"` // 日志配置
-	Cgroup   *Cgroup   `toml:"cgroup"`            // 动态控制
+	Logging  *Logging  `toml:"logging,omitempty"`
+	Cgroup   *Cgroup   `toml:"cgroup"`
 }
 
 type System struct {
 	RuleDir       string `toml:"rule_dir"`
-	CustomRuleDir string `toml:"custom_dir"`    // 用户自定义入口
-	LuaHotUpdate  bool   `toml:"lua_HotUpdate"` // lua热更开关
+	CustomRuleDir string `toml:"custom_dir"`
+	LuaHotUpdate  bool   `toml:"lua_HotUpdate"`
 	Cron          string `toml:"cron"`
 	DisableLog    bool   `toml:"disable_log"`
 }
@@ -108,8 +107,8 @@ type AliSls struct {
 type Logging struct {
 	Log      string  `toml:"log"`
 	LogLevel string  `toml:"log_level"`
-	Cgroup   *Cgroup `toml:"cgroup"` // 动态控制cpu和Mem
-	Rotate   int     `toml:"rotate"` // 日志分片大小 单位M 默认30M
+	Cgroup   *Cgroup `toml:"cgroup"`
+	Rotate   int     `toml:"rotate"`
 }
 
 // Cgroup cpu&mem 控制量
@@ -151,7 +150,7 @@ func DefaultConfig() *Config {
 		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 200},
 	}
 
-	// windows 下，日志继续跟 datakit 放在一起
+	// windows
 	if runtime.GOOS == "windows" {
 		c.Logging.Log = filepath.Join(securityChecker.InstallDir, "log")
 		c.System.RuleDir = filepath.Join(securityChecker.InstallDir, "rules.d")
@@ -175,7 +174,7 @@ func TryLoadConfig(filePath string) bool {
 	oldConf := new(Conf)
 	cfgData, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		log.Fatalf("ReadFile err %v", err)
+		l.Fatalf("ReadFile err %v", err)
 	}
 
 	if err = toml.Unmarshal(cfgData, oldConf); err != nil {
@@ -200,30 +199,29 @@ func TryLoadConfig(filePath string) bool {
 			newConf.Logging.LogLevel = oldConf.LogLevel
 		}
 	}
-	// 将新的配置写到配置文件中 O_TRUNC 覆盖写
+
 	f, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	res, _ := securityChecker.TomlMarshal(newConf)
-	// bug:将bytes写到文件时 没有格式化。转换成string后就格式化
+
 	_, err = f.WriteString(string(res))
 	if err != nil {
-		log.Fatalf("err:=%v", err)
+		l.Fatalf("err:=%v", err)
 	}
 
 	Cfg = newConf
 	return false
 }
 
-// LoadConfig
 func LoadConfig(p string) {
 	cfgData, _ := ioutil.ReadFile(p)
 	c := &Config{}
 	if err := toml.Unmarshal(cfgData, c); err != nil {
-		log.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
+		l.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
 	}
 	f, _ := os.OpenFile(p, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	res, _ := securityChecker.TomlMarshal(c)
-	// bug:将bytes写到文件时 没有格式化。转换成string后就格式化
 	_, err := f.WriteString(string(res))
+	f.Close()
 	if err != nil {
 		l.Errorf("err:=%v", err)
 	}
@@ -278,12 +276,10 @@ func initDir() {
 
 }
 
-// 查看当前的cpu和mem大小 控制cgroup的百分比 从而控制程序运行过程中占用系统资源的情况
 func hostInfo() {
 	//cpuMun := runtime.NumCPU()
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	//fmt.Printf("当前cpu数量是%d 内存是%d", cpuMun, m.TotalAlloc)
 }
 
 func CreateSymlinks() {

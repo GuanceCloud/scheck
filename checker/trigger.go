@@ -19,10 +19,9 @@ type provider struct {
 }
 
 func (p *provider) Funcs() []securityChecker.Func {
-	funcs := []securityChecker.Func{
+	return []securityChecker.Func{
 		{Name: `trigger`, Fn: p.trigger},
 	}
-	return funcs
 }
 
 func (p *provider) Catalog() string {
@@ -31,19 +30,7 @@ func (p *provider) Catalog() string {
 
 func (p *provider) trigger(ls *lua.LState) int {
 
-	var err error
-	var rule *Rule
-
 	cfg := funcs.GetScriptGlobalConfig(ls)
-
-	if cfg != nil {
-		rule = Chk.findRule(cfg.RulePath)
-	}
-
-	if rule == nil {
-		ls.RaiseError("rule not found")
-		return lua.MultRet
-	}
 
 	var manifestFileName string
 	var templateTable *lua.LTable
@@ -59,7 +46,7 @@ func (p *provider) trigger(ls *lua.LState) int {
 		}
 	}
 
-	lv = ls.Get(2) //第一个参数是manifestname时
+	lv = ls.Get(2)
 	if lv.Type() == lua.LTTable {
 		templateTable = lv.(*lua.LTable)
 	}
@@ -79,9 +66,10 @@ func (p *provider) trigger(ls *lua.LState) int {
 
 	if manifestFileName == "" {
 		//use the default manifest
-		manifestFileName = strings.TrimSuffix(filepath.Base(rule.File), filepath.Ext(rule.File))
+		manifestFileName = strings.TrimSuffix(filepath.Base(cfg.RulePath), filepath.Ext(cfg.RulePath))
 	}
-	manifest, err := Chk.getManifest(manifestFileName)
+
+	manifest, err := GetManifest("./rules.d/" + manifestFileName)
 	if err != nil {
 		ls.RaiseError("%s", err)
 		return lua.MultRet
@@ -120,6 +108,7 @@ func (p *provider) trigger(ls *lua.LState) int {
 
 	return 0
 }
+
 func firstTrigger() {
 	tags := map[string]string{}
 	tm := time.Now().UTC()
@@ -132,7 +121,7 @@ func firstTrigger() {
 	cronNum, intervalNum := Chk.scheduler.countInfo()
 	luas := cronNum + intervalNum
 	formatTime := time.Now().Format("2006-01-02 15:04:05")
-	message := fmt.Sprintf("scheck 程序启动 \n 当前共%d个lua进入巡检队列 时间：%s", luas, formatTime)
+	message := fmt.Sprintf("scheck 程序启动，当前共%d个lua进入巡检队列，启动时间为：%s", luas, formatTime)
 	fields["message"] = message
 	_ = output.SendMetric("0000-scheck-start", tags, fields, tm)
 

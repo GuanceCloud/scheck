@@ -11,6 +11,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"syscall"
@@ -19,6 +20,7 @@ import (
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
 )
@@ -54,7 +56,7 @@ func main() {
 		config.LoadConfig(*flagConfig)
 	}
 	config.Cfg.Init()
-	l = logger.DefaultSLogger("main")
+	l = logger.SLogger("main")
 	//go pprof()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
@@ -69,23 +71,15 @@ func pprof() {
 }
 
 func applyFlags() {
-
+	binDir := "/usr/local/scheck/version"
+	if runtime.GOOS == "windows" {
+		binDir = "C:\\Program Files\\scheck\\scheck.conf"
+	}
 	if *flagVersion {
-		//fmt.Printf("scheck(%s): %s\n", ReleaseType, Version)
-		if data, err := ioutil.ReadFile(`/usr/local/scheck/version`); err == nil {
-			/*type versionSt struct {
-				Version  string `json:"version"`
-				BuildAt  string `json:"date_utc"`
-				Uploader string `json:"uploader"`
-				Branch   string `json:"branch"`
-				Commit   string `json:"commit"`
-				Golang   string `json:"go"`
-			}
-			var verSt versionSt
-			if json.Unmarshal(data, &verSt) == nil {
-				l.Errorf("rules: %s\n", verSt.Version)
-			}*/
-			fmt.Println(string(data))
+		if data, err := ioutil.ReadFile(binDir); err == nil {
+			l.Debug(string(data))
+		} else {
+			l.Debugf("scheck(%s): %s\n", ReleaseType, Version)
 		}
 		os.Exit(0)
 	}
@@ -108,19 +102,18 @@ func applyFlags() {
 			l.Fatal(err)
 		}
 
-		bin := `/usr/local/scheck/scheck`
-		data, err := ioutil.ReadFile(bin)
+		data, err := ioutil.ReadFile(filepath.Join(binDir, "scheck"))
 		if err != nil {
 			l.Fatalf("%s", err)
 		}
-		md5 := md5.New()
-		md5.Write(data)
-		localVal := hex.EncodeToString(md5.Sum(nil))
+		newMd5 := md5.New()
+		newMd5.Write(data)
+		localVal := hex.EncodeToString(newMd5.Sum(nil))
 
 		if localVal != "" && localVal == string(remoteVal) {
-			fmt.Printf("MD5 verify ok\n")
+			l.Debug("MD5 verify ok")
 		} else {
-			fmt.Printf("[Error] MD5 checksum not match !!!\n")
+			l.Debug("[Error] MD5 checksum not match !!!")
 		}
 
 		os.Exit(0)
@@ -142,7 +135,8 @@ func applyFlags() {
 	}
 
 	if *flagTestRule != "" {
-		checker.TestRule(*flagTestRule)
+		funcs.TestLua(*flagTestRule)
+
 		os.Exit(0)
 	}
 
@@ -165,26 +159,23 @@ func applyFlags() {
 		os.Exit(0)
 	}
 	if *flagConfig == "" {
-		*flagConfig = "/usr/local/scheck/scheck.conf"
-		if runtime.GOOS == "windows" {
-			*flagConfig = "C:\\Program Files\\scheck\\scheck.conf"
-		}
-		// 查看本地是否有配置文件
-		_, err := os.Stat(*flagConfig)
+		conf := filepath.Join(binDir, "scheck.conf")
+		_, err := os.Stat(conf)
 		if err != nil {
 			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
-			fmt.Println(string(res))
-			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, 0644)
+
+			f, err := os.OpenFile(conf, os.O_CREATE|os.O_RDWR, 0644)
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
-			f.WriteString(string(res))
-			/*if err = ioutil.WriteFile(*flagConfig, res, 0644); err != nil {
-				l.Fatalf("%s", err)
-			}*/
+			_, err = f.WriteString(string(res))
+			if err != nil {
+				l.Fatalf("write to configFile err =%v", err)
+			}
+
 		}
 	}
 }

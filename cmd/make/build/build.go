@@ -204,19 +204,12 @@ func compileArch(bin, goos, goarch, dir, version string) {
 	}
 }
 
-type installInfo struct {
-	Name         string
-	DownloadAddr string
-	Version      string
-}
-
 func buidAllInstaller(outdir, goos, goarch string) {
 	buildInstaller(outdir, goos, goarch, installerExe)
 	buildInstaller(outdir, goos, goarch, noVerInstallerExe)
 }
-func buildInstaller(outdir, goos, goarch, installerName string) {
 
-	// ------------ 生成系统的install文件------------
+func buildInstaller(outdir, goos, goarch, installerName string) {
 	args := []string{
 		"go", "build",
 		"-o", filepath.Join(outdir, installerName),

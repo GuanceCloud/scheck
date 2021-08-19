@@ -79,7 +79,7 @@ func StartService() error {
 }
 
 func (p *program) Start(s service.Service) error {
-	//fmt.Printf("-------进入 start...---- \n")
+
 	if Entry == nil {
 		return fmt.Errorf("entry not set")
 	}
@@ -90,10 +90,7 @@ func (p *program) Start(s service.Service) error {
 
 func (p *program) Stop(s service.Service) error {
 	close(StopCh)
-	// We must wait here:
-	// On windows, we stop datakit in services.msc, if datakit process do not
-	// echo to here, services.msc will complain the datakit process has been
-	// exit unexpected
+
 	<-waitstopCh
 	return nil
 }

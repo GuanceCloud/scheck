@@ -91,7 +91,7 @@ func (s *Scheduler) DelRule(r *Rule) {
 func (s *Scheduler) Start() {
 	s.cron.Start()
 	for _, g := range s.intervalGroups {
-		l.Infof("调度启动for循环启动  当前的runId=%d ", g.runid)
+		l.Infof("check runId=%d ", g.runid)
 		g.start(s.ctx)
 	}
 }
