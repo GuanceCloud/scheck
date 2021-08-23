@@ -3,50 +3,60 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
-
 	"github.com/influxdata/toml"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 )
 
 const (
+	// todo 覆盖写配置文件时 要想带上注释 必须用模版。。。
 	MainConfigSample = `[system]
-  # ##(required) directory contains script
-  # The system path, rules cannot be modified
+  # ##(必选) 系统存放检测脚本的目录
+  rule_dir = "/usr/local/scheck/rules.d"
+  # ##客户自定义目录
+  custom_dir = "/usr/local/scheck/custom.rules.d"
+  #热更新
+  lua_HotUpdate = false
+  cron = ""
+  #是否禁用日志
+  disable_log = false
 
-  rule_dir='/usr/local/scheck/rules.d'
-
-  # custom_rule_dir is a user-defined directory，You can modify the path
-
-  custom_rule_dir='/usr/local/scheck/custom.rules.d'
-
-  # ##(optional)global cron, default is every 10 seconds
-  #cron='*/10 * * * *'
-  #disable_log=false
 [scoutput]
-  # ##(required) output of the check result, support local file or remote http server or aliyun sls
-  # ##remote:  http(s)://your.url
-  [http]
-     enable = true
-     output='{{.Output}}'
-  # ##localfile: file:///your/file/path
-  [log]
-     enable = false
-     output='{{.Output}}'
-  [alisls]
-     enable = false
-     endpoint = ''
-     access_key_id = ''
-     access_key_secret = ''
-[logging]
-  log='/usr/local/scheck/log'
-  log_level='info'	
+    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
+   # ##远程server，例：http(s)://your.url
+  [scoutput.http]
+    enable = true
+    output = "http://127.0.0.1:9529/v1/write/security"
+  [scoutput.log]
+    # ##可配置本地存储
+    enable = false
+    output = "/var/log/scheck/event.log"
+  # 阿里云日志系统
+  [scoutput.alisls]
+    enable = false
+    endpoint = ""
+    access_key_id = ""
+    access_key_secret = ""
+    project_name = "zhuyun-scheck"
+    log_store_name = "scheck"
 
+[logging]
+  # ##(可选) 程序运行过程中产生的日志存储位置
+  log = "/var/log/scheck/log"
+  log_level = "info"
+  rotate = 0
+
+[cgroup]
+    # 可选 默认关闭 可控制cpu和mem
+  enable = false
+  cpu_max = 30.0
+  cpu_min = 5.0
+  mem = 0
 `
 )
 
@@ -99,6 +109,7 @@ type Logging struct {
 	Log      string  `toml:"log"`
 	LogLevel string  `toml:"log_level"`
 	Cgroup   *Cgroup `toml:"cgroup"` // 动态控制cpu和Mem
+	Rotate   int     `toml:"rotate"` // 日志分片大小 单位M 默认30M
 }
 
 // Cgroup cpu&mem 控制量
@@ -135,8 +146,9 @@ func DefaultConfig() *Config {
 		Logging: &Logging{
 			LogLevel: "info",
 			Log:      filepath.Join("/var/log/scheck", "log"),
+			Rotate:   0, //默认32M
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 50},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 200},
 	}
 
 	// windows 下，日志继续跟 datakit 放在一起
@@ -149,19 +161,114 @@ func DefaultConfig() *Config {
 	return c
 }
 
-func LoadConfig(p string) error {
-	cfgdata, err := ioutil.ReadFile(p)
+// try load old config
+func TryLoadConfig(filePath string) bool {
+	type Conf struct {
+		RuleDir       string `toml:"rule_dir"`
+		CustomRuleDir string `toml:"custom_rule_dir"`
+		Output        string `toml:"output"`
+		Cron          string `toml:"cron"`
+		Log           string `toml:"log"`
+		LogLevel      string `toml:"log_level"`
+		DisableLog    bool   `toml:"disable_log"`
+	}
+	oldConf := new(Conf)
+	cfgData, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return err
+		log.Fatalf("ReadFile err %v", err)
 	}
 
+	if err = toml.Unmarshal(cfgData, oldConf); err != nil {
+		return true
+	}
+	newConf := DefaultConfig()
+	if oldConf.CustomRuleDir != "" && oldConf.CustomRuleDir != newConf.System.CustomRuleDir {
+		newConf.System.CustomRuleDir = oldConf.CustomRuleDir
+	}
+	if oldConf.Cron != "" {
+		if oldConf.Cron != newConf.System.Cron {
+			newConf.System.Cron = oldConf.Cron
+		}
+	}
+	if oldConf.Log != "" {
+		if oldConf.Log != newConf.Logging.Log {
+			newConf.Logging.Log = oldConf.Log
+		}
+	}
+	if oldConf.LogLevel != "" {
+		if oldConf.LogLevel != newConf.Logging.LogLevel {
+			newConf.Logging.LogLevel = oldConf.LogLevel
+		}
+	}
+	// 将新的配置写到配置文件中 O_TRUNC 覆盖写
+	f, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	res, _ := securityChecker.TomlMarshal(newConf)
+	// bug:将bytes写到文件时 没有格式化。转换成string后就格式化
+	_, err = f.WriteString(string(res))
+	if err != nil {
+		log.Fatalf("err:=%v", err)
+	}
+
+	Cfg = newConf
+	return false
+}
+
+// LoadConfig
+func LoadConfig(p string) {
+	cfgData, _ := ioutil.ReadFile(p)
 	c := &Config{}
-	if err := toml.Unmarshal(cfgdata, c); err != nil {
-		return err
+	if err := toml.Unmarshal(cfgData, c); err != nil {
+		log.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
 	}
 	Cfg = c
+}
 
-	return nil
+// Init config init
+func (c *Config) Init() {
+	// to init logging
+	c.setLogging()
+	//  CustomRuleDir file & rule.d file
+	initDir()
+}
+
+//init log
+func (c *Config) setLogging() {
+	// set global log root
+	if c.Logging.Log == "stdout" || c.Logging.Log == "" { // set log to disk file
+		l.Info("set log to stdout")
+		optFlags := logger.OPT_DEFAULT | logger.OPT_STDOUT
+		if err := logger.InitRoot(
+			&logger.Option{
+				Level: c.Logging.LogLevel,
+				Flags: optFlags}); err != nil {
+			l.Errorf("set root log fatal: %s", err.Error())
+		}
+	} else {
+		if c.Logging.Rotate > 0 {
+			logger.MaxSize = c.Logging.Rotate
+		}
+		if err := logger.InitRoot(&logger.Option{
+			Path:  c.Logging.Log,
+			Level: c.Logging.LogLevel,
+			Flags: logger.OPT_DEFAULT}); err != nil {
+			l.Errorf("set root log faile: %s", err.Error())
+		}
+	}
+	l = logger.DefaultSLogger("config")
+}
+
+// 初始化配置中的rule文件和用户自定义rules文件
+func initDir() {
+	_, err := os.Stat(Cfg.System.CustomRuleDir)
+	if err != nil {
+		_ = os.MkdirAll(Cfg.System.CustomRuleDir, 0644)
+	}
+
+	_, err = os.Stat(Cfg.System.RuleDir)
+	if err != nil {
+		_ = os.MkdirAll(Cfg.System.RuleDir, 0644)
+	}
+
 }
 
 // 查看当前的cpu和mem大小 控制cgroup的百分比 从而控制程序运行过程中占用系统资源的情况

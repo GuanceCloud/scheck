@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/mem"
-
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 )
 
 var (
-	l  = logger.DefaultSLogger("cgroup")
+	l  *logger.Logger
 	MB = int64(1024 * 1024)
 )
 
@@ -37,7 +36,7 @@ func Run() {
 	if config.Cfg.Cgroup.MEM != -1 {
 		if config.Cfg.Cgroup.MEM == 0 {
 			// 设置默认值 50M
-			config.Cfg.Cgroup.MEM = 50
+			config.Cfg.Cgroup.MEM = 200
 		}
 		//判断mem参数的合法性
 		vm, err := mem.VirtualMemory()

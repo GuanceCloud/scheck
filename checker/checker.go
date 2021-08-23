@@ -12,18 +12,18 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
-
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
 )
 
 var (
 	Chk *Checker
+	l   *logger.Logger
 )
 
 type (
@@ -46,12 +46,14 @@ type (
 
 // Start
 func Start(ctx context.Context, rulesDir, customRuleDir string, outputpath *config.ScOutput) {
-	log.Debugf("output: %v", outputpath)
-	log.Debugf("rule dir: %s", rulesDir)
+
+	l = logger.DefaultSLogger("check")
+	l.Debugf("output: %v", outputpath)
+	l.Debugf("rule dir: %s", rulesDir)
 
 	Chk = newChecker(rulesDir, customRuleDir)
 
-	output.Start(ctx, outputpath)
+	output.Start(outputpath)
 	Chk.start(ctx)
 }
 
@@ -87,7 +89,7 @@ func (c *Checker) addRule(r *Rule) {
 
 	scheduleID, err := c.scheduler.AddRule(r)
 	if err != nil {
-		log.Errorf("path=%s r.cron=%s err=%s", r.File, r.cron, err)
+		l.Errorf("path=%s r.cron=%s err=%s", r.File, r.cron, err)
 		return
 	}
 	r.scheduleID = scheduleID
@@ -97,7 +99,7 @@ func (c *Checker) addRule(r *Rule) {
 func (c *Checker) reSchedule(r *Rule) {
 	scheduleID, err := c.scheduler.AddRule(r)
 	if err != nil {
-		log.Errorf("%s", err)
+		l.Errorf("%s", err)
 		return
 	}
 	r.scheduleID = scheduleID
@@ -111,13 +113,13 @@ func (c *Checker) delRules() {
 		if atomic.LoadInt32(&r.markAsDelete) == 0 {
 			continue
 		}
-		log.Debugf("removing %s", r.File)
+		l.Debugf("removing %s", r.File)
 		if atomic.LoadInt32(&r.running) > 0 {
 			select {
 			case <-r.stopch:
 				c.doDelRule(r)
 			case <-time.After(time.Second * 10):
-				log.Warnf("remove rule failed, timeout")
+				l.Warnf("remove rule failed, timeout")
 			}
 		} else {
 			c.doDelRule(r)
@@ -136,13 +138,13 @@ func (c *Checker) doDelRule(r *Rule) {
 	/*
 		// delete lua file
 		if err := os.Remove(r.File); err != nil {
-			log.Warnf("删除lua文件错误 err=%v", err)
+			l.Warnf("删除lua文件错误 err=%v", err)
 		}
 		// delete manifest file
 		index := strings.LastIndex(r.File, ".")
 		manifestFile := r.File[:index] + ".manifest"
 		if err := os.Remove(manifestFile); err != nil {
-			log.Warnf("删除manifestFile文件错误 err=%v", err)
+			l.Warnf("删除manifestFile文件错误 err=%v", err)
 		}*/
 }
 
@@ -178,12 +180,12 @@ func (c *Checker) start(ctx context.Context) {
 		if e := recover(); e != nil {
 			buf := make([]byte, 2048)
 			n := runtime.Stack(buf, false)
-			log.Errorf("panic %s", e)
-			log.Errorf("%s", string(buf[:n]))
+			l.Errorf("panic %s", e)
+			l.Errorf("%s", string(buf[:n]))
 
 		}
-		output.Outputer.Close()
-		log.Info("checker exit")
+		output.Close()
+		l.Info("checker exit")
 	}()
 	if err := c.loadRules(ctx, c.rulesDir); err != nil {
 		return
@@ -191,7 +193,7 @@ func (c *Checker) start(ctx context.Context) {
 		c.loadRules(ctx, c.customRuleDir)
 	}
 
-	log.Warnf("------------调度启动------")
+	l.Infof("------------调度启动------")
 	c.scheduler.Start()
 
 	select {
@@ -201,7 +203,7 @@ func (c *Checker) start(ctx context.Context) {
 	}
 
 	if len(c.rules) == 0 {
-		log.Warnf("no rule loaded")
+		l.Warnf("no rule loaded")
 	}
 
 	go func() {
@@ -239,7 +241,7 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 	defer atomic.StoreInt32(&c.loading, 0)
 	files, err := ioutil.ReadDir(ruleDir)
 	if err != nil {
-		log.Errorf("loadRules error ：filepath=%s err=%v", ruleDir, err)
+		l.Errorf("loadRules error ：filepath=%s err=%v", ruleDir, err)
 		return err
 	}
 
@@ -278,10 +280,10 @@ func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
 		}
 	}
 
-	c.delRules() // ? 删除的目的是什么
+	// c.delRules() // ? 删除的目的是什么
 
 	cronNum, intervalNum := c.scheduler.countInfo()
-	log.Debugf("cronNum=%d, intervalNum=%d", cronNum, intervalNum)
+	l.Debugf("cronNum=%d, intervalNum=%d", cronNum, intervalNum)
 
 	return nil
 }
@@ -303,7 +305,6 @@ func sleepContext(ctx context.Context, duration time.Duration) error {
 
 func TestRule(rulepath string) {
 
-	log.SetReportCaller(true)
 	pwd, _ := os.Getwd()
 
 	//fmt.Println(filepath.Join(pwd, filepath.Dir(rulepath)))
@@ -317,9 +318,7 @@ func TestRule(rulepath string) {
 	ruledir := filepath.Dir(rulepath)
 
 	Chk = newChecker(ruledir, "") //todo
-	ctx, cancelfun := context.WithCancel(context.Background())
-	output.Start(ctx, &config.ScOutput{})
-	defer cancelfun()
+	output.Start(&config.ScOutput{})
 
 	r := newRule(rulepath)
 

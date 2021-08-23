@@ -61,16 +61,11 @@ var (
 const (
 	datakitBin = "scheck"
 	dlDatakit  = "scheck"
-	dlData     = "data"
 )
 
 func main() {
 
 	flag.Parse()
-
-	if *flagOTA {
-		install.OTA = true
-	}
 
 	if *flagInstallLog == "" {
 		lopt := logger.OPT_DEFAULT | logger.OPT_STDOUT
@@ -111,10 +106,10 @@ func main() {
 	mvOldDatakit(svc)
 
 	applyFlags()
-	l.Infof("打印系统参数 DataKitBaseURL=%s  Version:=%s", DataKitBaseURL, DataKitVersion)
+	//l.Infof("打印系统参数 DataKitBaseURL=%s  Version:=%s", DataKitBaseURL, DataKitVersion)
 	// create install dir if not exists
 	if err := os.MkdirAll(securityChecker.InstallDir, 0775); err != nil {
-		l.Fatal("makeDirAll %v", err)
+		l.Warnf("makeDirAll %v", err)
 	}
 
 	if *flagOffline && *flagSrcs != "" {
@@ -123,18 +118,17 @@ func main() {
 		}
 	} else {
 		install.CurDownloading = dlDatakit
-		if err := install.Download(datakitUrl, securityChecker.InstallDir, true, false); err != nil {
+		if err := install.Download(datakitUrl, securityChecker.InstallDir, true, true, false); err != nil {
+			l.Errorf("err = %v", err)
+			return
+		}
+		// download version
+		vUrl := "https://" + path.Join(DataKitBaseURL, "version")
+		if err := install.Download(vUrl, filepath.Join(securityChecker.InstallDir, "version"), false, true, true); err != nil {
+			l.Errorf("err = %v", err)
 			return
 		}
 
-		//fmt.Printf("\n")
-
-		// download data
-		//install.CurDownloading = dlData
-		//if err := install.Download(dataUrl, securityChecker.InstallDir, true, false); err != nil {
-		//	return
-		//}
-		//fmt.Printf("\n")
 	}
 
 	if *flagUpgrade { // upgrade new version
@@ -192,7 +186,7 @@ Golang Version: %s
 
 		if err := install.Download(datakitUrl,
 			fmt.Sprintf("scheck-%s-%s-%s.tar.gz",
-				runtime.GOOS, runtime.GOARCH, DataKitVersion), true, true); err != nil {
+				runtime.GOOS, runtime.GOARCH, DataKitVersion), true, true, true); err != nil {
 			return
 		}
 		//fmt.Printf("\n")
@@ -207,14 +201,6 @@ Golang Version: %s
 		os.Exit(0)
 	}
 
-	install.DataWayHTTP = *flagDatawayHTTP
-	install.GlobalTags = *flagGlobalTags
-	install.Port = *flagPort
-	install.Listen = *flagListen
-	install.CloudProvider = *flagCloudProvider
-	install.DatakitName = *flagDatakitName
-	install.EnableInputs = *flagEnableInputs
-	install.Namespace = *flagNamespace
 }
 
 func mvOldDatakit(svc service.Service) {
@@ -228,7 +214,6 @@ func mvOldDatakit(svc service.Service) {
 
 	if _, err := os.Stat(olddir); err != nil {
 		l.Debugf("path %s not exists, ingored", olddir)
-		return
 	}
 
 	if err := service.Control(svc, "uninstall"); err != nil {

@@ -57,7 +57,6 @@ endef
 gofmt:
 	@GO111MODULE=off go fmt ./...
 
-
 local: deps
 	$(call build, local, $(LOCAL_ARCHS), $(LOCAL_DOWNLOAD_ADDR))
 

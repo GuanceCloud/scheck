@@ -37,21 +37,22 @@ func (wc *writeCounter) PrintProgress() {
 	}
 }
 
-func Download(from, to string, progress, downloadOnly bool) error {
+func Download(from, to string, gzip, progress, downloadOnly bool) error {
 
 	// disable SSL verify for some bad client
 	cli := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 	req, err := http.NewRequest("GET", from, nil)
 	if err != nil {
-		l.Error(err)
 		return err
 	}
-
-	req.Header.Add("Accept-Encoding", "gzip")
+	if gzip {
+		req.Header.Add("Accept-Encoding", "gzip")
+	}
 
 	resp, err := cli.Do(req)
 	if err != nil {
+		l.Errorf("err %v", err)
 		return err
 	}
 
@@ -76,6 +77,7 @@ func doDownload(r io.Reader, to string) error {
 
 	f, err := os.OpenFile(to, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
+		l.Errorf("open file err=%v to=%s", err, to)
 		return err
 	}
 

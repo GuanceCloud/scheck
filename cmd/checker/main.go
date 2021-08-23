@@ -4,27 +4,23 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"sync"
 	"syscall"
-	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
-
-	log "github.com/sirupsen/logrus"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
 )
 
 var (
@@ -54,12 +50,12 @@ var (
 func main() {
 	flag.Parse()
 	applyFlags()
-
-	if err := config.LoadConfig(*flagConfig); err != nil {
-		//fmt.Printf("加载配置文件错误 err=%v \n", err)
-		log.Fatalf("%s", err)
+	if config.TryLoadConfig(*flagConfig) {
+		config.LoadConfig(*flagConfig)
 	}
-	setupLogger()
+	config.Cfg.Init()
+	l = logger.DefaultSLogger("main")
+	//go pprof()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())
@@ -68,54 +64,28 @@ func main() {
 	//	run()
 }
 
-func setupLogger() {
-	if config.Cfg.System.DisableLog {
-		log.SetLevel(log.PanicLevel)
-	} else {
-		log.SetReportCaller(true)
-		if config.Cfg.Logging.Log != "" {
-			lf, err := os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0664)
-			if err != nil {
-				err = os.MkdirAll(filepath.Dir(config.Cfg.Logging.Log), 0775)
-				if err != nil {
-					log.Fatalf("err=%v \n", err)
-					os.Exit(1)
-				}
-				lf, err = os.OpenFile(config.Cfg.Logging.Log, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0775)
-				if err != nil {
-					log.Fatalf("%s", err)
-					os.Exit(1)
-				}
-			}
-			log.SetOutput(lf)
-			//log.SetOutput(os.Stdout) //20210721  暂时修改成终端输出 方便调试
-			//log.AddHook() // todo 重写hook接口 就可以实现多端输出
-		}
-		switch config.Cfg.Logging.LogLevel {
-		case "debug":
-			log.SetLevel(log.DebugLevel)
-		case "warn":
-			log.SetLevel(log.WarnLevel)
-		case "error":
-			log.SetLevel(log.ErrorLevel)
-		default:
-			log.SetLevel(log.InfoLevel)
-		}
-	}
+func pprof() {
+	_ = http.ListenAndServe("0.0.0.0:6060", nil)
 }
 
 func applyFlags() {
 
 	if *flagVersion {
 		//fmt.Printf("scheck(%s): %s\n", ReleaseType, Version)
-		if data, err := ioutil.ReadFile(`/usr/local/scheck/rules.d/version`); err == nil {
-			type versionSt struct {
-				Version string `json:"version"`
+		if data, err := ioutil.ReadFile(`/usr/local/scheck/version`); err == nil {
+			/*type versionSt struct {
+				Version  string `json:"version"`
+				BuildAt  string `json:"date_utc"`
+				Uploader string `json:"uploader"`
+				Branch   string `json:"branch"`
+				Commit   string `json:"commit"`
+				Golang   string `json:"go"`
 			}
 			var verSt versionSt
 			if json.Unmarshal(data, &verSt) == nil {
-				log.Printf("rules: %s\n", verSt.Version)
-			}
+				l.Errorf("rules: %s\n", verSt.Version)
+			}*/
+			fmt.Println(string(data))
 		}
 		os.Exit(0)
 	}
@@ -130,18 +100,18 @@ func applyFlags() {
 		url := fmt.Sprintf("https://%s/scheck-%s-%s-%s.md5", urls[ReleaseType], runtime.GOOS, runtime.GOARCH, Version)
 		resp, err := http.Get(url)
 		if err != nil {
-			log.Fatal(err)
+			l.Fatal(err)
 		}
 		defer resp.Body.Close()
 		remoteVal, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			l.Fatal(err)
 		}
 
 		bin := `/usr/local/scheck/scheck`
 		data, err := ioutil.ReadFile(bin)
 		if err != nil {
-			log.Fatalf("%s", err)
+			l.Fatalf("%s", err)
 		}
 		md5 := md5.New()
 		md5.Write(data)
@@ -159,7 +129,7 @@ func applyFlags() {
 	if *flagCfgSample {
 		res, err := securityChecker.TomlMarshal(config.DefaultConfig())
 		if err != nil {
-			log.Fatalf("%s", err)
+			l.Fatalf("%s", err)
 		}
 		os.Stdout.WriteString(string(res))
 
@@ -172,7 +142,6 @@ func applyFlags() {
 	}
 
 	if *flagTestRule != "" {
-		log.SetLevel(log.DebugLevel)
 		checker.TestRule(*flagTestRule)
 		os.Exit(0)
 	}
@@ -205,11 +174,17 @@ func applyFlags() {
 		if err != nil {
 			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
 			if err != nil {
-				log.Fatalf("%s", err)
+				l.Fatalf("%s", err)
 			}
-			if err = ioutil.WriteFile(*flagConfig, res, 0775); err != nil {
-				log.Fatalf("%s", err)
+			fmt.Println(string(res))
+			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, 0644)
+			if err != nil {
+				l.Fatalf("%s", err)
 			}
+			f.WriteString(string(res))
+			/*if err = ioutil.WriteFile(*flagConfig, res, 0644); err != nil {
+				l.Fatalf("%s", err)
+			}*/
 		}
 	}
 }
@@ -224,8 +199,8 @@ func run() {
 		defer func() {
 			wg.Done()
 		}()
+		man.SetLog()
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
-		time.Sleep(time.Second * 5)
 		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
 	}()
 
@@ -236,7 +211,7 @@ func run() {
 		select {
 		case sig := <-signals:
 			if sig == syscall.SIGHUP {
-				log.Debugf("reload config")
+				l.Debugf("reload config")
 			}
 			cancel()
 		}
