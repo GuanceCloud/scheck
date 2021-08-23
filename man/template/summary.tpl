@@ -1,9 +1,9 @@
 # Summary
 
 - [Scheck 是什么](scheck-info)
+- [Scheck 版本历史](changelog)
 - [Scheck 使用入门](scheck-how-to)
 - [Scheck 最佳实践](best-practices)
-- [Scheck 版本历史](changelog)
 - [Scheck 安装、配置]()
 	- [Scheck 安装](scheck-install)
 	- [Scheck 配置](scheck-configure)

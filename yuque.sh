@@ -7,4 +7,4 @@
 rm -rf .docs
 mkdir -p .docs
 ./build/scheck-darwin-amd64/scheck -doc -dir .docs
-#waque upload .docs/*.md
+waque upload .docs/*.md

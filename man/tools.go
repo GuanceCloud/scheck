@@ -269,7 +269,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		if err := md.TemplateDecodeFile(); err != nil {
 			l.Fatalf("err:%s", err)
 		}
-		// 去除不要生成的
+		// Remove unwanted
 		if len(md.Description) < 1 {
 			continue
 		}
@@ -317,7 +317,7 @@ func ScheckCoreSyncDisk(ruleDir string) {
 	// Create a directory and synchronize Lua scripts to disk
 	if _, err := os.Stat(ruleDir); err != nil {
 		if err := os.Mkdir(ruleDir, 0775); err == nil {
-			//l.Debugf("当前的scriptBox 长度是 %d \n", len(ScriptBox.List()))
+			l.Debugf("The current scriptbox length is %d \n", len(ScriptBox.List()))
 			for _, name := range ScriptBox.List() {
 				if content, err := ScriptBox.Find(name); err == nil {
 					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
@@ -341,22 +341,6 @@ func ScheckCoreSyncDisk(ruleDir string) {
 		}
 	}
 
-}
-
-func templateMarshal(name, content string, obj interface{}) (string, error) {
-	tmpl, err := template.New(name).Parse(content)
-	if err != nil {
-		//l.Fatalf("parsing: %s", err)
-		return "", err
-	}
-	buf := new(bytes.Buffer)
-	err = tmpl.Execute(buf, obj)
-	if err != nil {
-		//fmt.Println(err)
-		//l.Fatalf("execution: %s", err)
-		return "", err
-	}
-	return buf.String(), nil
 }
 
 func ScheckDocSyncDisk(path string) error {
@@ -383,7 +367,6 @@ func ScheckDocSyncDisk(path string) error {
 				}
 			}
 			res := fmt.Sprintf(string(content), git.Version, git.BuildAt)
-			fmt.Println(name)
 			err := CreateFile(res, fmt.Sprintf("%s/%s", path, name))
 			if err != nil {
 				l.Fatalf("save file error,err :%s", err)
