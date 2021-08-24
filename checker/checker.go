@@ -224,6 +224,8 @@ func (c *Checker) start(ctx context.Context) {
 		// 设置一个入口 可以控制程序的cpu和内存大小
 		config.RunCGroupForTest()
 	}()*/
+	// 发送一次消息到output上
+	firstTrigger()
 	<-ctx.Done()
 	c.scheduler.Stop()
 }

@@ -63,6 +63,8 @@ func newOutputer(scOutPut *config.ScOutput) {
 func Start(scOutPut *config.ScOutput) {
 	l = logger.DefaultSLogger("output")
 	newOutputer(scOutPut)
+	// 发送一次消息：程序已启动 内容：（scheck启动：当前hostname、ip、加载的lua数量、scheck版本等）
+
 }
 func Close() {
 	// todo close

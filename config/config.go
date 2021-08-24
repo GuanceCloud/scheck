@@ -220,6 +220,13 @@ func LoadConfig(p string) {
 	if err := toml.Unmarshal(cfgData, c); err != nil {
 		log.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
 	}
+	f, _ := os.OpenFile(p, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	res, _ := securityChecker.TomlMarshal(c)
+	// bug:将bytes写到文件时 没有格式化。转换成string后就格式化
+	_, err := f.WriteString(string(res))
+	if err != nil {
+		l.Errorf("err:=%v", err)
+	}
 	Cfg = c
 }
 
