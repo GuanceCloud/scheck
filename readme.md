@@ -16,15 +16,15 @@
 ## 安装/更新
 
 *安装*：  
-
+### Linux 平台
 ```Shell
-sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/installer-linux-amd64 -o installer && chmod +x ./installer && ./installer && rm -rf ./installer'
+sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.sh'
 ```
 
 *更新*：  
-
+### Linux 平台
 ```Shell
-sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/installer-linux-amd64 -o installer && chmod +x ./installer && ./installer --upgrade && rm -rf ./installer'
+SC_UPGRADE=true;sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.sh'
 ```
 
 安装完成后即以服务的方式运行，服务名为`scheck`，使用服务管理工具来控制程序的启动/停止：  

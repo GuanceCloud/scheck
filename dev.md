@@ -20,6 +20,7 @@ export LOCAL_OSS_ACCESS_KEY='LTAI5tLaYtUxxx'
 export LOCAL_OSS_SECRET_KEY='nRr1xQBCeyl4oBgo0xx'
 export LOCAL_OSS_BUCKET='df-xxx-dev'
 export LOCAL_OSS_HOST='oss-cn-hangzhou.aliyuncs.com'
+export SC_USERNAME='xxx'
 ```
 
 
@@ -42,6 +43,8 @@ make pub_local
 ```
 # install.sh  In your project root directory
 sh install.sh 
+# upgrade Scheck
+SC_UPGRADE=true ;sh install.sh
 ```
 ### other
 ```
