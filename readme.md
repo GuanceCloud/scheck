@@ -39,7 +39,9 @@ systemctl start/stop/restart scheck
 service scheck start/stop/restart
 ```
 
+
 > 注意：Security Checker 支持 Linux/Windows amd64/arm64
+
 
 可配置环境变量`scoutput`来设置 Security Checker 安装后的初始 output。  
 
@@ -63,7 +65,7 @@ service scheck start/stop/restart
   disable_log = false
 
 [scoutput]
-    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
+   # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
    # ##远程server，例：http(s)://your.url
   [scoutput.http]
     enable = true
@@ -357,7 +359,7 @@ title      = '监视系统用户变动'
 desc       = '{{.Content}}'
 cron       = '*/10 * * * *'
 instanceId = 'id-xxx'
-os_arch    = ["CentOS", "Darwin"]
+os_arch    = ["Linux"]
 ```
 
 检测代码 `users.lua`：  

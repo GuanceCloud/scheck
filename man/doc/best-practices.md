@@ -1,8 +1,12 @@
-# Security Checker 最佳实践
+# Scheck 最佳实践
+
+- 版本：%s
+- 发布日期：%s
+- 操作系统支持：windows/amd64,windows/386,linux/arm,linux/arm64,linux/386,linux/amd64
 
 # 简介
 
-​		一般在运维过程中有非常重要的工作就是对系统，软件，包括日志等一系列的状态进行巡检，传统方案往往是通过工程师编写shell（bash）脚本进行类似的工作，通过一些远程的脚本管理工具实现集群的管理。但这种方法实际上非常危险，由于系统巡检操作存在权限过高的问题，往往使用root方式运行，一旦恶意脚本执行，后果不堪设想。实际情况中存在两种恶意脚本，一种是恶意命令，如rm -rf，另外一种是进行数据偷窃，如将数据通过网络 IO 泄露给外部。 因此 Security Checker 希望提供一种新型的安全的脚本方式（限制命令执行，限制本地IO，限制网络IO）来保证所有的行为安全可控，并且 Security Checker 将以日志方式通过统一的网络模型进行巡检事件的收集。同时 Security Checker 将提供海量的可更新的规则库脚本，包括系统，容器，网络，安全等一系列的巡检。
+    一般在运维过程中有非常重要的工作就是对系统，软件，包括日志等一系列的状态进行巡检，传统方案往往是通过工程师编写shell（bash）脚本进行类似的工作，通过一些远程的脚本管理工具实现集群的管理。但这种方法实际上非常危险，由于系统巡检操作存在权限过高的问题，往往使用root方式运行，一旦恶意脚本执行，后果不堪设想。实际情况中存在两种恶意脚本，一种是恶意命令，如rm -rf，另外一种是进行数据偷窃，如将数据通过网络 IO 泄露给外部。 因此 Security Checker 希望提供一种新型的安全的脚本方式（限制命令执行，限制本地IO，限制网络IO）来保证所有的行为安全可控，并且 Security Checker 将以日志方式通过统一的网络模型进行巡检事件的收集。同时 Security Checker 将提供海量的可更新的规则库脚本，包括系统，容器，网络，安全等一系列的巡检。
 
 > scheck 为Security Checker 简称
 >
@@ -12,7 +16,6 @@
 
 # 前置条件
 
-> **注意：目前仅支持linux**
 
 | 服务名称 | 版本                                                         | 是否必须安装 | 用途            |
 | -------- | ------------------------------------------------------------ | ------------ | --------------- |
@@ -24,7 +27,7 @@
 
 # 配置
 
-### 1 安装 Security Checker
+### 1 安装 Scheck
 
 ```sh
 bash -c "$(curl https://zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)" 
@@ -84,16 +87,10 @@ Usage of scheck:
     	show all supported lua-extend functions
   -test string
     	the name of a rule, without file extension
-  -update-rules
-    	update rules
   -version
     	show version
 ```
 
-- 更新
-```sh
-bash -c "$(curl https://zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh) --upgrade" 
-```
 
 - 启停命令 
 ```sh

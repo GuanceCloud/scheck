@@ -1,0 +1,130 @@
+# Scheck install script for UNIX-like OS
+# Wed Aug 11 11:35:28 CST 2021
+# Author: tanb@jiagouyun.com
+
+set -e
+
+# detect root user
+if [ "$(echo "UID")" = "0" ]; then
+	sudo_cmd=''
+else
+	sudo_cmd='sudo'
+fi
+
+##################
+# Global variables
+##################
+RED="\033[31m"
+CLR="\033[0m"
+BLU="\033[34m"
+
+##################
+# Set Variables
+##################
+
+# Detect OS/Arch
+
+arch=
+case $(uname -m) in
+
+	"x86_64")
+		arch="amd64"
+		;;
+
+	"i386" | "i686")
+		arch="386"
+		;;
+
+	"aarch64")
+		arch="arm64"
+		;;
+
+	"arm" | "armv7l")
+		arch="arm"
+		;;
+
+	*)
+		printf "${RED}[E] Unknown arch $(uname -m) ${CLR}\n"
+		exit 1
+		;;
+esac
+
+os=
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	if [[ $arch != "amd64" ]]; then # Darwin only support amd64
+		printf "${RED}[E] Darwin only support amd64.${CLR}\n"
+		exit 1;
+	fi
+
+	os="darwin"
+else
+	os="linux"
+fi
+
+# Select installer
+installer_base_url="http://{{INSTALLER_BASE_URL}}"
+if [ -n "$DK_INSTALLER_BASE_URL" ]; then
+	installer_base_url=$DK_INSTALLER_BASE_URL
+fi
+
+installer_file="installer-${os}-${arch}"
+printf "${BLU} Detect installer ${installer_file}${CLR}\n"
+
+installer_url="${installer_base_url}/${installer_file}"
+installer=/tmp/dk-installer
+
+
+
+upgrade=
+if [ -n "$DK_UPGRADE" ]; then
+	upgrade=$DK_UPGRADE
+fi
+
+
+
+if [ -n "$HTTP_PROXY" ]; then
+	proxy=$HTTP_PROXY
+fi
+
+if [ -n "$HTTPS_PROXY" ]; then
+	proxy=$HTTPS_PROXY
+fi
+
+log_path=/var/log/scheck
+
+mkdir -p $log_path
+install_log=$log_path/install.log
+if [ -n "$SC_INSTALL_LOG" ]; then
+	install_log=$SC_INSTALL_LOG
+fi
+
+##################
+# Try install...
+##################
+printf "${BLU}\n* Downloading installer ${installer}\n${CLR}"
+
+rm -rf $installer
+
+if [ "$proxy" ]; then # add proxy for curl
+	curl -x "$proxy" --fail --progress-bar $installer_url > $installer
+else
+	curl --fail --progress-bar $installer_url > $installer
+fi
+
+# Set executable
+chmod +x $installer
+
+if [ "$upgrade" ]; then
+	printf "${BLU}\n* Upgrading Scheck...${CLR}\n"
+	$sudo_cmd $installer -upgrade | $sudo_cmd tee ${install_log}
+else
+	printf "${BLU}\n* Installing Scheck...${CLR}\n"
+	if [ "$install_only" ]; then
+		$sudo_cmd $installer                   \
+			--install_only | $sudo_cmd tee ${install_log}
+	else
+		$sudo_cmd $installer | $sudo_cmd tee ${install_log}
+	fi
+fi
+
+rm -rf $installer

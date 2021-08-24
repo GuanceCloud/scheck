@@ -34,6 +34,7 @@ type (
 )
 
 // Start
+
 func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
 	l = logger.SLogger("checker")
 

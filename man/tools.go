@@ -1,9 +1,5 @@
 package man
 
-/*
-模版模块
-从manifest中读取文件 后生成md格式的模版 导出命令：-doc 使用
-*/
 import (
 	"bytes"
 	"fmt"
@@ -14,9 +10,11 @@ import (
 	"strings"
 	"text/template"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 
 	"github.com/BurntSushi/toml"
+	"github.com/gobuffalo/packr/v2"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 )
 
 var (
@@ -27,9 +25,16 @@ func SetLog() {
 	l = logger.DefaultSLogger("tool")
 }
 
+type Params struct {
+	Version        string
+	ReleaseDate    string
+	AvailableArchs string
+}
+
 type Tmp struct {
 	Path string
 	Obj  interface{}
+	box  *packr.Box
 }
 
 /*
@@ -86,8 +91,9 @@ func (t *Tmp) GetTemplate() string {
 		"inc":     t.arrayTostring,
 		"htmlUrl": t.htmlUrl,
 	}
-
-	tpl, err := GetTpl(t.Path)
+	//pahtList := strings.Split(t.Path, "/")
+	// Create template, add template function, add parsing template text
+	tpl, err := GetTpl(t.box, t.Path)
 	tmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
 	if err != nil {
 		l.Fatalf("parsing: %s", err)
@@ -126,16 +132,22 @@ type Markdown struct {
 func (m *Markdown) TemplateDecodeFile() error {
 	fileStr, err := GetManifest(m.path)
 	if err != nil {
-		l.Warnf("没有此manifest文件 name=%s", m.path)
+		l.Warnf("There is no such manifest file name=%s", m.path)
 		return err
 	}
 	if err = toml.Unmarshal([]byte(fileStr), m); err != nil {
-		l.Warnf("反序列化错误 err=%v", err)
+		l.Warnf("Deserialization error err=%v", err)
 		return err
 	}
 	return nil
 }
 
+/*
+	Determine whether the file or folder exists
+	If the error returned is nil, the file or folder exists
+	If the returned error type is judged as true using OS. Isnotexist(), the file or folder does not exist
+	If the error returned is of another type, it is uncertain whether it exists
+*/
 func PathExists(path string) (bool, error) {
 
 	_, err := os.Stat(path)
@@ -155,7 +167,7 @@ func ScheckDir(id string, outputPath string) {
 	if !bool {
 		err := os.Mkdir(path, os.ModePerm)
 		if err != nil {
-			l.Fatalf("%s 创建失败", path)
+			l.Fatalf("%s Creation failed", path)
 		}
 	}
 }
@@ -186,13 +198,14 @@ func CreateFile(content string, file string) error {
 	file = doFilepath(file)
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		l.Fatalf("open file err=%v", err)
+
+		l.Fatalf("fail to open file err=%v", err)
 		return err
 	}
 	defer f.Close()
 	_, err = f.Write([]byte(content))
 	if err != nil {
-		l.Fatalf("write to file err=%v", err)
+		l.Fatalf("fail to write to file err=%v", err)
 		return err
 	}
 	return nil
@@ -222,17 +235,18 @@ func DfTemplate(filesName []string, outputPath string) {
 		if len(md.Description) < 1 {
 			continue
 		}
-		yaml := Tmp{Path: "manifest", Obj: md}
-		meta := Tmp{Path: "md", Obj: md}
+		yaml := Tmp{Path: "manifest.tpl", Obj: md, box: TemplateBox}
+		meta := Tmp{Path: "md.tpl", Obj: md, box: TemplateBox}
 		ScheckDir(v, outputPath)
 		CreateFile(yaml.GetTemplate(), yamlPath)
 		CreateFile(meta.GetTemplate(), metaPath)
 		count++
 	}
-	l.Debugf("模版生成  manifest数量=%d , 在%s 目录下", count, outputPath)
 
+	l.Debugf("Template generation MF quantity =%d, in%s directory \n", count, outputPath)
 }
 
+// The parameter is a file list without a file suffix
 func ToMakeMdFile(filesName []string, outputPath string) {
 	if _, err := os.Stat(outputPath); err != nil {
 		if err := os.MkdirAll(outputPath, 0775); err != nil {
@@ -254,7 +268,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		if err := md.TemplateDecodeFile(); err != nil {
 			l.Fatalf("err:%s", err)
 		}
-
+		// Remove unwanted
 		if len(md.Description) < 1 {
 			continue
 		}
@@ -262,7 +276,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		if ok {
 			category[md.Category][fmt.Sprintf("%s-%s", strings.Split(md.RuleID, "-")[0], md.Title)] = md.RuleID
 		}
-		yuquemd := Tmp{Path: "yuquemd", Obj: md}
+		yuquemd := Tmp{Path: "yuquemd.tpl", Obj: md, box: TemplateBox}
 		if _, err := os.Stat(outputPath); err != nil {
 			if err := os.MkdirAll(outputPath, 0775); err != nil {
 				l.Fatalf("%s create dir : %s", outputPath, err)
@@ -276,10 +290,88 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		count++
 	}
 
-	yuque := Tmp{Path: "summary", Obj: Summary{Category: category}}
+	yuque := Tmp{Path: "summary.tpl", Obj: Summary{Category: category}, box: TemplateBox}
 	yuquePath := fmt.Sprintf("%s/%s", outputPath, "summary.md")
-	l.Debugf("doc文档生成  manifest数量=%d , 在%s 目录下 \n", count, outputPath)
-	ScheckDocSyncDisk(outputPath)
+
+	err := ScheckDocSyncDisk(outputPath)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	CreateFile(yuque.GetTemplate(), yuquePath)
 
+}
+
+/*
+	Clear system script path
+	Rewrite script
+
+*/
+func ScheckCoreSyncDisk(ruleDir string) {
+	// Delete directory
+	if _, err := os.Stat(ruleDir); err == nil {
+		if err := os.RemoveAll(ruleDir); err != nil {
+			l.Fatal(err)
+		}
+	}
+	// Create a directory and synchronize Lua scripts to disk
+	if _, err := os.Stat(ruleDir); err != nil {
+		if err := os.Mkdir(ruleDir, 0775); err == nil {
+			l.Debugf("The current scriptbox length is %d \n", len(ScriptBox.List()))
+			for _, name := range ScriptBox.List() {
+				if content, err := ScriptBox.Find(name); err == nil {
+					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
+					name = strings.ReplaceAll(name, "\\", "/")
+					// Processing multi-level directories
+					paths := strings.Split(name, "/")
+					if len(paths) > 1 {
+						// Splice catalog
+						lib_dir := fmt.Sprintf("%s/%s", ruleDir, strings.Join(paths[0:len(paths)-1], "/"))
+						if _, err := os.Stat(lib_dir); err != nil {
+							if err := os.MkdirAll(lib_dir, 0775); err != nil {
+								l.Fatalf("%s create dir : %s", lib_dir, err)
+							}
+						}
+					}
+					// Write file
+					CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
+
+				}
+			}
+		}
+	}
+
+}
+
+func ScheckDocSyncDisk(path string) error {
+
+	// Create a directory and synchronize Lua scripts to disk
+	if _, err := os.Stat(path); err != nil {
+		if err := os.Mkdir(path, 0775); err == nil {
+			// Traversal Lua script name
+			l.Debug("The current scriptbox length is %d \n", len(ScriptBox.List()))
+		}
+	}
+	for _, name := range DocBox.List() {
+		if content, err := DocBox.Find(name); err == nil {
+			name = strings.ReplaceAll(name, "\\", "/")
+			// Processing multi-level directories
+			paths := strings.Split(name, "/")
+			if len(paths) > 1 {
+				// Splice catalog
+				lib_dir := fmt.Sprintf("%s/%s", path, strings.Join(paths[0:len(paths)-1], "/"))
+				if _, err := os.Stat(lib_dir); err != nil {
+					if err := os.MkdirAll(lib_dir, 0775); err != nil {
+						l.Fatalf("%s create dir : %s", lib_dir, err)
+					}
+				}
+			}
+			res := fmt.Sprintf(string(content), git.Version, git.BuildAt)
+			err := CreateFile(res, fmt.Sprintf("%s/%s", path, name))
+			if err != nil {
+				l.Fatalf("save file error,err :%s", err)
+			}
+		}
+	}
+	return nil
 }

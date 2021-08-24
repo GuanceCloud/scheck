@@ -25,5 +25,5 @@ git/git.go
 *.pyc
 *.zip
 install.sh
-/install.sh.template
+install.ps1
 .docs
