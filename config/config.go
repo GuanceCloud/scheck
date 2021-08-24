@@ -1,11 +1,13 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
+	"text/template"
 
 	"github.com/influxdata/toml"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
@@ -13,49 +15,48 @@ import (
 )
 
 const (
-	// todo 覆盖写配置文件时 要想带上注释 必须用模版。。。
 	MainConfigSample = `[system]
   # ##(必选) 系统存放检测脚本的目录
-  rule_dir = "/usr/local/scheck/rules.d"
+  rule_dir = "{{.System.RuleDir}}"
   # ##客户自定义目录
-  custom_dir = "/usr/local/scheck/custom.rules.d"
-  #热更新
-  lua_HotUpdate = false
-  cron = ""
+  custom_dir = "{{.System.CustomRuleDir}}"
+  #热更新 默认false
+  lua_HotUpdate = {{.System.LuaHotUpdate}}
+  cron = "{{.System.Cron}}"
   #是否禁用日志
-  disable_log = false
+  disable_log = {{.System.DisableLog}}
 
 [scoutput]
-    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
+   # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
    # ##远程server，例：http(s)://your.url
   [scoutput.http]
-    enable = true
-    output = "http://127.0.0.1:9529/v1/write/security"
+    enable = {{.ScOutput.Http.Enable}}
+    output = "{{.ScOutput.Http.Output}}"
   [scoutput.log]
     # ##可配置本地存储
-    enable = false
-    output = "/var/log/scheck/event.log"
+    enable = {{.ScOutput.Log.Enable}}
+    output = "{{.ScOutput.Log.Output}}"
   # 阿里云日志系统
   [scoutput.alisls]
-    enable = false
-    endpoint = ""
-    access_key_id = ""
-    access_key_secret = ""
-    project_name = "zhuyun-scheck"
-    log_store_name = "scheck"
+    enable = {{.ScOutput.AliSls.Enable}}
+    endpoint = "{{.ScOutput.AliSls.EndPoint}}"
+    access_key_id = "{{.ScOutput.AliSls.AccessKeyID}}"
+    access_key_secret = "{{.ScOutput.AliSls.AccessKeySecret}}"
+    project_name = "{{.ScOutput.AliSls.ProjectName}}"
+    log_store_name = "{{.ScOutput.AliSls.LogStoreName}}"
 
 [logging]
   # ##(可选) 程序运行过程中产生的日志存储位置
-  log = "/var/log/scheck/log"
-  log_level = "info"
-  rotate = 0
+  log = "{{.Logging.Log}}"
+  log_level = "{{.Logging.LogLevel}}"
+  rotate = {{.Logging.Rotate}}
 
 [cgroup]
-    # 可选 默认关闭 可控制cpu和mem
-  enable = false
-  cpu_max = 30.0
-  cpu_min = 5.0
-  mem = 0
+    # 可选 cpu是百分比 默认关闭 
+  enable = {{.Cgroup.Enable}}
+  cpu_max = {{.Cgroup.CPUMax}}
+  cpu_min = {{.Cgroup.CPUMin}}
+  mem = {{.Cgroup.MEM}}
 `
 )
 
@@ -105,18 +106,17 @@ type AliSls struct {
 }
 
 type Logging struct {
-	Log      string  `toml:"log"`
-	LogLevel string  `toml:"log_level"`
-	Cgroup   *Cgroup `toml:"cgroup"`
-	Rotate   int     `toml:"rotate"`
+	Log      string `toml:"log"`
+	LogLevel string `toml:"log_level"`
+	Rotate   int    `toml:"rotate"`
 }
 
 // Cgroup cpu&mem 控制量
 type Cgroup struct {
-	Enable bool    `toml:"enable"`
-	CPUMax float64 `toml:"cpu_max"`
-	CPUMin float64 `toml:"cpu_min"`
-	MEM    int     `toml:"mem"`
+	Enable bool `toml:"enable"`
+	CPUMax int  `toml:"cpu_max"`
+	CPUMin int  `toml:"cpu_min"`
+	MEM    int  `toml:"mem"`
 }
 
 func DefaultConfig() *Config {
@@ -147,13 +147,14 @@ func DefaultConfig() *Config {
 			Log:      filepath.Join("/var/log/scheck", "log"),
 			Rotate:   0, //默认32M
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 30.0, CPUMin: 5.0, MEM: 200},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 10.0, CPUMin: 5.0, MEM: 100},
 	}
 
 	// windows
 	if runtime.GOOS == "windows" {
 		c.Logging.Log = filepath.Join(securityChecker.InstallDir, "log")
 		c.System.RuleDir = filepath.Join(securityChecker.InstallDir, "rules.d")
+		c.System.CustomRuleDir = filepath.Join(securityChecker.InstallDir, "custom.rules.d")
 		c.ScOutput.Log.Output = fmt.Sprintf("file://%s", filepath.Join(securityChecker.InstallDir, "event.log"))
 	}
 
@@ -201,9 +202,18 @@ func TryLoadConfig(filePath string) bool {
 	}
 
 	f, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	res, _ := securityChecker.TomlMarshal(newConf)
 
-	_, err = f.WriteString(string(res))
+	tmpl, err := template.New("config").Parse(MainConfigSample)
+	if err != nil {
+		l.Fatalf("make template err=%v", err)
+	}
+	buf := new(bytes.Buffer)
+	err = tmpl.Execute(buf, newConf)
+	if err != nil {
+		l.Fatalf("execute err=%v", err)
+	}
+
+	_, err = f.WriteString(buf.String())
 	if err != nil {
 		l.Fatalf("err:=%v", err)
 	}
@@ -219,12 +229,16 @@ func LoadConfig(p string) {
 		l.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
 	}
 	f, _ := os.OpenFile(p, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	res, _ := securityChecker.TomlMarshal(c)
-	_, err := f.WriteString(string(res))
-	f.Close()
+	defer f.Close()
+	tmpl, err := template.New("config").Parse(MainConfigSample)
 	if err != nil {
-		l.Errorf("err:=%v", err)
+		l.Fatalf("make template err=%v", err)
 	}
+	err = tmpl.Execute(f, c)
+	if err != nil {
+		l.Fatalf("execute err=%v", err)
+	}
+
 	Cfg = c
 }
 

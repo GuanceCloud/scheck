@@ -24,7 +24,8 @@ type (
 	}
 
 	ScriptRunTime struct {
-		ls *lua.LState
+		Id int
+		Ls *lua.LState
 	}
 )
 
@@ -41,25 +42,41 @@ var (
 )
 
 func (r *ScriptRunTime) Close() {
-	if r.ls != nil {
-		if !r.ls.IsClosed() {
-			r.ls.Close()
+	if r.Ls != nil {
+		if !r.Ls.IsClosed() {
+			r.Ls.Close()
 		}
 	}
 }
 
+func NewScriptRunTime() *ScriptRunTime {
+	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
+	if err := LoadLuaLibs(ls); err != nil {
+		ls.Close()
+		//l.Errorf("LoadLuaLibs err=%v \n ", err)
+		return nil
+	}
+	luajson.Preload(ls)
+	for _, p := range checker.FuncProviders {
+		for _, f := range p.Funcs() {
+			ls.Register(f.Name, lua.LGFunction(f.Fn))
+		}
+	}
+	return &ScriptRunTime{Ls: ls}
+}
+
 func (r *ScriptRunTime) PCall(bcode *ByteCode) error {
-	lfunc := r.ls.NewFunctionFromProto(bcode.Proto)
-	r.ls.Push(lfunc)
-	return r.ls.PCall(0, lua.MultRet, nil)
+	lfunc := r.Ls.NewFunctionFromProto(bcode.Proto)
+	r.Ls.Push(lfunc)
+	return r.Ls.PCall(0, lua.MultRet, nil)
 }
 
 func CompilesScript(filePath string) (*ByteCode, error) {
 	file, err := os.Open(filePath)
-	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 	reader := bufio.NewReader(file)
 	chunk, err := luaparse.Parse(reader, filePath)
 	if err != nil {
@@ -118,7 +135,7 @@ func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 		}
 	}
 	return &ScriptRunTime{
-		ls: ls,
+		Ls: ls,
 	}, nil
 }
 

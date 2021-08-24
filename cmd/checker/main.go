@@ -10,9 +10,12 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -55,9 +58,12 @@ func main() {
 	if config.TryLoadConfig(*flagConfig) {
 		config.LoadConfig(*flagConfig)
 	}
+	if checkServiceExist() {
+		l.Fatalf("service scheck is running!!!")
+	}
 	config.Cfg.Init()
 	l = logger.SLogger("main")
-	//go pprof()
+	go goPprof()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())
@@ -66,12 +72,13 @@ func main() {
 	//	run()
 }
 
-func pprof() {
+func goPprof() {
+
 	_ = http.ListenAndServe("0.0.0.0:6060", nil)
 }
 
 func applyFlags() {
-	binDir := "/usr/local/scheck/version"
+	binDir := "/usr/local/scheck/"
 	if runtime.GOOS == "windows" {
 		binDir = "C:\\Program Files\\scheck\\scheck.conf"
 	}
@@ -159,15 +166,15 @@ func applyFlags() {
 		os.Exit(0)
 	}
 	if *flagConfig == "" {
-		conf := filepath.Join(binDir, "scheck.conf")
-		_, err := os.Stat(conf)
+		*flagConfig = filepath.Join(binDir, "scheck.conf")
+		_, err := os.Stat(*flagConfig)
 		if err != nil {
 			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
 
-			f, err := os.OpenFile(conf, os.O_CREATE|os.O_RDWR, 0644)
+			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, 0644)
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
@@ -185,14 +192,14 @@ func run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	wg.Add(1)
-	//内置系统
+
 	go func() {
 		defer func() {
 			wg.Done()
 		}()
 		man.SetLog()
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
-		checker.Start(ctx, config.Cfg.System.RuleDir, config.Cfg.System.CustomRuleDir, config.Cfg.ScOutput)
+		checker.Start(ctx, config.Cfg.System, config.Cfg.ScOutput)
 	}()
 
 	signals := make(chan os.Signal, 1)
@@ -210,4 +217,40 @@ func run() {
 	wg.Wait()
 	service.Stop()
 
+}
+
+// checkServiceExist :The server cannot run two scheck at the same time
+func checkServiceExist() bool {
+	if runtime.GOOS == "windows" {
+		//  tasklist /fi "SERVICES eq scheck"  or  IMAGENAME eq scheck
+		cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq scheck.exe")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			l.Error(err)
+		}
+
+		if n := strings.Count(string(out), "scheck"); n >= 2 {
+			return true
+		}
+	} else {
+		cmds := []*exec.Cmd{
+			exec.Command("ps", "-ef"),
+			exec.Command("grep", "scheck"),
+			exec.Command("grep", "-v", "grep"),
+			exec.Command("wc", "-l"),
+		}
+		result, _ := securityChecker.ExecPipeLine(cmds...)
+
+		if len(result) > 0 {
+			n, err := strconv.Atoi(result)
+			if err == nil {
+				if n >= 2 {
+					return true
+				}
+			}
+
+		}
+	}
+
+	return false
 }

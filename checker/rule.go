@@ -10,9 +10,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"text/template"
 	"time"
+
+	lua "github.com/yuin/gopher-lua"
 
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
@@ -22,25 +23,16 @@ import (
 
 // Rule corresponding to a lua script file
 type Rule struct {
-	File string
+	File     string
+	Name     string
+	byteCode *funcs.ByteCode
 
-	byteCode   *funcs.ByteCode
-	lastModify int64
-
-	cron string //多个manifest的cron应当一样
-
-	mux sync.Mutex
-
+	cron     string
+	mux      sync.Mutex
 	disabled bool
-
-	markAsDelete int32
-	stopch       chan bool
-	running      int32
-
-	rt         *funcs.ScriptRunTime
-	scheduleID int
-
-	interval time.Duration
+	interval int64
+	RunTime  int64 //下一次执行时间 单位秒
+	manifest *RuleManifest
 }
 
 type RuleManifest struct {
@@ -74,35 +66,23 @@ func (r *Rule) load() error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
-	fi, err := os.Stat(r.File)
+	bcode, err := funcs.CompilesScript(r.File)
 	if err != nil {
 		l.Errorf("%s", err)
 		return err
 	}
-
-	if fi.ModTime().Unix() > r.lastModify {
-		if r.lastModify > 0 {
-			l.Debugf("%s changed, reload it", r.File)
-		}
-
-		bcode, err := funcs.CompilesScript(r.File)
-		if err != nil {
-			l.Errorf("%s", err)
-			return err
-		}
-		r.byteCode = bcode
-		r.lastModify = fi.ModTime().Unix()
-	}
+	r.byteCode = bcode
 
 	//load default manifest for cron info
 	ruledir := filepath.Dir(r.File)
 	rulename := strings.TrimSuffix(filepath.Base(r.File), filepath.Ext(r.File))
+	r.Name = rulename
 	manifestPath := filepath.Join(ruledir, rulename+".manifest")
 
-	manifest := Chk.manifests[manifestPath]
+	manifest := r.manifest
 	if manifest == nil {
 		manifest = newManifest(manifestPath)
-		Chk.addManifest(manifest)
+		r.manifest = manifest
 	}
 
 	if err = manifest.load(); err != nil {
@@ -110,76 +90,46 @@ func (r *Rule) load() error {
 		l.Errorf("fail to load %s, %s", manifestPath, err)
 		return err
 	}
-	reschedule := false
-	if r.cron != "" && manifest.Cron != r.cron {
-		l.Debugf("cron change from %s to %s", r.cron, manifest.Cron)
-		Chk.scheduler.DelRule(r) //
-		reschedule = true
-	}
+
 	// 添加操作系统参数字段后 需要判断是否运行该lua文件
 	runLua := false
 	for _, localOS := range manifest.OSArch {
 		if strings.Contains(strings.ToUpper(localOS), strings.ToUpper(runtime.GOOS)) {
-			//l.Warnf("有相同的操作系统匹配到。。。 localos=%s", localOS)
 			runLua = true
 		}
 	}
 	if !runLua {
-		//l.Warnf("manifest中不支持当前操作系统 当前的os=%s", strings.ToUpper(runtime.GOOS))
-		Chk.doDelRule(r) // 删除当前规则 删除lua文件
 		return fmt.Errorf("manifest中不支持当前操作系统")
 	}
 
 	r.cron = manifest.Cron
-	r.interval = checkInterval(r.cron)
+	r.interval = checkRunTime(r.cron)
 	r.disabled = manifest.disabled
-	if reschedule {
-		Chk.reSchedule(r)
-	}
-
+	r.RunTime = time.Now().Unix() + r.interval
 	return nil
 }
 
-func (r *Rule) run() {
-	if r == nil {
-		return
-	}
-	if atomic.LoadInt32(&r.running) > 0 {
-		return
-	}
-	if r.disabled {
+func (r *Rule) RunJob() {
+	if pool == nil {
+		l.Warn("the statePool is nil!!!")
 		return
 	}
 
-	defer func() {
-		if e := recover(); e != nil {
-			l.Errorf("panic, %v", e)
-		}
-		atomic.AddInt32(&r.running, -1)
-		close(r.stopch)
-	}()
-	atomic.AddInt32(&r.running, 1)
-	r.stopch = make(chan bool)
+	state := pool.getState()
+	// to set filePath
+	var lt lua.LTable
+	lt.RawSetString("rulefile", lua.LString(r.Name))
+	state.Ls.SetGlobal("__this_configuration", &lt)
 
-	var err error
-	if r.rt == nil {
-		if r.rt, err = funcs.GetScriptRuntime(&funcs.ScriptGlobalCfg{
-			RulePath: r.File,
-		}); err != nil {
-			l.Errorf("%s", err)
-			return
-		}
+	l.Debugf("当前运行的是 %s", r.Name)
+	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
+	state.Ls.Push(lFunc)
+	if err := state.Ls.PCall(0, lua.MultRet, nil); err != nil {
+		l.Errorf("lua.state run  err=%v ", err)
 	}
 
-	l.Debugf("start run %s", filepath.Base(r.File))
-	r.mux.Lock()
-	err = r.rt.PCall(r.byteCode)
-	r.mux.Unlock()
-	if err != nil {
-		l.Errorf("run %s failed, %s", filepath.Base(r.File), err)
-	} else {
-		l.Debugf("run %s ok", filepath.Base(r.File))
-	}
+	pool.putPool(state)
+
 }
 
 func newManifest(path string) *RuleManifest {
@@ -425,7 +375,7 @@ func ensureFieldBool(k string, v interface{}, b *bool) error {
 }
 
 // 从cron中 取出设置的间隔时间
-func checkInterval(cronStr string) time.Duration {
+func checkInterval(cronStr string) int64 {
 	fields := strings.Fields(cronStr)
 	intervals := map[int]int64{}
 
@@ -447,18 +397,56 @@ func checkInterval(cronStr string) time.Duration {
 		for k, v := range intervals {
 			switch k {
 			case 0:
-				return time.Duration(v * int64(time.Second))
+				return v * int64(time.Second)
 			case 1:
-				return time.Duration(v * int64(time.Minute))
+				return v * int64(time.Minute)
 			case 2:
-				return time.Duration(v * int64(time.Hour))
+				return v * int64(time.Hour)
 			case 3:
-				return time.Duration(v * int64(time.Hour) * 24)
+				return v * int64(time.Hour) * 24
 			case 4:
-				return time.Duration(v * int64(time.Hour) * 24 * 30)
+				return v * int64(time.Hour) * 24 * 30
 			}
 		}
 	}
 
 	return 0
+}
+
+var cronMaps = map[int]int64{
+	0: 1, //second
+	1: 60,
+	2: 60 * 60,
+	3: 60 * 60 * 24,
+	4: 60 * 60 * 24 * 30,
+}
+var cronInterval = []int64{60, 60, 24, 30, 1, 1}
+
+func checkRunTime(cronStr string) int64 {
+	nextRunTime := int64(0)
+	fields := strings.Fields(cronStr)
+
+	for idx, f := range fields {
+		parts := strings.Split(f, "/")
+		if len(parts) == 2 && parts[0] == "*" {
+			interval, err := strconv.ParseInt(parts[1], 10, 64)
+			if err == nil && interval > 0 {
+
+				nextRunTime += (cronMaps[idx]) * interval
+			}
+		}
+
+	}
+	// 1 1 2 * *
+	if nextRunTime == 0 {
+		swap := int64(0)
+		for idx, f := range fields {
+			if f != "*" {
+				swap = cronMaps[idx] * cronInterval[idx]
+			}
+		}
+		nextRunTime = swap
+	}
+
+	return nextRunTime
 }

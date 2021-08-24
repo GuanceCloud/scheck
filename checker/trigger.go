@@ -3,8 +3,7 @@ package checker
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
-	"strings"
+	"os"
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
@@ -66,10 +65,10 @@ func (p *provider) trigger(ls *lua.LState) int {
 
 	if manifestFileName == "" {
 		//use the default manifest
-		manifestFileName = strings.TrimSuffix(filepath.Base(cfg.RulePath), filepath.Ext(cfg.RulePath))
+		manifestFileName = cfg.RulePath
 	}
 
-	manifest, err := GetManifest("./rules.d/" + manifestFileName)
+	manifest, err := GetManifestByName(manifestFileName)
 	if err != nil {
 		ls.RaiseError("%s", err)
 		return lua.MultRet
@@ -117,9 +116,12 @@ func firstTrigger() {
 	tags["level"] = "-"
 	tags["category"] = "system"
 	tags["version"] = git.Version
+	if h, err := os.Hostname(); err == nil {
+		tags["host"] = h
+	}
 	fields := map[string]interface{}{}
-	cronNum, intervalNum := Chk.scheduler.countInfo()
-	luas := cronNum + intervalNum
+
+	luas := GetRuleNum()
 	formatTime := time.Now().Format("2006-01-02 15:04:05")
 	message := fmt.Sprintf("scheck 程序启动，当前共%d个lua进入巡检队列，启动时间为：%s", luas, formatTime)
 	fields["message"] = message
