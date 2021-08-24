@@ -117,6 +117,11 @@ func PubDatakit() {
 	if ak == "" || sk == "" {
 		l.Fatalf("oss access key or secret key missing, tag=%s", strings.ToUpper(Release))
 	}
+	ossSlice := strings.SplitN(DownloadAddr, "/", 2)
+	if len(ossSlice) != 2 {
+		l.Fatalf("downloadAddr:%s err", DownloadAddr)
+	}
+	OSSPath = ossSlice[1]
 
 	oc := &cliutils.OssCli{
 		Host:       ossHost,
@@ -160,6 +165,7 @@ func PubDatakit() {
 	}
 
 	var ver versionDesc
+	l.Info("version path: ", filepath.Join(PubDir, Release, "version"))
 	verdata, err := ioutil.ReadFile(filepath.Join(PubDir, Release, "version"))
 	if err != nil {
 		l.Fatalf("%s", err)
@@ -226,7 +232,7 @@ func PubDatakit() {
 
 		fi, _ := os.Stat(k)
 		l.Debugf("upload %s(%s)...", k, humanize.Bytes(uint64(fi.Size())))
-
+		l.Debugf("key: %s, value: %s", k, v)
 		if err := oc.Upload(k, v); err != nil {
 			l.Fatal(err)
 		}

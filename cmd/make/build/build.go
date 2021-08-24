@@ -49,7 +49,7 @@ var (
 	BuildInstallDir = "build/install"
 	PubDir          = "pub"
 	AppBin          = "scheck"
-	OSSPath         = "security-checker"
+	OSSPath         = "scheck"
 	Archs           string
 	Release         string
 	MainEntry       string
@@ -60,8 +60,13 @@ var (
 func prepare() *versionDesc {
 
 	os.RemoveAll(BuildDir)
-	_ = os.MkdirAll(BuildDir, os.ModePerm)
-	_ = os.MkdirAll(filepath.Join(PubDir, Release), os.ModePerm)
+	if err := os.MkdirAll(BuildDir, os.ModePerm); err != nil {
+		l.Fatalf("MkdirAll %s error, err: %s", BuildDir, err)
+	}
+	l.Info("PubDir: %s", filepath.Join(PubDir, Release))
+	if err := os.MkdirAll(filepath.Join(PubDir, Release), os.ModePerm); err != nil {
+		l.Fatalf("MkdirAll %s error, err: %s", PubDir, err)
+	}
 
 	// create version info
 	vd := &versionDesc{
