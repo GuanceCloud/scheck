@@ -161,7 +161,12 @@ func PubDatakit() {
 	}
 
 	ossfiles := map[string]string{
-		path.Join(PubDir, Release, "version"): path.Join(OSSPath, "version"),
+		//path.Join(PubDir, Release, "version"): path.Join(OSSPath, "version"),
+		path.Join(OSSPath, "version"):                                     path.Join(PubDir, Release, "version"),
+		path.Join(OSSPath, "install.sh"):                                  "install.sh",
+		path.Join(OSSPath, "install.ps1"):                                 "install.ps1",
+		path.Join(OSSPath, fmt.Sprintf("install-%s.sh", ReleaseVersion)):  "install.sh",
+		path.Join(OSSPath, fmt.Sprintf("install-%s.ps1", ReleaseVersion)): "install.ps1",
 	}
 
 	var ver versionDesc
@@ -176,11 +181,11 @@ func PubDatakit() {
 	for _, v := range archs {
 		fields := strings.Split(v, "/")
 		f := fmt.Sprintf("%s-%s-%s-%s.md5", AppBin, fields[0], fields[1], ver.Version)
-		ossfiles[path.Join(PubDir, Release, f)] = path.Join(OSSPath, f)
+		ossfiles[path.Join(OSSPath, f)] = path.Join(PubDir, Release, f)
 	}
 
 	if Archs == "darwin/amd64" {
-		delete(ossfiles, path.Join(PubDir, Release, "version"))
+		delete(ossfiles, path.Join(OSSPath, "version"))
 	}
 
 	renameOssFiles := map[string]string{}
@@ -203,7 +208,7 @@ func PubDatakit() {
 
 		gzNameNoVer := fmt.Sprintf("%s-%s.tar.gz", AppBin, goos+"-"+goarch)
 
-		ossfiles[path.Join(PubDir, Release, gzName)] = path.Join(OSSPath, gzName)
+		ossfiles[path.Join(OSSPath, gzName)] = path.Join(PubDir, Release, gzName)
 
 		renameOssFiles[path.Join(OSSPath, gzName)] = path.Join(OSSPath, gzNameNoVer)
 
@@ -217,23 +222,23 @@ func PubDatakit() {
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
 		}
 
-		ossfiles[path.Join(BuildInstallDir, installerExe)] = path.Join(OSSPath, installerExe)
-		ossfiles[path.Join(BuildInstallDir, noVerInstallerExe)] = path.Join(OSSPath, noVerInstallerExe)
+		ossfiles[path.Join(OSSPath, installerExe)] = path.Join(BuildInstallDir, installerExe)
+		ossfiles[path.Join(OSSPath, noVerInstallerExe)] = path.Join(BuildInstallDir, noVerInstallerExe)
 	}
 
 	// test if all file ok before uploading
-	for k, _ := range ossfiles {
-		if _, err := os.Stat(k); err != nil {
+	for _, v := range ossfiles {
+		if _, err := os.Stat(v); err != nil {
 			l.Fatal(err)
 		}
 	}
 
 	for k, v := range ossfiles {
 
-		fi, _ := os.Stat(k)
-		l.Debugf("upload %s(%s)...", k, humanize.Bytes(uint64(fi.Size())))
+		fi, _ := os.Stat(v)
+		l.Debugf("upload %s(%s)...", v, humanize.Bytes(uint64(fi.Size())))
 		l.Debugf("key: %s, value: %s", k, v)
-		if err := oc.Upload(k, v); err != nil {
+		if err := oc.Upload(v, k); err != nil {
 			l.Fatal(err)
 		}
 	}

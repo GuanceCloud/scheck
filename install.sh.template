@@ -62,7 +62,7 @@ else
 fi
 
 # Select installer
-installer_base_url="http://{{INSTALLER_BASE_URL}}" # "https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck"
+installer_base_url="http://{{INSTALLER_BASE_URL}}"
 if [ -n "$DK_INSTALLER_BASE_URL" ]; then
 	installer_base_url=$DK_INSTALLER_BASE_URL
 fi

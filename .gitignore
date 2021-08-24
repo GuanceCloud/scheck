@@ -24,4 +24,5 @@ git/git.go
 *.pyc
 *.zip
 install.sh
+install.ps1
 .docs
