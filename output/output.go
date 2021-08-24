@@ -71,7 +71,6 @@ func Close() {
 
 // SendMetric lua.trigger callback
 func SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
-<<<<<<< HEAD
 	if uploads == nil {
 		uploads = make(map[string]outPuterInterface)
 	}
@@ -79,9 +78,6 @@ func SendMetric(measurement string, tags map[string]string, fields map[string]in
 		// when:test/lua.CompileLua/  the uploads.len == 0 , use os.stdout
 		uploads["stdout"] = newLocalLog("stdout")
 	}
-=======
-
->>>>>>> testing
 	for _, writer := range uploads {
 		writer.ReadMsg(measurement, tags, fields, t...)
 	}
