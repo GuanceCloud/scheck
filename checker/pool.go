@@ -100,9 +100,9 @@ func (p *statePool) putPool(srt *funcs.ScriptRunTime) {
 
 	p.running--
 	if srt.Id == -1 {
+		srt.Ls.Close()
 		return
 	}
-	srt.Ls.Env = srt.Ls.G.Global // remove global cache!
 	p.poolStatus[srt.Id] = false
 	p.freeSignal <- sig{}
 }

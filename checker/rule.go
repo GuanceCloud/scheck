@@ -121,7 +121,7 @@ func (r *Rule) RunJob() {
 	lt.RawSetString("rulefile", lua.LString(r.Name))
 	state.Ls.SetGlobal("__this_configuration", &lt)
 
-	l.Debugf("当前运行的是 %s", r.Name)
+	l.Debugf("rule name: %s is running!!!", r.Name)
 	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
 	state.Ls.Push(lFunc)
 	if err := state.Ls.PCall(0, lua.MultRet, nil); err != nil {

@@ -26,7 +26,7 @@ var (
 type (
 	Checker struct {
 		rulesDir      string
-		customRuleDir string //用户自定义的路径
+		customRuleDir string
 		taskScheduler *TaskScheduler
 		ruleMux       sync.Mutex
 		manifestMux   sync.Mutex
@@ -114,9 +114,8 @@ func (c *Checker) start(ctx context.Context) {
 	default:
 	}
 
-	go cgroup.Run() //所有规则加载完成后 启动cgroup
+	go cgroup.Run()
 
-	// 发送一次消息到output上
 	firstTrigger()
 	<-ctx.Done()
 	c.taskScheduler.Stop()
