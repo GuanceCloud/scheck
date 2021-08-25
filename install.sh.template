@@ -76,8 +76,8 @@ installer=/tmp/dk-installer
 
 
 upgrade=
-if [ -n "$DK_UPGRADE" ]; then
-	upgrade=$DK_UPGRADE
+if [ -n "$SC_UPGRADE" ]; then
+	upgrade=$SC_UPGRADE
 fi
 
 
