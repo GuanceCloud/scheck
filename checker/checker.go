@@ -2,6 +2,7 @@ package checker
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -34,23 +35,27 @@ type (
 )
 
 // Start
-
 func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
 	l = logger.SLogger("checker")
 
-	Chk = newChecker(confSys.RuleDir, confSys.CustomRuleDir, confSys.LuaHotUpdate)
+	Chk = newChecker(confSys)
 
 	output.Start(outputpath)
 	Chk.start(ctx)
 }
 
-func newChecker(rulesDir, customRuleDir string, hotUpdate bool) *Checker {
-	lua.LuaPathDefault = filepath.Join(rulesDir, "/lib/?.lua")
+func newChecker(confsys *config.System) *Checker {
+	lua.LuaPathDefault = filepath.Join(confsys.RuleDir, "/lib/?.lua")
+	_, err := os.Stat(confsys.CustomRuleLibDir)
+	if err == nil {
+		dir := filepath.Join(confsys.CustomRuleLibDir, "?.lua")
+		lua.LuaPathDefault += ";" + dir
+	}
 
 	c := &Checker{
-		rulesDir:      rulesDir,
-		customRuleDir: customRuleDir,
-		taskScheduler: NewTaskScheduler(rulesDir, customRuleDir, hotUpdate),
+		rulesDir:      confsys.RuleDir,
+		customRuleDir: confsys.CustomRuleDir,
+		taskScheduler: NewTaskScheduler(confsys.RuleDir, confsys.CustomRuleDir, confsys.LuaHotUpdate),
 	}
 
 	InitStatePool(15, 20)

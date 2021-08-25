@@ -40,20 +40,6 @@ if ($x -ne $null) {
 	Write-COutput green ("* set upgrade" )
 }
 
-$x = [Environment]::GetEnvironmentVariable("DK_DATAWAY")
-if ($x -ne $null) {
-	$dataway = $x
-	Write-COutput green ("* set dataway to $dataway" )
-}
-
-if ($dataway -eq $null) {
-	if ($upgrade -eq $null) {
-		Write-COutput red "[ERROR] Dataway not set on 'DK_DATAWAY'"
-		Exit
-	}
-}
-
-
 
 $proxy=""
 $x = [Environment]::GetEnvironmentVariable("HTTP_PROXY")
@@ -101,8 +87,8 @@ Invoke-Expression $dl_installer_action
 if ($upgrade -ne $null) { # upgrade
 	$action = "$installer -upgrade"
 } else { # install new Scheck
-	$action = "$installer '"
-	if ($install_only -ne "") {
+	$action = "$installer "
+	if ($install_only -ne $null) {
 		$action = -join($action, " ", "--install-only")
 	}
 }
@@ -112,10 +98,10 @@ Invoke-Expression $action
 
 # remove installer
 Remove-Item -Force -ErrorAction SilentlyContinue $installer
-Remove-Item -Force -ErrorAction SilentlyContinue .\installer.ps1
+Remove-Item -Force -ErrorAction SilentlyContinue .\install.ps1
 
 # clean envs
-$optional_envs="DK_DATAWAY","DK_UPGRADE","HTTP_PROXY","HTTP_PROXY","DK_HTTP_PORT","DK_HTTP_LISTEN","DK_INSTALL_ONLY"
+$optional_envs="DK_DATAWAY","DK_UPGRADE","HTTP_PROXY","HTTPS_PROXY","DK_HTTP_PORT","DK_HTTP_LISTEN","DK_INSTALL_ONLY"
 foreach ($env in $optional_envs) {
 	Remove-Item -ErrorAction SilentlyContinue Env:$env
 }

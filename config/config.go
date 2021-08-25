@@ -20,6 +20,8 @@ const (
   rule_dir = "{{.System.RuleDir}}"
   # ##客户自定义目录
   custom_dir = "{{.System.CustomRuleDir}}"
+  # 可选 用户自定义lua库 不可用rule_dir 系统默认为用户目录下的libs
+  custom_rule_lib_dir = "{{.System.CustomRuleLibDir}}"
   #热更新 默认false
   lua_HotUpdate = {{.System.LuaHotUpdate}}
   cron = "{{.System.Cron}}"
@@ -52,7 +54,7 @@ const (
   rotate = {{.Logging.Rotate}}
 
 [cgroup]
-    # 可选 cpu是百分比 默认关闭 
+  # 可选 默认关闭 cpu是百分比
   enable = {{.Cgroup.Enable}}
   cpu_max = {{.Cgroup.CPUMax}}
   cpu_min = {{.Cgroup.CPUMin}}
@@ -73,11 +75,12 @@ type Config struct {
 }
 
 type System struct {
-	RuleDir       string `toml:"rule_dir"`
-	CustomRuleDir string `toml:"custom_dir"`
-	LuaHotUpdate  bool   `toml:"lua_HotUpdate"`
-	Cron          string `toml:"cron"`
-	DisableLog    bool   `toml:"disable_log"`
+	RuleDir          string `toml:"rule_dir"`
+	CustomRuleDir    string `toml:"custom_dir"`
+	CustomRuleLibDir string `toml:"custom_rule_lib_dir"`
+	LuaHotUpdate     bool   `toml:"lua_HotUpdate"`
+	Cron             string `toml:"cron"`
+	DisableLog       bool   `toml:"disable_log"`
 }
 
 type ScOutput struct {
@@ -123,10 +126,11 @@ func DefaultConfig() *Config {
 
 	c := &Config{
 		System: &System{
-			RuleDir:       "/usr/local/scheck/rules.d",
-			CustomRuleDir: "/usr/local/scheck/custom.rules.d",
-			Cron:          "",
-			DisableLog:    false,
+			RuleDir:          "/usr/local/scheck/rules.d",
+			CustomRuleDir:    "/usr/local/scheck/custom.rules.d",
+			CustomRuleLibDir: "/usr/local/scheck/custom.rules.d/libs",
+			Cron:             "",
+			DisableLog:       false,
 		},
 		ScOutput: &ScOutput{
 			Http: &Http{
@@ -155,6 +159,7 @@ func DefaultConfig() *Config {
 		c.Logging.Log = filepath.Join(securityChecker.InstallDir, "log")
 		c.System.RuleDir = filepath.Join(securityChecker.InstallDir, "rules.d")
 		c.System.CustomRuleDir = filepath.Join(securityChecker.InstallDir, "custom.rules.d")
+		c.System.CustomRuleLibDir = filepath.Join(c.System.CustomRuleDir, "libs")
 		c.ScOutput.Log.Output = fmt.Sprintf("file://%s", filepath.Join(securityChecker.InstallDir, "event.log"))
 	}
 
