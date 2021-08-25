@@ -85,7 +85,7 @@ func (scheduler *TaskScheduler) Stop() {
 	scheduler.stop <- struct{}{}
 }
 
-// doAndReset 根据key重置队列中task的时间
+// doAndReset
 func (scheduler *TaskScheduler) doAndReset(key string) {
 	scheduler.lock.Lock()
 	defer scheduler.lock.Unlock()
@@ -96,7 +96,6 @@ func (scheduler *TaskScheduler) doAndReset(key string) {
 }
 
 //run task list
-//if is empty,run a year timer task
 func (scheduler *TaskScheduler) run() {
 	if len(scheduler.tasks) == 0 {
 		l.Warnf("schedules is empty....")

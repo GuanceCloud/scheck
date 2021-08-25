@@ -19,6 +19,8 @@ import (
 	"sync"
 	"syscall"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
@@ -63,7 +65,7 @@ func main() {
 	}
 	config.Cfg.Init()
 	l = logger.SLogger("main")
-	go goPprof()
+	//go goPprof()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())
@@ -83,11 +85,16 @@ func applyFlags() {
 		binDir = "C:\\Program Files\\scheck\\scheck.conf"
 	}
 	if *flagVersion {
-		if data, err := ioutil.ReadFile(binDir); err == nil {
-			l.Debug(string(data))
-		} else {
-			l.Debugf("scheck(%s): %s\n", ReleaseType, Version)
-		}
+		fmt.Printf(`
+       Version: %s
+        Commit: %s
+        Branch: %s
+ Build At(UTC): %s
+Golang Version: %s
+      Uploader: %s
+ReleasedInputs: %s
+`, Version, git.Commit, git.Branch, git.BuildAt, git.Golang, git.Uploader, ReleaseType)
+
 		os.Exit(0)
 	}
 
