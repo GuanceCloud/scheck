@@ -82,7 +82,7 @@ func goPprof() {
 func applyFlags() {
 	binDir := "/usr/local/scheck/"
 	if runtime.GOOS == "windows" {
-		binDir = "C:\\Program Files\\scheck\\scheck.conf"
+		binDir = "C:\\Program Files\\scheck"
 	}
 	if *flagVersion {
 		fmt.Printf(`
