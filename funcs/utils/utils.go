@@ -1,13 +1,15 @@
 package utils
 
-import securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+import (
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
+)
 
 type provider struct {
-	funcs []securityChecker.Func
+	funcs []funcs.Func
 }
 
-func (p *provider) Funcs() []securityChecker.Func {
-	funcs := []securityChecker.Func{
+func (p *provider) Funcs() []funcs.Func {
+	funcs := []funcs.Func{
 		{Name: `set_cache`, Fn: p.setCache},
 		{Name: `get_cache`, Fn: p.getCache},
 		{Name: `set_global_cache`, Fn: p.setGlobalCache},
@@ -25,5 +27,5 @@ func (p *provider) Catalog() string {
 }
 
 func init() {
-	securityChecker.AddFuncProvider(&provider{})
+	funcs.AddFuncProvider(&provider{})
 }

@@ -1,4 +1,4 @@
-package securityChecker
+package funcs
 
 import (
 	"fmt"

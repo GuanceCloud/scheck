@@ -19,15 +19,13 @@ import (
 	"sync"
 	"syscall"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
-
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/tools"
 )
 
 var (
@@ -134,7 +132,7 @@ ReleasedInputs: %s
 	}
 
 	if *flagCfgSample {
-		res, err := securityChecker.TomlMarshal(config.DefaultConfig())
+		res, err := tools.TomlMarshal(config.DefaultConfig())
 		if err != nil {
 			l.Fatalf("%s", err)
 		}
@@ -144,7 +142,7 @@ ReleasedInputs: %s
 	}
 
 	if *flagFuncs {
-		securityChecker.DumpSupportLuaFuncs(os.Stdout)
+		funcs.DumpSupportLuaFuncs(os.Stdout)
 		os.Exit(0)
 	}
 
@@ -157,18 +155,18 @@ ReleasedInputs: %s
 	if *flagRulesToDoc {
 		if *flagOutDir == "" {
 
-			man.ToMakeMdFile(man.GetAllName(), "doc")
+			tools.ToMakeMdFile(tools.GetAllName(), "doc")
 		} else {
-			man.ToMakeMdFile(man.GetAllName(), *flagOutDir)
+			tools.ToMakeMdFile(tools.GetAllName(), *flagOutDir)
 		}
 		os.Exit(0)
 	}
 
 	if *flagRulesToTemplate {
 		if *flagOutDir == "" {
-			man.DfTemplate(man.GetAllName(), "C://Users/gitee")
+			tools.DfTemplate(tools.GetAllName(), "C://Users/gitee")
 		} else {
-			man.DfTemplate(man.GetAllName(), *flagOutDir)
+			tools.DfTemplate(tools.GetAllName(), *flagOutDir)
 		}
 		os.Exit(0)
 	}
@@ -176,7 +174,7 @@ ReleasedInputs: %s
 		*flagConfig = filepath.Join(binDir, "scheck.conf")
 		_, err := os.Stat(*flagConfig)
 		if err != nil {
-			res, err := securityChecker.TomlMarshal(config.DefaultConfig())
+			res, err := tools.TomlMarshal(config.DefaultConfig())
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
@@ -204,8 +202,8 @@ func run() {
 		defer func() {
 			wg.Done()
 		}()
-		man.SetLog()
-		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
+
+		tools.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		checker.Start(ctx, config.Cfg.System, config.Cfg.ScOutput)
 	}()
 
@@ -246,7 +244,7 @@ func checkServiceExist() bool {
 			exec.Command("grep", "-v", "grep"),
 			exec.Command("wc", "-l"),
 		}
-		result, _ := securityChecker.ExecPipeLine(cmds...)
+		result, _ := tools.ExecPipeLine(cmds...)
 
 		if len(result) > 0 {
 			n, err := strconv.Atoi(result)

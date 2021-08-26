@@ -1,4 +1,4 @@
-package securityChecker
+package global
 
 import (
 	"runtime"

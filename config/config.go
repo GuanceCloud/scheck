@@ -10,9 +10,10 @@ import (
 	"strings"
 	"text/template"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"github.com/influxdata/toml"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 )
 
 const (
@@ -157,11 +158,11 @@ func DefaultConfig() *Config {
 
 	// windows
 	if runtime.GOOS == "windows" {
-		c.Logging.Log = filepath.Join(securityChecker.InstallDir, "log")
-		c.System.RuleDir = filepath.Join(securityChecker.InstallDir, "rules.d")
-		c.System.CustomRuleDir = filepath.Join(securityChecker.InstallDir, "custom.rules.d")
+		c.Logging.Log = filepath.Join(global.InstallDir, "log")
+		c.System.RuleDir = filepath.Join(global.InstallDir, "rules.d")
+		c.System.CustomRuleDir = filepath.Join(global.InstallDir, "custom.rules.d")
 		c.System.CustomRuleLibDir = filepath.Join(c.System.CustomRuleDir, "libs")
-		c.ScOutput.Log.Output = fmt.Sprintf("file://%s", filepath.Join(securityChecker.InstallDir, "event.log"))
+		c.ScOutput.Log.Output = fmt.Sprintf("file://%s", filepath.Join(global.InstallDir, "event.log"))
 	}
 
 	return c
@@ -282,34 +283,34 @@ func CreateSymlinks() {
 	if runtime.GOOS == "windows" {
 		x = [][2]string{
 			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck.exe"),
+				filepath.Join(global.InstallDir, "scheck.exe"),
 				`C:\WINDOWS\system32\scheck.exe`,
 			},
 		}
 	} else {
 		x = [][2]string{
 			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
+				filepath.Join(global.InstallDir, "scheck"),
 				"/usr/local/bin/scheck",
 			},
 
 			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
+				filepath.Join(global.InstallDir, "scheck"),
 				"/usr/local/sbin/scheck",
 			},
 
 			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
+				filepath.Join(global.InstallDir, "scheck"),
 				"/sbin/scheck",
 			},
 
 			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
+				filepath.Join(global.InstallDir, "scheck"),
 				"/usr/sbin/scheck",
 			},
 
 			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
+				filepath.Join(global.InstallDir, "scheck"),
 				"/usr/bin/scheck",
 			},
 		}

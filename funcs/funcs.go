@@ -8,7 +8,6 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
-	checker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	luajson "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/json"
 )
 
@@ -57,7 +56,7 @@ func NewScriptRunTime() *ScriptRunTime {
 		return nil
 	}
 	luajson.Preload(ls)
-	for _, p := range checker.FuncProviders {
+	for _, p := range FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}
@@ -129,7 +128,7 @@ func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 	}
 	SetScriptGlobalConfig(ls, cfg)
 	luajson.Preload(ls) //for json parse
-	for _, p := range checker.FuncProviders {
+	for _, p := range FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}
@@ -182,7 +181,7 @@ func TestLua(rulepath string) {
 	}
 	SetScriptGlobalConfig(ls, &ScriptGlobalCfg{RulePath: rulepath})
 	luajson.Preload(ls)
-	for _, p := range checker.FuncProviders {
+	for _, p := range FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}

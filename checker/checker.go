@@ -14,8 +14,8 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
 	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/cgroup"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service/cgroup"
 )
 
 var (

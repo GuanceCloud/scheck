@@ -1,4 +1,4 @@
-package man
+package tools
 
 import (
 	"bytes"
@@ -18,12 +18,8 @@ import (
 )
 
 var (
-	l = logger.SLogger("tool")
-)
-
-func SetLog() {
 	l = logger.DefaultSLogger("tool")
-}
+)
 
 type Params struct {
 	Version        string

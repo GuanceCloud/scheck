@@ -11,11 +11,11 @@ import (
 
 	"github.com/kardianos/service"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/installer/install"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
-	dkservice "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/service"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	dkservice "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
 )
 
 var (
@@ -72,8 +72,8 @@ func main() {
 		install.Init()
 	}
 
-	dkservice.ServiceExecutable = filepath.Join(securityChecker.InstallDir, checkBin)
-	if runtime.GOOS == securityChecker.OSWindows {
+	dkservice.ServiceExecutable = filepath.Join(global.InstallDir, checkBin)
+	if runtime.GOOS == global.OSWindows {
 		dkservice.ServiceExecutable += ".exe"
 	}
 
@@ -93,23 +93,23 @@ func main() {
 	applyFlags()
 
 	// create install dir if not exists
-	if err := os.MkdirAll(securityChecker.InstallDir, 0775); err != nil {
+	if err := os.MkdirAll(global.InstallDir, 0775); err != nil {
 		l.Warnf("makeDirAll %v", err)
 	}
 
 	if *flagOffline && *flagSrcs != "" {
 		for _, f := range strings.Split(*flagSrcs, ",") {
-			_ = install.ExtractDatakit(f, securityChecker.InstallDir)
+			_ = install.ExtractDatakit(f, global.InstallDir)
 		}
 	} else {
 		install.CurDownloading = checkBin
-		if err := install.Download(datakitUrl, securityChecker.InstallDir, true, true, false); err != nil {
+		if err := install.Download(datakitUrl, global.InstallDir, true, true, false); err != nil {
 			l.Errorf("err = %v", err)
 			return
 		}
 		// download version
 		vUrl := "https://" + path.Join(DataKitBaseURL, "version")
-		if err := install.Download(vUrl, filepath.Join(securityChecker.InstallDir, "version"), false, true, true); err != nil {
+		if err := install.Download(vUrl, filepath.Join(global.InstallDir, "version"), false, true, true); err != nil {
 			l.Errorf("err = %v", err)
 			return
 		}
@@ -152,7 +152,7 @@ func applyFlags() {
 Golang Version: %s
        BaseUrl: %s
        scheck: %s
-`, securityChecker.Version, git.BuildAt, git.Golang, DataKitBaseURL, datakitUrl)
+`, global.Version, git.BuildAt, git.Golang, DataKitBaseURL, datakitUrl)
 		os.Exit(0)
 	}
 
@@ -175,9 +175,9 @@ Golang Version: %s
 func mvOldDatakit(svc service.Service) {
 	olddir := oldInstallDir
 	switch runtime.GOOS + "/" + runtime.GOARCH {
-	case securityChecker.OSArchWinAmd64:
+	case global.OSArchWinAmd64:
 		olddir = oldInstallDirWin
-	case securityChecker.OSArchWin386:
+	case global.OSArchWin386:
 		olddir = oldInstallDirWin32
 	}
 

@@ -7,18 +7,17 @@ import (
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
 
 type provider struct {
-	funcs []securityChecker.Func
+	funcs []funcs.Func
 }
 
-func (p *provider) Funcs() []securityChecker.Func {
-	return []securityChecker.Func{
+func (p *provider) Funcs() []funcs.Func {
+	return []funcs.Func{
 		{Name: `trigger`, Fn: p.trigger},
 	}
 }
@@ -129,5 +128,5 @@ func firstTrigger() {
 
 }
 func init() {
-	securityChecker.AddFuncProvider(&provider{})
+	funcs.AddFuncProvider(&provider{})
 }
