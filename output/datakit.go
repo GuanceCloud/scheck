@@ -61,6 +61,7 @@ func (dk *DatakitWriter) start() {
 		case <-time.After(time.Second * 10):
 			if len(dk.pending) != 0 {
 				dk.ToUpstream(dk.pending...)
+				dk.pending = make([]*sample, 0)
 			}
 		}
 	}
