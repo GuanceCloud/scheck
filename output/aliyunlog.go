@@ -36,20 +36,50 @@ func (a *AliYunLog) CreateProject() {
 	if err != nil {
 		_, err := a.Client.CreateProject(a.AliSls.ProjectName, a.AliSls.Description)
 		if err != nil {
-			l.Errorf("Create project : %s failed %v\n", a.AliSls.Description, err)
+			l.Errorf("Create project : %s failed %v\n, ", a.AliSls.Description, err)
 		}
 	}
+	count := 0
+	for {
+		_, err := a.Client.GetProject(a.AliSls.ProjectName)
+		if err == nil {
+			l.Info("%s exist", a.AliSls.ProjectName)
+			break
+		} else if count > 10 {
+			l.Errorf("Create project timeout ")
+			break
+		}
+		time.Sleep(2 * time.Second)
+		count++
+	}
+
+	if a.AliSls.LogStoreName == "" {
+		a.AliSls.LogStoreName = "scheck"
+	}
+
+	if _, err := a.Client.GetLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName); err != nil {
+		if err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName, 3, 2, true, 6); err != nil {
+			l.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
+		}
+	}
+
+	logStoreCount := 0
+	for {
+		_, err := a.Client.GetLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName)
+		if err == nil {
+			l.Info("%s exist", a.AliSls.LogStoreName)
+			break
+		} else if logStoreCount > 10 {
+			l.Errorf("Create LogStore timeout ")
+			break
+		}
+		time.Sleep(2 * time.Second)
+		logStoreCount++
+	}
+
 }
 
 func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
-
-	a.AliSls.LogStoreName = "scheck"
-
-	err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName, 3, 2, true, 6)
-	if err != nil {
-		l.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
-		return err
-	}
 
 	indexKey := map[string]sls.IndexKey{}
 	for i := range fields {
@@ -70,11 +100,15 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 			ExcludeKeys:   []string{},
 		},
 	}
-	err = a.Client.CreateIndex(a.AliSls.ProjectName, a.AliSls.LogStoreName, index)
+
+	err := a.Client.CreateIndex(a.AliSls.ProjectName, a.AliSls.LogStoreName, index)
 	if err != nil {
-		l.Errorf("Create Index failed %v\n", err)
+		if err = a.Client.UpdateIndex(a.AliSls.ProjectName, a.AliSls.LogStoreName, index); err != nil {
+			l.Errorf("Index error %v\n", err)
+		}
 		return err
 	}
+	time.Sleep(4 * time.Second)
 
 	return nil
 }

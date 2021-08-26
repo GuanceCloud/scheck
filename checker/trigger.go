@@ -113,7 +113,7 @@ func firstTrigger() {
 	tm := time.Now().UTC()
 
 	tags["title"] = "scheck start"
-	tags["level"] = "-"
+	tags["level"] = "info"
 	tags["category"] = "system"
 	tags["version"] = git.Version
 	if h, err := os.Hostname(); err == nil {
