@@ -139,7 +139,7 @@ func DefaultConfig() *Config {
 				Output: "http://127.0.0.1:9529/v1/write/security",
 			},
 			Log: &Log{
-				Enable: false,
+				Enable: true,
 				Output: fmt.Sprintf("file://%s", filepath.Join("/var/log/scheck", "event.log")),
 			},
 			AliSls: &AliSls{
@@ -214,7 +214,6 @@ func TryLoadConfig(filePath string) bool {
 func LoadConfig(p string) {
 	cfgData, _ := ioutil.ReadFile(p)
 	c := &Config{}
-	fmt.Println(string(cfgData))
 	if err := toml.Unmarshal(cfgData, c); err != nil {
 		l.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
 	}

@@ -106,6 +106,7 @@ func (scheduler *TaskScheduler) run() {
 		l.Warnf("schedules is empty....")
 	}
 	for {
+		time.Sleep(time.Second / 2)
 		now := time.Now()
 		task, key := scheduler.GetTask()
 		runTime := task.RunTime
