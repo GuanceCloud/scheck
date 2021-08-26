@@ -13,21 +13,24 @@
 ### Linux 平台
 
 ```Shell
-sudo -- sh -c 'curl https://static.dataflux.cn/scheck/install.sh | sh'
+sudo -- bash -c "$(curl -L https://static.dataflux.cn/scheck/install.sh)"
 ```
 
 ### Windows 平台
-
+```powershell
+Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://static.dataflux.cn/scheck/install.ps1 -destination .install.ps1; powershell .install.ps1;
+```
 
 
 ## *更新*：  
 ### Linux 平台
-- amd64 类型
 ```Shell
-SC_UPGRADE=true;sudo -- sh -c 'curl https://static.dataflux.cn/scheck/install.sh | sh'
+SC_UPGRADE=1 bash -c "$(curl -L https://static.dataflux.cn/scheck/install.sh)"
 ```
 ### Windows 平台
-
+```powershell
+$env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://static.dataflux.cn/scheck/install.ps1 -destination .install.ps1; powershell .install.ps1;
+```
 
 
 安装完成后即以服务的方式运行，服务名为`scheck`，使用服务管理工具来控制程序的启动/停止：  
