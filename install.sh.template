@@ -62,7 +62,7 @@ else
 fi
 
 # Select installer
-installer_base_url="http://{{INSTALLER_BASE_URL}}"
+installer_base_url="https://{{INSTALLER_BASE_URL}}"
 if [ -n "$DK_INSTALLER_BASE_URL" ]; then
 	installer_base_url=$DK_INSTALLER_BASE_URL
 fi
