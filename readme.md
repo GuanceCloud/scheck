@@ -14,15 +14,13 @@
 [示例](#示例)  
 
 ## 安装/更新
-
-*安装*：  
 ### Linux 平台
+*安装*：  
 ```Shell
 sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.sh'
 ```
 
 *更新*：  
-### Linux 平台
 ```Shell
 SC_UPGRADE=true;sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.sh'
 ```
@@ -38,7 +36,16 @@ systemctl start/stop/restart scheck
 ```
 service scheck start/stop/restart
 ```
+### Windows平台
+*安装*：
+```powershell
+Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.ps1 -destination .install.ps1; powershell .install.ps1;
+```
 
+*更新*：
+```powershell
+$env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.ps1 -destination .install.ps1; powershell .install.ps1;
+```
 
 > 注意：Security Checker 支持 Linux/Windows amd64/arm64
 

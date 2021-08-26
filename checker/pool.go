@@ -1,9 +1,8 @@
 package checker
 
 import (
-	"sync"
-
 	"os"
+	"sync"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 )
@@ -22,7 +21,7 @@ type statePool struct {
 
 func InitStatePool(initCap, cap int) {
 	if initCap <= 0 || cap <= 0 || initCap > cap {
-		l.Warnf("newStatePool warning!!! initcap=%d,cap=%d", initCap, cap)
+		l.Warnf("newStatePool warning!!! initCap=%d,cap=%d", initCap, cap)
 		os.Exit(0)
 		return
 	}
