@@ -5,7 +5,7 @@ iploc.bin
 .orig
 pub
 a.out
-doc
+#doc
 dist/
 build/
 packrd/
