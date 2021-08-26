@@ -54,7 +54,7 @@ $installer=".sc-installer.exe"
 ##########################
 # try install...
 ##########################
-Write-COutput green "* Downloading $insntaller_url..."
+Write-COutput green "* Downloading ..."
 
 if (Test-Path $installer) {
 	Remove-Item $installer
@@ -62,7 +62,7 @@ if (Test-Path $installer) {
 
 Import-Module bitstransfer
 $dl_installer_action = "start-bitstransfer -source $installer_url -destination $installer"
-if ($proxy -ne "") {
+if ($proxy -ne $null) {
 	$dl_installer_action = "start-bitstransfer -ProxyUsage Override -ProxyList $proxy -source $installer_url -destination $installer"
 }
 

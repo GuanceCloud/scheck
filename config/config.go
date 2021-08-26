@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"text/template"
 
 	"github.com/influxdata/toml"
@@ -56,8 +57,8 @@ const (
 [cgroup]
   # 可选 默认关闭 cpu是百分比
   enable = {{.Cgroup.Enable}}
-  cpu_max = {{.Cgroup.CPUMax}}
-  cpu_min = {{.Cgroup.CPUMin}}
+  cpu_max = {{.Cgroup.CPUMax}}.0
+  cpu_min = {{.Cgroup.CPUMin}}.0
   mem = {{.Cgroup.MEM}}
 `
 )
@@ -116,10 +117,10 @@ type Logging struct {
 
 // Cgroup cpu&mem 控制量
 type Cgroup struct {
-	Enable bool `toml:"enable"`
-	CPUMax int  `toml:"cpu_max"`
-	CPUMin int  `toml:"cpu_min"`
-	MEM    int  `toml:"mem"`
+	Enable bool    `toml:"enable"`
+	CPUMax float64 `toml:"cpu_max"`
+	CPUMin float64 `toml:"cpu_min"`
+	MEM    int     `toml:"mem"`
 }
 
 func DefaultConfig() *Config {
@@ -138,7 +139,7 @@ func DefaultConfig() *Config {
 				Output: "http://127.0.0.1:9529/v1/write/security",
 			},
 			Log: &Log{
-				Enable: false,
+				Enable: true,
 				Output: fmt.Sprintf("file://%s", filepath.Join("/var/log/scheck", "event.log")),
 			},
 			AliSls: &AliSls{
@@ -151,7 +152,7 @@ func DefaultConfig() *Config {
 			Log:      filepath.Join("/var/log/scheck", "log"),
 			Rotate:   0, //默认32M
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 10.0, CPUMin: 5.0, MEM: 100},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 10, CPUMin: 5, MEM: 100},
 	}
 
 	// windows
@@ -205,24 +206,7 @@ func TryLoadConfig(filePath string) bool {
 			newConf.Logging.LogLevel = oldConf.LogLevel
 		}
 	}
-
-	f, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-
-	tmpl, err := template.New("config").Parse(MainConfigSample)
-	if err != nil {
-		l.Fatalf("make template err=%v", err)
-	}
-	buf := new(bytes.Buffer)
-	err = tmpl.Execute(buf, newConf)
-	if err != nil {
-		l.Fatalf("execute err=%v", err)
-	}
-
-	_, err = f.WriteString(buf.String())
-	if err != nil {
-		l.Fatalf("err:=%v", err)
-	}
-
+	tmplToFile(newConf, filePath)
 	Cfg = newConf
 	return false
 }
@@ -233,17 +217,7 @@ func LoadConfig(p string) {
 	if err := toml.Unmarshal(cfgData, c); err != nil {
 		l.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
 	}
-	f, _ := os.OpenFile(p, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-	defer f.Close()
-	tmpl, err := template.New("config").Parse(MainConfigSample)
-	if err != nil {
-		l.Fatalf("make template err=%v", err)
-	}
-	err = tmpl.Execute(f, c)
-	if err != nil {
-		l.Fatalf("execute err=%v", err)
-	}
-
+	tmplToFile(c, p)
 	Cfg = c
 }
 
@@ -357,4 +331,33 @@ func symlink(src, dst string) error {
 	}
 
 	return os.Symlink(src, dst)
+}
+
+func tmplToFile(c *Config, fpath string) {
+	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	if err != nil {
+		l.Fatalf("open file err =%v", err)
+	}
+	defer f.Close()
+	tmpl, err := template.New("config").Parse(MainConfigSample)
+	if err != nil {
+		l.Fatalf("make template err=%v", err)
+	}
+	if runtime.GOOS == "windows" {
+		c.System.RuleDir = strings.ReplaceAll(c.System.RuleDir, "\\", "\\\\")
+		c.System.CustomRuleLibDir = strings.ReplaceAll(c.System.CustomRuleLibDir, "\\", "\\\\")
+		c.System.CustomRuleDir = strings.ReplaceAll(c.System.CustomRuleDir, "\\", "\\\\")
+		c.Logging.Log = strings.ReplaceAll(c.Logging.Log, "\\", "\\\\")
+		c.ScOutput.Log.Output = strings.ReplaceAll(c.ScOutput.Log.Output, "\\", "\\\\")
+	}
+	buf := new(bytes.Buffer)
+	err = tmpl.Execute(buf, c)
+	if err != nil {
+		l.Fatalf("execute err=%v", err)
+	}
+	//_, err = f.WriteString(buf.String())
+	_, err = f.Write(buf.Bytes())
+	if err != nil {
+		l.Fatalf("err:=%v", err)
+	}
 }

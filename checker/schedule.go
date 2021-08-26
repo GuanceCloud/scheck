@@ -40,7 +40,7 @@ func NewTaskScheduler(rulesDir, customRuleDir string, hotUpdate bool) *TaskSched
 	schedule.LoadFromFile(rulesDir)
 	schedule.LoadFromFile(customRuleDir)
 	if hotUpdate {
-		schedule.hotUpdate()
+		go schedule.hotUpdate()
 	}
 
 	return schedule
@@ -78,6 +78,11 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			}
 		}
 	}
+	if len(scheduler.tasks) == 0 {
+		l.Warnf("There are no rules in the folder to load! . system exit at three second !!!")
+		time.Sleep(time.Second * 3)
+		os.Exit(0)
+	}
 }
 
 //stop all
@@ -101,7 +106,7 @@ func (scheduler *TaskScheduler) run() {
 		l.Warnf("schedules is empty....")
 	}
 	for {
-		time.Sleep(time.Second / 5)
+		time.Sleep(time.Second / 2)
 		now := time.Now()
 		task, key := scheduler.GetTask()
 		runTime := task.RunTime
