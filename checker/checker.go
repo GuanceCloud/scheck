@@ -57,7 +57,7 @@ func newChecker(confsys *config.System) *Checker {
 		customRuleDir: confsys.CustomRuleDir,
 		taskScheduler: NewTaskScheduler(confsys.RuleDir, confsys.CustomRuleDir, confsys.LuaHotUpdate),
 	}
-	if confsys.LuaCap == 0 || confsys.LuaInitCap == 0 || confsys.LuaInitCap > confsys.LuaCap {
+	if confsys.LuaCap <= 0 || confsys.LuaInitCap <= 0 || confsys.LuaInitCap > confsys.LuaCap {
 		confsys.LuaInitCap = 15
 		confsys.LuaCap = 20
 	}
