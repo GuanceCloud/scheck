@@ -76,7 +76,6 @@ pub_local:
 pub_testing:
 	$(call pub,test,$(TEST_DOWNLOAD_ADDR),$(DEFAULT_ARCHS))
 
-
 pub_release:
 	$(call pub,release,$(RELEASE_DOWNLOAD_ADDR),$(DEFAULT_ARCHS))
 
@@ -92,6 +91,9 @@ prepare:
 	@echo "$$GIT_INFO" > git/git.go
 
 deps: man gofmt vet
+
+lint: deps
+	@golangci-lint run | tee check.err # https://golangci-lint.run/usage/install/#local-installation
 
 # local:
 # 	$(call build,linux,amd64)
