@@ -26,6 +26,9 @@ const (
   #热更新 默认false
   lua_HotUpdate = {{.System.LuaHotUpdate}}
   cron = "{{.System.Cron}}"
+  # ##lua运行过程中 控制线程数量 run_cap为初始化线程数量，tot_cap是最大允许的数量
+  lua_run_cap = {{.System.LuaInitCap}}
+  lua_tot_cap = {{.System.LuaCap}}
   #是否禁用日志
   disable_log = {{.System.DisableLog}}
 
@@ -82,6 +85,8 @@ type System struct {
 	LuaHotUpdate     bool   `toml:"lua_HotUpdate"`
 	Cron             string `toml:"cron"`
 	DisableLog       bool   `toml:"disable_log"`
+	LuaInitCap       int    `toml:"lua_run_cap,omitempty"`
+	LuaCap           int    `toml:"lua_tot_cap,omitempty"`
 }
 
 type ScOutput struct {
@@ -131,6 +136,8 @@ func DefaultConfig() *Config {
 			CustomRuleDir:    "/usr/local/scheck/custom.rules.d",
 			CustomRuleLibDir: "/usr/local/scheck/custom.rules.d/libs",
 			Cron:             "",
+			LuaInitCap:       15,
+			LuaCap:           20,
 			DisableLog:       false,
 		},
 		ScOutput: &ScOutput{

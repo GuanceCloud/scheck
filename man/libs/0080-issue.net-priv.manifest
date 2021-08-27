@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="issue.net不是644"
 desc="{{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

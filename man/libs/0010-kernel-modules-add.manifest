@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="内核模块被添加"
 desc="内核模块添加了 {{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

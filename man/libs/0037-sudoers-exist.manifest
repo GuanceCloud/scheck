@@ -3,7 +3,7 @@ category="storage"
 level="critical"
 title="主机/etc/sudoers 被删除"
 desc="{{.Content}} 被删除"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

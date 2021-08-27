@@ -29,8 +29,6 @@ func applyFlags() {
 	build.ReleaseType = build.Release
 	build.MainEntry = *flagMain
 	build.DownloadAddr = *flagDownloadAddr
-	// slq make testing
-	//build.DownloadAddr = "df-storage-dev.oss-cn-hangzhou.aliyuncs.com/songlongqi/scheck"
 
 	if *flagPub {
 		build.PubDatakit()

@@ -3,7 +3,7 @@ category="storage"
 level="warn"
 title="squashfs 被启用"
 desc="{{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 
