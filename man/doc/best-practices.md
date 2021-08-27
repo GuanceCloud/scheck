@@ -30,7 +30,7 @@
 ### 1 安装 Scheck
 
 ```sh
-bash -c "$(curl https://zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)" 
+sudo -- bash -c "$(curl -L https://static.dataflux.cn/security-checker/install.sh)"
 ```
 
 

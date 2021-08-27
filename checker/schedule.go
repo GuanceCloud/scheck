@@ -104,6 +104,7 @@ func (scheduler *TaskScheduler) doAndReset(key string) {
 func (scheduler *TaskScheduler) run() {
 	if len(scheduler.tasks) == 0 {
 		l.Warnf("schedules is empty....")
+		return
 	}
 	for {
 		time.Sleep(time.Second / 2)

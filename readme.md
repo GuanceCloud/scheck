@@ -17,12 +17,12 @@
 ### Linux 平台
 *安装*：  
 ```Shell
-sudo -- bash -c "$(curl -L https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.sh)"
+sudo -- bash -c "$(curl -L https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)"
 ```
 
 *更新*：  
 ```Shell
-SC_UPGRADE=1 bash -c "$(curl -L https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.sh)"
+SC_UPGRADE=1 bash -c "$(curl -L https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)"
 ```
 
 安装完成后即以服务的方式运行，服务名为`scheck`，使用服务管理工具来控制程序的启动/停止：  
@@ -39,12 +39,12 @@ service scheck start/stop/restart
 ### Windows平台
 *安装*：
 ```powershell
-Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.ps1 -destination .install.ps1; powershell .install.ps1;
+Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
 ```
 
 *更新*：
 ```powershell
-$env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck/install.ps1 -destination .install.ps1; powershell .install.ps1;
+$env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
 ```
 
 > 注意：Security Checker 支持 Linux/Windows amd64/arm64

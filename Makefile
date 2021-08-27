@@ -11,11 +11,11 @@ ENTRY = cmd/checker/main.go
 RELEASE_DOWNLOAD_ADDR = zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker
 
 # 测试环境
-TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/scheck
+TEST_DOWNLOAD_ADDR = zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker
 
 
 LOCAL_ARCHS = "local"
-LOCAL_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"$(SC_USERNAME)"/"scheck
+LOCAL_DOWNLOAD_ADDR = $(LOCAL_OSS_BUCKET)"."$(LOCAL_OSS_HOST)"/"$(SC_USERNAME)"/"security-checker
 DEFAULT_ARCHS = "all"
 
 VERSION := $(shell git describe --always --tags)

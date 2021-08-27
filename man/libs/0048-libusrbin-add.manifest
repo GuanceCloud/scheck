@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="/usr/bin 目录被添加文件"
 desc="{{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

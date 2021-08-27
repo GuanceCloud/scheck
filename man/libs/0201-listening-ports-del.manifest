@@ -2,7 +2,7 @@ id="0201-listening-ports-del"
 category="system"
 level="warn"
 title="主机端口被关闭"
-desc="端口被打开，{{.Content}} "
+desc="端口被关闭，{{.Content}} "
 cron="1 */5 * * *"
 # 开关
 disabled=false

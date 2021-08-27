@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="主机名被修改"
 desc="主机名改为 {{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

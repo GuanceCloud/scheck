@@ -18,6 +18,9 @@
 
 - [Scheck Funcs支持清单](funcs)
 
+- [其他]()
+    - [Scheck 并发策略](scheck-pool)
+
 - [规则库]()
 {{ range $index, $value := .Category }}
     - [{{$index -}}]()

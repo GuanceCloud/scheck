@@ -16,6 +16,7 @@ type DatakitWriter struct {
 	pending      []*sample
 	maxPending   int
 	lastSendTime int64
+	samSig       chan *sample
 }
 
 func newDatakitWriter(filePath string, maxPending int) *DatakitWriter {
@@ -23,11 +24,16 @@ func newDatakitWriter(filePath string, maxPending int) *DatakitWriter {
 		filePath = "http://" + filePath
 	}
 
-	return &DatakitWriter{
+	dk := &DatakitWriter{
 		httpURL:      filePath,
 		maxPending:   maxPending,
-		lastSendTime: time.Now().Unix()}
+		lastSendTime: time.Now().Unix(),
+		samSig:       make(chan *sample, 1),
+	}
+	go dk.start()
+	return dk
 }
+
 func (dk *DatakitWriter) Stop() {
 
 }
@@ -39,13 +45,25 @@ func (dk *DatakitWriter) ReadMsg(measurement string, tags map[string]string, fie
 	if err != nil {
 		return
 	}
-	dk.pending = append(dk.pending, &sample{data: data})
-	timenow := time.Now().Unix()
-	if len(dk.pending) >= dk.maxPending || (timenow-dk.lastSendTime) > 10 {
-		dk.ToUpstream(dk.pending...)
-		dk.pending = make([]*sample, 0)
-		dk.lastSendTime = timenow
-		return
+	dk.samSig <- &sample{data: data}
+
+}
+
+func (dk *DatakitWriter) start() {
+	for {
+		select {
+		case sam := <-dk.samSig:
+			dk.pending = append(dk.pending, sam)
+			if len(dk.pending) > dk.maxPending {
+				dk.ToUpstream(dk.pending...)
+				dk.pending = make([]*sample, 0)
+			}
+		case <-time.After(time.Second * 10):
+			if len(dk.pending) != 0 {
+				dk.ToUpstream(dk.pending...)
+				dk.pending = make([]*sample, 0)
+			}
+		}
 	}
 }
 
