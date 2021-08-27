@@ -10,12 +10,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime"
-	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 
@@ -60,8 +57,10 @@ func main() {
 	if config.TryLoadConfig(*flagConfig) {
 		config.LoadConfig(*flagConfig)
 	}
-	if checkServiceExist() {
-		l.Fatalf("service scheck is running!!!")
+
+	if err := securityChecker.SavePid(); err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
 	}
 	config.Cfg.Init()
 	l = logger.SLogger("main")
@@ -224,40 +223,4 @@ func run() {
 	wg.Wait()
 	service.Stop()
 
-}
-
-// checkServiceExist :The server cannot run two scheck at the same time
-func checkServiceExist() bool {
-	if runtime.GOOS == "windows" {
-		//  tasklist /fi "SERVICES eq scheck"  or  IMAGENAME eq scheck
-		cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq scheck.exe")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			l.Error(err)
-		}
-
-		if n := strings.Count(string(out), "scheck"); n >= 2 {
-			return true
-		}
-	} else {
-		cmds := []*exec.Cmd{
-			exec.Command("ps", "-ef"),
-			exec.Command("grep", "scheck"),
-			exec.Command("grep", "-v", "grep"),
-			exec.Command("wc", "-l"),
-		}
-		result, _ := securityChecker.ExecPipeLine(cmds...)
-
-		if len(result) > 0 {
-			n, err := strconv.Atoi(result)
-			if err == nil {
-				if n >= 2 {
-					return true
-				}
-			}
-
-		}
-	}
-
-	return false
 }
