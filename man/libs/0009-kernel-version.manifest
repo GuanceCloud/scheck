@@ -3,7 +3,7 @@ category="system"
 level="critical"
 title="主机内核版本发生改变"
 desc="内核版本发生改变， 版本为{{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

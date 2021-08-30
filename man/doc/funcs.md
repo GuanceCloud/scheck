@@ -1,4 +1,9 @@
-# Security Checker Funcs支持清单
+# Scheck Funcs支持清单
+
+- 版本：%s
+- 发布日期：%s
+- 操作系统支持：windows/amd64,windows/386,linux/arm,linux/arm64,linux/386,linux/amd64
+
 1. [ls](#ls)   
 2. [file_exist](#file_exist)  
 3. [file_info](#file_info)  

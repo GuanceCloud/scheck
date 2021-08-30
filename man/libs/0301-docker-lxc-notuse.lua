@@ -8,7 +8,7 @@ local function  is_use_lxc()
             return true
         end
     end
-    return nil
+    return false
 end
 
 local function check()
@@ -24,7 +24,7 @@ local function check()
 
     if old == nil then
         local current = is_use_lxc()
-        if current ~= nil then
+        if current then
             trigger()
         end
         set_cache(cache_key, current)
@@ -33,7 +33,9 @@ local function check()
 
     local current = is_use_lxc()
     if old ~= current then
-        trigger()
+        if current then
+            trigger()
+        end
         set_cache(cache_key, current)
     end
 end

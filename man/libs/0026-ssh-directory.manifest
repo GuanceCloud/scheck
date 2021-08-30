@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="sshd 文件是否被修改"
 desc="/etc/ssh目录{.Content} 被修改"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 os_arch=["Linux"]

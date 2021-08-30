@@ -4,7 +4,7 @@ level="warn"
 title="主机用户密码被修改"
 #desc="文件 {{.File}} 发生了变化"
 desc="主机用户密码， {{.Content}} 文件被修改"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

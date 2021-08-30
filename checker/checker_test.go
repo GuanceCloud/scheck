@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"text/template"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 
 	cron "github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
@@ -142,7 +143,7 @@ func TestChecker(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	_ = cancel
-	Start(ctx, ruleDir, "", &config.ScOutput{})
+	Start(ctx, nil, &config.ScOutput{})
 
 }
 

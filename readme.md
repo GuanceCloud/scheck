@@ -14,17 +14,15 @@
 [示例](#示例)  
 
 ## 安装/更新
-
+### Linux 平台
 *安装*：  
-
 ```Shell
-sudo -- sh -c 'curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/installer-linux-amd64 -o installer && chmod +x ./installer && ./installer && rm -rf ./installer'
+sudo -- bash -c "$(curl -L https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)"
 ```
 
 *更新*：  
-
 ```Shell
-bash -c "$(curl https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh) --upgrade"
+SC_UPGRADE=1 bash -c "$(curl -L https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.sh)"
 ```
 
 安装完成后即以服务的方式运行，服务名为`scheck`，使用服务管理工具来控制程序的启动/停止：  
@@ -38,8 +36,19 @@ systemctl start/stop/restart scheck
 ```
 service scheck start/stop/restart
 ```
+### Windows平台
+*安装*：
+```powershell
+Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
+```
 
-> 注意：Security Checker 支持 Linux、Windows amd64/386/arm64
+*更新*：
+```powershell
+$env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
+```
+
+> 注意：Security Checker 支持 Linux/Windows amd64/arm64
+
 
 可配置环境变量`scoutput`来设置 Security Checker 安装后的初始 output。  
 
@@ -63,14 +72,15 @@ service scheck start/stop/restart
   disable_log = false
 
 [scoutput]
+   # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
    # ##远程server，例：http(s)://your.url
   [scoutput.http]
     enable = true
     output = "http://127.0.0.1:9529/v1/write/security"
   [scoutput.log]
+    # ##可配置本地存储
     enable = false
-    # ##本地文件时需要使用前缀 file://， 例：file:///your/file/path
-    output = "file:///var/log/scheck/event.log"
+    output = "/var/log/scheck/event.log"
   # 阿里云日志系统
   [scoutput.alisls]
     enable = false
@@ -81,11 +91,13 @@ service scheck start/stop/restart
     log_store_name = "scheck"
 
 [logging]
-  # ##(可选) 程序本身的日志配置
+  # ##(可选) 程序运行过程中产生的日志存储位置
   log = "/var/log/scheck/log"
   log_level = "info"
+  rotate = 0
 
 [cgroup]
+    # 可选 默认关闭 可控制cpu和mem
   enable = false
   cpu_max = 30.0
   cpu_min = 5.0
@@ -354,7 +366,7 @@ title      = '监视系统用户变动'
 desc       = '{{.Content}}'
 cron       = '*/10 * * * *'
 instanceId = 'id-xxx'
-os_arch    = ["CentOS", "Darwin"]
+os_arch    = ["Linux"]
 ```
 
 检测代码 `users.lua`：  
