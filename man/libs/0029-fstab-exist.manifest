@@ -3,7 +3,7 @@ category="system"
 level="critical"
 title="fstab 被删除"
 desc="{{.Content}} 被删除"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

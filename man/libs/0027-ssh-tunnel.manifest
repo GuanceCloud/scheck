@@ -3,7 +3,7 @@ category="network"
 level="critical"
 title="存在ssh隧道"
 desc="存在{{.Count}}个ssh隧道, pid 为 {{.Pid}} 强烈建议立即处理"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

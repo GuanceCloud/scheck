@@ -3,7 +3,7 @@ category="storage"
 level="warn"
 title="路径被卸载"
 desc="路径被卸载了 {{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

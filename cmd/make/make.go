@@ -30,15 +30,6 @@ func applyFlags() {
 	build.MainEntry = *flagMain
 	build.DownloadAddr = *flagDownloadAddr
 
-	// switch *flagEnv {
-	// case "release":
-	// 	log.Printf("under release, only checked inputs released")
-	// 	build.ReleaseType = "checked"
-	// default:
-	// 	log.Printf("under non-release, all inputs released")
-	// 	build.ReleaseType = "all"
-	// }
-
 	if *flagPub {
 		build.PubDatakit()
 		os.Exit(0)

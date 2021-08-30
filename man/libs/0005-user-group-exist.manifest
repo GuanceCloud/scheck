@@ -3,7 +3,7 @@ category="system"
 level="critical"
 title="主机/etc/group不存在"
 desc="主机核心文件 {{.Content}} 被删除"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

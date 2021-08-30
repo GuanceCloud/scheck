@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="sshd 文件是否被修改"
 desc="敏感文件 {{.File}}发生了改变"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 
