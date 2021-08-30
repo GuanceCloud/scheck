@@ -35,5 +35,5 @@ func DumpSupportLuaFuncs(w io.Writer) {
 	}
 	s := strings.Join(names, "\n")
 	s += "\n"
-	w.Write([]byte(s))
+	_, _ = w.Write([]byte(s))
 }

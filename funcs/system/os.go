@@ -166,10 +166,6 @@ func (p *provider) users(l *lua.LState) int {
 	return 1
 }
 
-func loggedInUsers(l *lua.LState) int {
-	return 1
-}
-
 func (p *provider) shadow(l *lua.LState) int {
 
 	type shadowInfo struct {

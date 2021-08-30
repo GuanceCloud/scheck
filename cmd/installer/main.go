@@ -39,9 +39,7 @@ var (
 	flagDownloadOnly = flag.Bool("download-only", false, `download scheck only, not install`)
 	flagInstallOnly  = flag.Bool("install-only", false, "install only, not start")
 
-	flagInstallLog    = flag.String("install-log", "", "install log")
-	flagOTA           = flag.Bool("ota", false, "auto update")
-	flagCloudProvider = flag.String("cloud-provider", "", "specify cloud provider(accept aliyun/tencent/aws)")
+	flagInstallLog = flag.String("install-log", "", "install log")
 
 	flagOffline = flag.Bool("offline", false, "offline install mode")
 	flagSrcs    = flag.String("srcs", fmt.Sprintf("./scheck-%s-%s-%s.tar.gz,./data.tar.gz", runtime.GOOS, runtime.GOARCH, DataKitVersion), `local path of scheck and agent install files`)
@@ -60,13 +58,13 @@ func main() {
 		if runtime.GOOS != "windows" { // disable color on windows(some color not working under windows)
 			lopt |= logger.OPT_COLOR
 		}
-
-		if err := logger.SetGlobalRootLogger("", logger.DEBUG, lopt); err != nil {
+		opt := &logger.Option{Path: "", Level: "debug", Flags: lopt}
+		if err := logger.InitRoot(opt); err != nil {
 			l.Warnf("set root log failed: %s", err.Error())
 		}
 	} else {
 		l.Infof("set log file to %s", *flagInstallLog)
-		if err := logger.SetGlobalRootLogger(*flagInstallLog, logger.DEBUG, logger.OPT_DEFAULT); err != nil {
+		if err := logger.InitRoot(&logger.Option{Path: *flagInstallLog, Level: logger.DEBUG, Flags: logger.OPT_DEFAULT}); err != nil {
 			l.Errorf("set root log failed: %s", err.Error())
 		}
 		install.Init()

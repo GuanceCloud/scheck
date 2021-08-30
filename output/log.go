@@ -27,7 +27,7 @@ func newLocalLog(filePath string) *localLog {
 
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		os.MkdirAll(filepath.Dir(filePath), 0775)
+		_ = os.MkdirAll(filepath.Dir(filePath), 0775)
 		f, err = os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
 			l.Errorf("%s", err)

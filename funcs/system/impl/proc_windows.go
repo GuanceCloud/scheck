@@ -106,15 +106,6 @@ type (
 		Shell string
 	}
 
-	lastItemInfo struct {
-		username string
-		pid      int
-		typ      int
-		tty      string
-		tm       int64
-		host     string
-	}
-
 	SocketInfo struct {
 		Socket    string
 		Family    int

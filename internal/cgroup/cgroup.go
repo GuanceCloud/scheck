@@ -1,10 +1,6 @@
 package cgroup
 
 import (
-	"os"
-	"runtime"
-	"time"
-
 	"github.com/shirou/gopsutil/mem"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
@@ -51,25 +47,4 @@ func Run() {
 	}
 
 	start()
-}
-
-var blocks = make([][1024 * 512]byte, 0)
-
-func memTest() {
-	time.Sleep(time.Second)
-	for {
-		var m1 runtime.MemStats
-		runtime.ReadMemStats(&m1)
-
-		if m1.Alloc > uint64(1024*1024*30) {
-			os.Exit(0)
-		} else {
-			blocks = append(blocks, [1024 * 512]byte{})
-		}
-		time.Sleep(time.Second * 2)
-	}
-
-}
-func bToMb(b uint64) uint64 {
-	return b / uint64(MB)
 }

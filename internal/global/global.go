@@ -18,14 +18,17 @@ const (
 	OSArchLinux386    = "linux/386"
 	OSArchLinuxAmd64  = "linux/amd64"
 	OSArchDarwinAmd64 = "darwin/amd64"
+
+	ReleaseUrl = "zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker"
+	TestUrl    = "zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker"
 )
 
 var (
 	Version            = git.Version
 	InstallDir         = optionalInstallDir[runtime.GOOS+"/"+runtime.GOARCH]
 	optionalInstallDir = map[string]string{
-		OSArchWinAmd64: `C:\Program Files\scheck`,
-		OSArchWin386:   `C:\Program Files (x86)\scheck`,
+		OSArchWinAmd64: `C:\\Program Files\\scheck`,
+		OSArchWin386:   `C:\\Program Files (x86)\\scheck`,
 
 		OSArchLinuxArm:    `/usr/local/scheck`,
 		OSArchLinuxArm64:  `/usr/local/scheck`,

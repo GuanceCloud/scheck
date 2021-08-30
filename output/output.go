@@ -156,7 +156,7 @@ func gzipCompress(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	zw.Flush()
-	zw.Close()
+	_ = zw.Flush()
+	_ = zw.Close()
 	return z.Bytes(), nil
 }

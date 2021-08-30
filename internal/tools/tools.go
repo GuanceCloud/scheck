@@ -157,32 +157,32 @@ func PathExists(path string) (bool, error) {
 }
 
 func ScheckDir(id string, outputPath string) {
-	path := fmt.Sprintf("%s/%s", outputPath, id)
+	filePath := fmt.Sprintf("%s/%s", outputPath, id)
 
-	bool, _ := PathExists(path)
-	if !bool {
-		err := os.Mkdir(path, os.ModePerm)
+	exist, _ := PathExists(filePath)
+	if !exist {
+		err := os.Mkdir(filePath, os.ModePerm)
 		if err != nil {
-			l.Fatalf("%s Creation failed", path)
+			l.Fatalf("%s Creation failed", filePath)
 		}
 	}
 }
 
-func IsAppand(file_path string) bool {
-	files, _ := ioutil.ReadFile(file_path)
+func IsAppand(filePath string) bool {
+	files, _ := ioutil.ReadFile(filePath)
 	if strings.Index(string(files), "fitOs") >= 0 {
 		return true
 	}
 	return false
 }
 
-func ScheckList(dir_path string) []string {
-	files, _ := ioutil.ReadDir(dir_path)
+func ScheckList(dirPath string) []string {
+	files, _ := ioutil.ReadDir(dirPath)
 	manifest := make([]string, 0)
 	for _, f := range files {
 		scId := strings.Split(f.Name(), ".manifest")
 		if path.Ext(f.Name()) == ".manifest" {
-			if IsAppand(fmt.Sprintf("%s%s", dir_path, f.Name())) {
+			if IsAppand(fmt.Sprintf("%s%s", dirPath, f.Name())) {
 				manifest = append(manifest, scId[0])
 			}
 		}
@@ -227,15 +227,15 @@ func DfTemplate(filesName []string, outputPath string) {
 		metaPath := fmt.Sprintf("%s/%s/meta.md", outputPath, v)
 		id := strings.Split(v, "-")[0]
 		md := Markdown{path: v, Id: id}
-		md.TemplateDecodeFile()
+		_ = md.TemplateDecodeFile()
 		if len(md.Description) < 1 {
 			continue
 		}
 		yaml := Tmp{Path: "manifest.tpl", Obj: md, box: TemplateBox}
 		meta := Tmp{Path: "md.tpl", Obj: md, box: TemplateBox}
 		ScheckDir(v, outputPath)
-		CreateFile(yaml.GetTemplate(), yamlPath)
-		CreateFile(meta.GetTemplate(), metaPath)
+		_ = CreateFile(yaml.GetTemplate(), yamlPath)
+		_ = CreateFile(meta.GetTemplate(), metaPath)
 		count++
 	}
 
@@ -294,7 +294,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		fmt.Println(err)
 	}
 
-	CreateFile(yuque.GetTemplate(), yuquePath)
+	_ = CreateFile(yuque.GetTemplate(), yuquePath)
 
 }
 
@@ -330,7 +330,7 @@ func ScheckCoreSyncDisk(ruleDir string) {
 						}
 					}
 					// Write file
-					CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
+					_ = CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
 
 				}
 			}

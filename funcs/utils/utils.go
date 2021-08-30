@@ -9,7 +9,7 @@ type provider struct {
 }
 
 func (p *provider) Funcs() []funcs.Func {
-	funcs := []funcs.Func{
+	return []funcs.Func{
 		{Name: `set_cache`, Fn: p.setCache},
 		{Name: `get_cache`, Fn: p.getCache},
 		{Name: `set_global_cache`, Fn: p.setGlobalCache},
@@ -19,7 +19,6 @@ func (p *provider) Funcs() []funcs.Func {
 		{Name: `mysql_weak_psw`, Fn: p.checkMysqlWeakPassword},
 		{Name: `mysql_ports_list`, Fn: p.mysqlPortsList},
 	}
-	return funcs
 }
 
 func (p *provider) Catalog() string {

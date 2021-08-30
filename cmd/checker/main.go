@@ -19,6 +19,8 @@ import (
 	"sync"
 	"syscall"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
@@ -63,7 +65,9 @@ func main() {
 	}
 	config.Cfg.Init()
 	l = logger.SLogger("main")
-	//go goPprof()
+	if config.Cfg.System.Pprof {
+		go goPprof()
+	}
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())
@@ -78,10 +82,8 @@ func goPprof() {
 }
 
 func applyFlags() {
-	binDir := "/usr/local/scheck/"
-	if runtime.GOOS == "windows" {
-		binDir = "C:\\Program Files\\scheck"
-	}
+
+	binDir := global.InstallDir
 	if *flagVersion {
 		fmt.Printf(`
        Version: %s
@@ -98,10 +100,7 @@ ReleasedInputs: %s
 
 	if *flagCheckMD5 {
 
-		urls := map[string]string{
-			"release": `zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker`,
-			"test":    `zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker`,
-		}
+		urls := map[string]string{"release": global.ReleaseUrl, "test": global.TestUrl}
 
 		url := fmt.Sprintf("https://%s/scheck-%s-%s-%s.md5", urls[ReleaseType], runtime.GOOS, runtime.GOARCH, Version)
 		resp, err := http.Get(url)
@@ -136,7 +135,7 @@ ReleasedInputs: %s
 		if err != nil {
 			l.Fatalf("%s", err)
 		}
-		os.Stdout.WriteString(string(res))
+		_, _ = os.Stdout.WriteString(string(res))
 
 		os.Exit(0)
 	}
@@ -211,13 +210,11 @@ func run() {
 	signal.Notify(signals, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
-		select {
-		case sig := <-signals:
-			if sig == syscall.SIGHUP {
-				l.Debugf("reload config")
-			}
-			cancel()
+		sig := <-signals
+		if sig == syscall.SIGHUP {
+			l.Debugf("reload config")
 		}
+		cancel()
 	}()
 	wg.Wait()
 	service.Stop()

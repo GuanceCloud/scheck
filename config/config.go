@@ -88,6 +88,7 @@ type System struct {
 	DisableLog       bool   `toml:"disable_log"`
 	LuaInitCap       int    `toml:"lua_run_cap,omitempty"`
 	LuaCap           int    `toml:"lua_tot_cap,omitempty"`
+	Pprof            bool   `toml:"pprof,omitempty"`
 }
 
 type ScOutput struct {
@@ -277,15 +278,9 @@ func initDir() {
 
 }
 
-func hostInfo() {
-	//cpuMun := runtime.NumCPU()
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-}
-
 func CreateSymlinks() {
 
-	x := [][2]string{}
+	var x [][2]string
 
 	if runtime.GOOS == "windows" {
 		x = [][2]string{
