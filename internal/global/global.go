@@ -1,8 +1,14 @@
 package global
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"runtime"
+	"strconv"
 
+	"github.com/shirou/gopsutil/process"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 )
 
@@ -36,4 +42,53 @@ var (
 		OSArchLinux386:    `/usr/local/scheck`,
 		OSArchDarwinAmd64: `/usr/local/scheck`,
 	}
+
+	AppBin  = "scheck"
+	pidFile = filepath.Join(InstallDir, ".pid")
 )
+
+func SavePid() error {
+
+	if isRuning() {
+		return fmt.Errorf("Scheck still running, PID: %s", pidFile)
+	}
+
+	pid := os.Getpid()
+	return ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), os.ModePerm)
+}
+
+func isRuning() bool {
+	var oidPid int64
+	var name string
+	var p *process.Process
+
+	cont, err := ioutil.ReadFile(pidFile)
+
+	// pid文件不存在
+	if err != nil {
+		return false
+	}
+
+	oidPid, err = strconv.ParseInt(string(cont), 10, 32)
+	if err != nil {
+		return false
+	}
+
+	p, _ = process.NewProcess(int32(oidPid))
+	name, _ = p.Name()
+
+	if name == getBinName() {
+		return true
+	}
+	return false
+}
+
+func getBinName() string {
+	bin := AppBin
+
+	if runtime.GOOS == "windows" {
+		bin += ".exe"
+	}
+
+	return bin
+}
