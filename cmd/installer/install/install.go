@@ -11,11 +11,12 @@ import (
 )
 
 var (
-	l = logger.DefaultSLogger("install")
+	DownloadOnly   bool
+	CurDownloading = ""
+	l              = logger.DefaultSLogger("install")
 )
 
-func InstallNewDatakit(svc service.Service) {
-
+func NewScheck(svc service.Service) {
 	if err := service.Control(svc, "uninstall"); err != nil {
 		l.Warnf("uninstall service: %s, ignored", err.Error())
 	}
@@ -25,7 +26,7 @@ func InstallNewDatakit(svc service.Service) {
 	}
 }
 
-func preEnableHostobjectInput(cloud string) ([]byte, error) {
+func preEnableHostobjectInput(cloud string) []byte {
 	// I don't want to import hostobject input, cause the installer binary bigger
 	sample := []byte(`
 [inputs.hostobject]
@@ -51,11 +52,10 @@ func preEnableHostobjectInput(cloud string) ([]byte, error) {
 		[]byte(fmt.Sprintf(`  cloud_provider = "%s"`, cloud)),
 		-1)
 
-	return conf, nil
+	return conf
 }
 
 func UpgradeDatakit(svc service.Service) error {
-
 	if err := service.Control(svc, "stop"); err != nil {
 		l.Warnf("stop service: %s, ignored", err.Error())
 	}

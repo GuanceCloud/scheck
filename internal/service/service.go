@@ -9,10 +9,10 @@ import (
 
 var (
 	ServiceName        = "scheck"
-	ServiceDisplayName = "scheck"
 	ServiceDescription = `security check host`
 	ServiceExecutable  string
 	ServiceArguments   []string
+	serviceErrChanLen  = 32
 
 	Entry func()
 
@@ -24,7 +24,6 @@ var (
 type program struct{}
 
 func NewService() (service.Service, error) {
-
 	prog := &program{}
 	scfg := &service.Config{
 		Name:        ServiceName,
@@ -48,13 +47,12 @@ func NewService() (service.Service, error) {
 }
 
 func StartService() error {
-
 	svc, err := NewService()
 	if err != nil {
 		return err
 	}
 
-	errch := make(chan error, 32)
+	errch := make(chan error, serviceErrChanLen)
 	slogger, err = svc.Logger(errch)
 	if err != nil {
 		return err
@@ -79,11 +77,9 @@ func StartService() error {
 }
 
 func (p *program) Start(s service.Service) error {
-
 	if Entry == nil {
 		return fmt.Errorf("entry not set")
 	}
-
 	go Entry()
 	return nil
 }

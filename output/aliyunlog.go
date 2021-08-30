@@ -24,7 +24,6 @@ func (a *AliYunLog) conn(aliSls *config.AliSls) {
 }
 
 func (a *AliYunLog) CreateProject() {
-
 	if a.AliSls.ProjectName == "" {
 		a.AliSls.ProjectName = "zhuyun-scheck"
 	}
@@ -80,7 +79,6 @@ func (a *AliYunLog) CreateProject() {
 }
 
 func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
-
 	indexKey := map[string]sls.IndexKey{}
 	for i := range fields {
 		indexKey[i] = sls.IndexKey{
@@ -109,7 +107,6 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 		return err
 	}
 	time.Sleep(4 * time.Second)
-
 	return nil
 }
 

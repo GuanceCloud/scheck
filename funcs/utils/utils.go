@@ -1,11 +1,8 @@
 package utils
 
-import (
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
-)
+import "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 
 type provider struct {
-	funcs []funcs.Func
 }
 
 func (p *provider) Funcs() []funcs.Func {
@@ -25,6 +22,6 @@ func (p *provider) Catalog() string {
 	return "utils"
 }
 
-func init() {
+func Init() {
 	funcs.AddFuncProvider(&provider{})
 }

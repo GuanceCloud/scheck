@@ -66,7 +66,7 @@ type testRule struct {
 	script   string
 }
 
-func newTestRule(idx int, cron string, lua string) *testRule {
+func newTestRule(idx int, cronSrt, lua string) *testRule {
 	if manifestTemp == nil {
 		manifestTemp, _ = template.New("manifest").Parse(manifestTempStr)
 	}
@@ -75,7 +75,7 @@ func newTestRule(idx int, cron string, lua string) *testRule {
 	}
 	m := map[string]string{
 		"ID":       fmt.Sprintf("test-%d", idx),
-		"Cron":     cron,
+		"Cron":     cronSrt,
 		"Disabled": "false",
 	}
 	var buf bytes.Buffer

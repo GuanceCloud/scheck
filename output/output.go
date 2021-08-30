@@ -3,9 +3,6 @@ package output
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
-	"math"
-	"reflect"
 	"strings"
 	"time"
 
@@ -39,8 +36,8 @@ func newOutputer(scOutPut *config.ScOutput) {
 		uploads["local"] = newLocalLog(scOutPut.Log.Output)
 		flag = true
 	}
-	if scOutPut.Http != nil && scOutPut.Http.Enable {
-		uploads["http"] = newDatakitWriter(scOutPut.Http.Output, 100)
+	if scOutPut.HTTP != nil && scOutPut.HTTP.Enable {
+		uploads["http"] = newDatakitWriter(scOutPut.HTTP.Output, 100)
 		flag = true
 	}
 	if scOutPut.AliSls != nil && scOutPut.AliSls.Enable {
@@ -111,22 +108,6 @@ func makeMetric(name string, tags map[string]string, fields map[string]interface
 
 	for k, v := range tags { // remove any suffix `\` in all tag values
 		tags[k] = trimSuffixAll(v, `\`)
-	}
-
-	for k, v := range fields { // convert uint to int
-		switch v.(type) {
-		case uint64:
-			if v.(uint64) > uint64(math.MaxInt64) {
-				l.Warnf("on input `%s', filed %s, get uint64 %d > MaxInt64(%d), dropped", name, k, v.(uint64), uint64(math.MaxInt64))
-				delete(fields, k)
-			} else { // convert uint64 -> int64
-				fields[k] = int64(v.(uint64))
-			}
-		case int, uint32, uint16, uint8, int64, int32, int16, int8, bool, string, float32, float64:
-		default:
-			l.Warnf("invalid filed type `%s', from `%s', on filed `%s', got value `%+#v'", reflect.TypeOf(v).String(), name, k, fields[k])
-			return nil, fmt.Errorf("invalid field type")
-		}
 	}
 
 	pt, err := ifxcli.NewPoint(name, tags, fields, tm)

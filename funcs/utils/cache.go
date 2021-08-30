@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"sync"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
+
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 )
 
 const (
@@ -130,7 +131,7 @@ func (p *provider) setGlobalCache(l *lua.LState) int {
 
 	lv = l.Get(2)
 	if lv == lua.LNil {
-		globalCache.setKey(key, nil)
+		_ = globalCache.setKey(key, nil)
 		return 0
 	}
 	switch lv.Type() {
@@ -147,7 +148,7 @@ func (p *provider) setGlobalCache(l *lua.LState) int {
 	val := &cacheValue{}
 	val.fromLuaVal(lv)
 
-	globalCache.setKey(key, val)
+	_ = globalCache.setKey(key, val)
 	return 0
 }
 
@@ -171,7 +172,7 @@ func (p *provider) getGlobalCache(l *lua.LState) int {
 
 func (p *provider) setCache(l *lua.LState) int {
 
-	globalCfg := funcs.GetScriptGlobalConfig(l)
+	globalCfg := luafuncs.GetScriptGlobalConfig(l)
 	if globalCfg == nil || globalCfg.RulePath == "" {
 		return 0
 	}
@@ -190,7 +191,7 @@ func (p *provider) setCache(l *lua.LState) int {
 
 	lv = l.Get(2)
 	if lv == lua.LNil {
-		sc.setKey(key, nil)
+		_ = sc.setKey(key, nil)
 		return 0
 	}
 	switch lv.Type() {
@@ -207,13 +208,13 @@ func (p *provider) setCache(l *lua.LState) int {
 	val := &cacheValue{}
 	val.fromLuaVal(lv)
 
-	sc.setKey(key, val)
+	_ = sc.setKey(key, val)
 	return 0
 }
 
 func (p *provider) getCache(l *lua.LState) int {
 
-	globalCfg := funcs.GetScriptGlobalConfig(l)
+	globalCfg := luafuncs.GetScriptGlobalConfig(l)
 	if globalCfg == nil || globalCfg.RulePath == "" {
 		return 0
 	}

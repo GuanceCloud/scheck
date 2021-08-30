@@ -2,27 +2,22 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"sync"
 	"syscall"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/tools"
 )
@@ -54,6 +49,8 @@ var (
 func main() {
 	flag.Parse()
 	applyFlags()
+	parseConfig()
+
 	if config.TryLoadConfig(*flagConfig) {
 		config.LoadConfig(*flagConfig)
 	}
@@ -63,6 +60,7 @@ func main() {
 		os.Exit(-1)
 	}
 	config.Cfg.Init()
+	checker.InitLuaGlobalFunc()
 	l = logger.SLogger("main")
 	if config.Cfg.System.Pprof {
 		go goPprof()
@@ -72,17 +70,15 @@ func main() {
 		l.Errorf("start service failed: %s", err.Error())
 		return
 	}
-	//	run()
+
 }
 
 func goPprof() {
-
-	_ = http.ListenAndServe("0.0.0.0:6060", nil)
+	_ = http.ListenAndServe(global.DefPprofPort, nil)
 }
 
 func applyFlags() {
 
-	binDir := global.InstallDir
 	if *flagVersion {
 		fmt.Printf(`
        Version: %s
@@ -98,34 +94,7 @@ ReleasedInputs: %s
 	}
 
 	if *flagCheckMD5 {
-
-		urls := map[string]string{"release": global.ReleaseUrl, "test": global.TestUrl}
-
-		url := fmt.Sprintf("https://%s/scheck-%s-%s-%s.md5", urls[ReleaseType], runtime.GOOS, runtime.GOARCH, Version)
-		resp, err := http.Get(url)
-		if err != nil {
-			l.Fatal(err)
-		}
-		defer resp.Body.Close()
-		remoteVal, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			l.Fatal(err)
-		}
-
-		data, err := ioutil.ReadFile(filepath.Join(binDir, "scheck"))
-		if err != nil {
-			l.Fatalf("%s", err)
-		}
-		newMd5 := md5.New()
-		newMd5.Write(data)
-		localVal := hex.EncodeToString(newMd5.Sum(nil))
-
-		if localVal != "" && localVal == string(remoteVal) {
-			l.Debug("MD5 verify ok")
-		} else {
-			l.Debug("[Error] MD5 checksum not match !!!")
-		}
-
+		global.CheckMd5(ReleaseType)
 		os.Exit(0)
 	}
 
@@ -134,8 +103,7 @@ ReleasedInputs: %s
 		if err != nil {
 			l.Fatalf("%s", err)
 		}
-		_, _ = os.Stdout.WriteString(string(res))
-
+		fmt.Println(string(res))
 		os.Exit(0)
 	}
 
@@ -145,14 +113,13 @@ ReleasedInputs: %s
 	}
 
 	if *flagTestRule != "" {
-		funcs.TestLua(*flagTestRule)
-
+		checker.InitLuaGlobalFunc()
+		luafuncs.TestLua(*flagTestRule)
 		os.Exit(0)
 	}
 
 	if *flagRulesToDoc {
 		if *flagOutDir == "" {
-
 			tools.ToMakeMdFile(tools.GetAllName(), "doc")
 		} else {
 			tools.ToMakeMdFile(tools.GetAllName(), *flagOutDir)
@@ -168,6 +135,11 @@ ReleasedInputs: %s
 		}
 		os.Exit(0)
 	}
+
+}
+
+func parseConfig() {
+	binDir := global.InstallDir
 	if *flagConfig == "" {
 		*flagConfig = filepath.Join(binDir, "scheck.conf")
 		_, err := os.Stat(*flagConfig)
@@ -176,8 +148,7 @@ ReleasedInputs: %s
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
-
-			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, 0644)
+			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
@@ -185,7 +156,6 @@ ReleasedInputs: %s
 			if err != nil {
 				l.Fatalf("write to configFile err =%v", err)
 			}
-
 		}
 	}
 }

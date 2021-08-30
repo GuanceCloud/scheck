@@ -6,14 +6,15 @@ import (
 	"os"
 	"time"
 
-	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
+
+	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
 
 type provider struct {
-	funcs []funcs.Func
 }
 
 func (p *provider) Funcs() []funcs.Func {
@@ -28,7 +29,7 @@ func (p *provider) Catalog() string {
 
 func (p *provider) trigger(ls *lua.LState) int {
 
-	cfg := funcs.GetScriptGlobalConfig(ls)
+	cfg := luafuncs.GetScriptGlobalConfig(ls)
 
 	var manifestFileName string
 	var templateTable *lua.LTable
@@ -72,10 +73,30 @@ func (p *provider) trigger(ls *lua.LState) int {
 		ls.RaiseError("%s", err)
 		return lua.MultRet
 	}
-
 	fields := map[string]interface{}{}
-	tags := map[string]string{}
 	tm := time.Now().UTC()
+	message := manifest.Desc
+	tags := makeManifestTags(manifest)
+	if manifest.tmpl != nil {
+		buf := bytes.NewBufferString("")
+		if err = manifest.tmpl.Execute(buf, templateTable); err != nil {
+			ls.RaiseError("fail to apple template, %s", err)
+			return lua.MultRet
+		} else {
+			message = buf.String()
+		}
+	}
+	fields["message"] = message
+	if err = output.SendMetric(manifest.RuleID, tags, fields, tm); err != nil {
+		ls.RaiseError("%s", err)
+		return lua.MultRet
+	}
+
+	return 0
+}
+
+func makeManifestTags(manifest *RuleManifest) map[string]string {
+	tags := map[string]string{}
 
 	tags["title"] = manifest.Title
 	tags["level"] = manifest.Level
@@ -86,27 +107,9 @@ func (p *provider) trigger(ls *lua.LState) int {
 			tags[k] = v
 		}
 	}
-	message := manifest.Desc
+	return tags
 
-	if manifest.tmpl != nil {
-		buf := bytes.NewBufferString("")
-		if err = manifest.tmpl.Execute(buf, templateVals); err != nil {
-			ls.RaiseError("fail to apple template, %s", err)
-			return lua.MultRet
-		} else {
-			message = buf.String()
-		}
-	}
-	fields["message"] = message
-
-	if err = output.SendMetric(manifest.RuleID, tags, fields, tm); err != nil {
-		ls.RaiseError("%s", err)
-		return lua.MultRet
-	}
-
-	return 0
 }
-
 func firstTrigger() {
 	tags := map[string]string{}
 	tm := time.Now().UTC()
@@ -127,6 +130,7 @@ func firstTrigger() {
 	_ = output.SendMetric("0000-scheck-start", tags, fields, tm)
 
 }
-func init() {
+
+func Init() {
 	funcs.AddFuncProvider(&provider{})
 }

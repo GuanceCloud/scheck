@@ -114,7 +114,8 @@ func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 		return
 
 	case 4:
-		l.Errorf("post %d to %s failed(HTTP: %d): %s, cost %v, data dropped", len(body), dk.httpURL, resp.StatusCode, string(respbody), time.Since(postbeg))
+		l.Errorf("post %d to %s failed(HTTP: %d): %s, cost %v, data dropped",
+			len(body), dk.httpURL, resp.StatusCode, string(respbody), time.Since(postbeg))
 		return
 
 	case 5:

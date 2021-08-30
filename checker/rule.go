@@ -18,14 +18,14 @@ import (
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 )
 
 // Rule corresponding to a lua script file
 type Rule struct {
 	File     string
 	Name     string
-	byteCode *funcs.ByteCode
+	byteCode *luafuncs.ByteCode
 
 	cron     string
 	mux      sync.Mutex
@@ -66,7 +66,7 @@ func (r *Rule) load() error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
-	bcode, err := funcs.CompilesScript(r.File)
+	bcode, err := luafuncs.CompilesScript(r.File)
 	if err != nil {
 		l.Errorf("%s", err)
 		return err
@@ -138,32 +138,32 @@ func newManifest(path string) *RuleManifest {
 	}
 }
 
-func (m *RuleManifest) load() error {
+func (rm *RuleManifest) load() error {
 
-	fi, err := os.Stat(m.path)
+	fi, err := os.Stat(rm.path)
 	if err != nil {
 		l.Errorf("%s", err)
 		return err
 	}
 
-	if fi.ModTime().Unix() > m.lastModify {
-		if m.lastModify > 0 {
-			l.Debugf("%s changed, reload it", m.path)
+	if fi.ModTime().Unix() > rm.lastModify {
+		if rm.lastModify > 0 {
+			l.Debugf("%s changed, reload it", rm.path)
 		} else {
-			l.Debugf("load manifest: %s", m.path)
+			l.Debugf("load manifest: %s", rm.path)
 		}
-		err := m.parse()
+		err := rm.parse()
 		if err != nil {
 			l.Errorf("%s", err)
 			return err
 		}
-		m.lastModify = time.Now().Unix()
+		rm.lastModify = time.Now().Unix()
 	}
 
 	return nil
 }
 
-func (m *RuleManifest) parse() (err error) {
+func (rm *RuleManifest) parse() (err error) {
 
 	defer func() {
 		if e := recover(); e != nil {
@@ -172,11 +172,11 @@ func (m *RuleManifest) parse() (err error) {
 		}
 	}()
 
-	rm := *m
+	rm1 := *rm
 
 	var contents []byte
 	var tbl *ast.Table
-	contents, err = ioutil.ReadFile(rm.path)
+	contents, err = ioutil.ReadFile(rm1.path)
 	if err != nil {
 		l.Warnf("read file err=%v", err)
 		return
@@ -210,6 +210,31 @@ func (m *RuleManifest) parse() (err error) {
 		"references":   false,
 		"CIS":          false,
 	}
+	rm1.setRequireKey(tbl, requireKeys)
+
+	for k, bset := range requireKeys {
+		if !bset {
+			return fmt.Errorf("%s must not be empty", k)
+		}
+	}
+	// 模版rm.Desc
+	if rm1.tmpl, err = template.New("test").Parse(rm1.Desc); err != nil {
+		return fmt.Errorf("invalid desc: %s", err)
+	}
+
+	if _, err = specParser.Parse(rm1.Cron); err != nil {
+		return fmt.Errorf("invalid cron: %s, %s", rm1.Cron, err)
+	}
+
+	if err := rm1.setTag(tbl, requireKeys, invalidField); err != nil {
+		return err
+	}
+
+	*rm = rm1
+	return nil
+}
+
+func (rm *RuleManifest) setRequireKey(tbl *ast.Table, requireKeys map[string]bool) {
 	for k := range requireKeys {
 		v := tbl.Fields[k]
 		if v == nil {
@@ -217,7 +242,7 @@ func (m *RuleManifest) parse() (err error) {
 		}
 		str := ""
 		if err := ensureFieldString(k, v, &str); err != nil {
-			return err
+			return
 		} else {
 			switch k {
 			case "id":
@@ -236,7 +261,7 @@ func (m *RuleManifest) parse() (err error) {
 				}
 				rm.Cron = str
 			case "os_arch":
-				arr, err := ensureFieldStrings(k, v, &str)
+				arr, err := ensureFieldStrings(k, v)
 				if err != nil {
 					l.Warnf("os_arch is err = %v", err)
 				}
@@ -248,22 +273,9 @@ func (m *RuleManifest) parse() (err error) {
 			}
 		}
 	}
+}
 
-	for k, bset := range requireKeys {
-		if !bset {
-			return fmt.Errorf("%s must not be empty", k)
-		}
-	}
-
-	// 模版rm.Desc
-	if rm.tmpl, err = template.New("test").Parse(rm.Desc); err != nil {
-		return fmt.Errorf("invalid desc: %s", err)
-	}
-
-	if _, err := specParser.Parse(rm.Cron); err != nil {
-		return fmt.Errorf("invalid cron: %s, %s", rm.Cron, err)
-	}
-
+func (rm *RuleManifest) setTag(tbl *ast.Table, requireKeys, invalidField map[string]bool) error {
 	rm.tags = map[string]string{}
 	omithost := false
 	hostname := ""
@@ -292,7 +304,7 @@ func (m *RuleManifest) parse() (err error) {
 			continue
 		} else if k == "hostname" {
 			str := ""
-			err = ensureFieldString(k, v, &str)
+			err := ensureFieldString(k, v, &str)
 			if err != nil {
 				return err
 			}
@@ -300,7 +312,7 @@ func (m *RuleManifest) parse() (err error) {
 		}
 
 		str := ""
-		err = ensureFieldString(k, v, &str)
+		err := ensureFieldString(k, v, &str)
 		if err != nil {
 			return err
 		}
@@ -315,14 +327,10 @@ func (m *RuleManifest) parse() (err error) {
 
 	if !omithost {
 		if hostname == "" {
-			if h, err := os.Hostname(); err == nil {
-				hostname = h
-			}
+			hostname, _ = os.Hostname()
 		}
 		rm.tags["host"] = hostname
 	}
-
-	*m = rm
 	return nil
 }
 
@@ -341,7 +349,7 @@ func ensureFieldString(k string, v interface{}, s *string) error {
 
 	return fmt.Errorf("unknown value for field '%s', expecting string", k)
 }
-func ensureFieldStrings(k string, v interface{}, s *string) ([]string, error) {
+func ensureFieldStrings(k string, v interface{}) ([]string, error) {
 	arr := make([]string, 0)
 	if kv, ok := v.(*ast.KeyValue); ok {
 		if str, ok := kv.Value.(*ast.Array); ok {
@@ -393,21 +401,16 @@ func checkInterval(cronStr string) int64 {
 			}
 		}
 	}
-
+	timeDurations := []int64{
+		0: int64(time.Second),
+		1: int64(time.Minute),
+		2: int64(time.Hour),
+		3: int64(time.Hour) * 24,
+		4: int64(time.Hour) * 24 * 30,
+	}
 	if len(intervals) == 1 {
 		for k, v := range intervals {
-			switch k {
-			case 0:
-				return v * int64(time.Second)
-			case 1:
-				return v * int64(time.Minute)
-			case 2:
-				return v * int64(time.Hour)
-			case 3:
-				return v * int64(time.Hour) * 24
-			case 4:
-				return v * int64(time.Hour) * 24 * 30
-			}
+			return v * timeDurations[k]
 		}
 	}
 

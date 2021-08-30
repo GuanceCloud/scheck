@@ -6,9 +6,16 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 )
 
+const (
+	KB     = 1024
+	MB     = KB * 1024
+	cpuMax = 100
+	cpuMin = 0
+	DefMEM = 200
+)
+
 var (
-	l  = logger.DefaultSLogger("cgroup")
-	MB = int64(1024 * 1024)
+	l = logger.DefaultSLogger("cgroup")
 )
 
 func Run() {
@@ -18,8 +25,8 @@ func Run() {
 		return
 	}
 
-	if !(0 < config.Cfg.Cgroup.CPUMax && config.Cfg.Cgroup.CPUMax < 100) ||
-		!(0 < config.Cfg.Cgroup.CPUMin && config.Cfg.Cgroup.CPUMin < 100) {
+	if !(float64(cpuMin) < config.Cfg.Cgroup.CPUMax && config.Cfg.Cgroup.CPUMax < float64(cpuMax)) ||
+		!(float64(cpuMin) < config.Cfg.Cgroup.CPUMin && config.Cfg.Cgroup.CPUMin < float64(cpuMax)) {
 		l.Errorf("CPUMax and CPUMin should be in range of (0.0, 100.0)")
 		return
 	}
@@ -30,7 +37,7 @@ func Run() {
 	}
 	if config.Cfg.Cgroup.MEM != -1 {
 		if config.Cfg.Cgroup.MEM == 0 {
-			config.Cfg.Cgroup.MEM = 200
+			config.Cfg.Cgroup.MEM = DefMEM
 		}
 
 		vm, err := mem.VirtualMemory()

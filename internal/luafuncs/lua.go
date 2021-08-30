@@ -1,4 +1,4 @@
-package funcs
+package luafuncs
 
 import (
 	"bufio"
@@ -8,7 +8,9 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	luajson "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/json"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 type (
@@ -23,7 +25,7 @@ type (
 	}
 
 	ScriptRunTime struct {
-		Id int
+		ID int
 		Ls *lua.LState
 	}
 )
@@ -56,7 +58,7 @@ func NewScriptRunTime() *ScriptRunTime {
 		return nil
 	}
 	luajson.Preload(ls)
-	for _, p := range FuncProviders {
+	for _, p := range funcs.FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}
@@ -128,7 +130,7 @@ func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 	}
 	SetScriptGlobalConfig(ls, cfg)
 	luajson.Preload(ls) //for json parse
-	for _, p := range FuncProviders {
+	for _, p := range funcs.FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}
@@ -165,13 +167,13 @@ func LoadLuaLibs(ls *lua.LState) error {
 // testLua
 func TestLua(rulepath string) {
 	rulepath, _ = filepath.Abs(rulepath)
-	rulepath = rulepath + ".lua"
+	rulepath += global.LuaExt
 	byteCode, err := CompilesScript(rulepath)
 	if err != nil {
 		fmt.Printf("Compile lua scripterr=%v \n", err)
 		return
 	}
-	lua.LuaPathDefault = "./rules.d/lib/?.lua"
+	lua.LuaPathDefault = filepath.Join(global.InstallDir, global.DefRulesDir, "lib", "?.lua")
 
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
 	if err := LoadLuaLibs(ls); err != nil {
@@ -181,7 +183,7 @@ func TestLua(rulepath string) {
 	}
 	SetScriptGlobalConfig(ls, &ScriptGlobalCfg{RulePath: rulepath})
 	luajson.Preload(ls)
-	for _, p := range FuncProviders {
+	for _, p := range funcs.FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}

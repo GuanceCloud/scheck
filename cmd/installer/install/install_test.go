@@ -8,10 +8,7 @@ func TestPreEnableHostobjectInput(t *testing.T) {
 	for _, cloud := range []string{
 		"aws", "tencent", "aliyun", "unknown", "",
 	} {
-		conf, err := preEnableHostobjectInput(cloud)
-		if err != nil {
-			t.Fatal()
-		}
+		conf := preEnableHostobjectInput(cloud)
 
 		t.Logf("conf:\n%s", string(conf))
 	}

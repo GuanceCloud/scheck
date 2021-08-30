@@ -5,20 +5,15 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
-	"time"
 )
 
 const (
 	lineSize = 32
 	nameSize = 32
 	hostSize = 256
-	// Display time format
-	TimeFormat = time.RFC1123
 )
 
 type (
-	// utmp structures
-	// see man utmp
 	ExitStatus struct {
 		Termination int16
 		Exit        int16
@@ -30,8 +25,7 @@ type (
 	}
 
 	utmpImpl struct {
-		Type int16
-		// alignment
+		Type    int16
 		_       [2]byte
 		Pid     int32
 		Device  [lineSize]byte
@@ -92,7 +86,7 @@ func readLine(file io.Reader) (*utmpImpl, error) {
 func (r *utmpImpl) addr() net.IP {
 	ip := make(net.IP, 16)
 	// no error checking: reading from r.AddrV6 cannot fail
-	binary.Read(bytes.NewReader(r.AddrV6[:]), binary.BigEndian, ip)
+	_ = binary.Read(bytes.NewReader(r.AddrV6[:]), binary.BigEndian, ip)
 	if bytes.Equal(ip[4:], net.IPv6zero[4:]) {
 		// IPv4 address, shorten the slice so that net.IP behaves correctly:
 		ip = ip[:4]

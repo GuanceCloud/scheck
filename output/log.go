@@ -14,21 +14,19 @@ type localLog struct {
 }
 
 func newLocalLog(filePath string) *localLog {
-	if strings.HasPrefix(filePath, "file://") {
-		filePath = strings.TrimPrefix(filePath, "file://")
-	}
-	local := &localLog{filePath: filePath}
+	filePath = strings.TrimPrefix(filePath, "file://")
 
+	local := &localLog{filePath: filePath}
 	if filePath == "stdout" {
 		local.outputFile = os.Stdout
 		l.Info("init stdout success")
 		return local
 	}
 
-	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.ModeAppend|os.ModePerm)
 	if err != nil {
-		_ = os.MkdirAll(filepath.Dir(filePath), 0775)
-		f, err = os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		_ = os.MkdirAll(filepath.Dir(filePath), os.ModeDir|os.ModePerm)
+		f, err = os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.ModeAppend|os.ModePerm)
 		if err != nil {
 			l.Errorf("%s", err)
 		}

@@ -1,14 +1,8 @@
 package global
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"runtime"
-	"strconv"
 
-	"github.com/shirou/gopsutil/process"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 )
 
@@ -25,8 +19,13 @@ const (
 	OSArchLinuxAmd64  = "linux/amd64"
 	OSArchDarwinAmd64 = "darwin/amd64"
 
-	ReleaseUrl = "zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker"
-	TestUrl    = "zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker"
+	ReleaseURL = "zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker"
+	TestURL    = "zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker"
+
+	WindowsExt     = ".exe"
+	LuaManifestExt = ".manifest"
+	LuaExt         = ".lua"
+	PidExt         = ".pid"
 )
 
 var (
@@ -43,52 +42,11 @@ var (
 		OSArchDarwinAmd64: `/usr/local/scheck`,
 	}
 
-	AppBin  = "scheck"
-	pidFile = filepath.Join(InstallDir, ".pid")
+	AppBin = "scheck"
+
+	// DefLogPath is default config
+	DefLogPath  = "/var/log/scheck"
+	DefRulesDir = "rules.d"
+
+	DefPprofPort = ":6060"
 )
-
-func SavePid() error {
-
-	if isRuning() {
-		return fmt.Errorf("Scheck still running, PID: %s", pidFile)
-	}
-
-	pid := os.Getpid()
-	return ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), os.ModePerm)
-}
-
-func isRuning() bool {
-	var oidPid int64
-	var name string
-	var p *process.Process
-
-	cont, err := ioutil.ReadFile(pidFile)
-
-	// pid文件不存在
-	if err != nil {
-		return false
-	}
-
-	oidPid, err = strconv.ParseInt(string(cont), 10, 32)
-	if err != nil {
-		return false
-	}
-
-	p, _ = process.NewProcess(int32(oidPid))
-	name, _ = p.Name()
-
-	if name == getBinName() {
-		return true
-	}
-	return false
-}
-
-func getBinName() string {
-	bin := AppBin
-
-	if runtime.GOOS == "windows" {
-		bin += ".exe"
-	}
-
-	return bin
-}

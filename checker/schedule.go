@@ -182,12 +182,6 @@ func (scheduler *TaskScheduler) addRule(r *Rule) {
 	scheduler.customRulesTime[r.Name] = fileModify(r.File)
 }
 
-func (scheduler *TaskScheduler) removeRule(r *Rule) {
-	scheduler.lock.Lock()
-	defer scheduler.lock.Unlock()
-	delete(scheduler.tasks, r.Name)
-}
-
 // hotUpdate to hotUpdate users rules dir
 func (scheduler *TaskScheduler) hotUpdate() {
 	files, err := ioutil.ReadDir(scheduler.customRuleDir)
@@ -198,8 +192,16 @@ func (scheduler *TaskScheduler) hotUpdate() {
 	if files != nil && len(files) == 0 {
 		return
 	}
-	for range time.Tick(time.Second * 60) {
-		scheduler.LoadFromFile(scheduler.customRuleDir)
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-scheduler.stop:
+			l.Info("Done!")
+			return
+		case <-ticker.C:
+			scheduler.LoadFromFile(scheduler.customRuleDir)
+		}
 	}
 }
 

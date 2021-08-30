@@ -12,7 +12,6 @@ import (
 	"github.com/kardianos/service"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/installer/install"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 	dkservice "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
@@ -26,7 +25,7 @@ var (
 	oldInstallDirWin   = `C:\Program Files\dataflux\scheck`
 	oldInstallDirWin32 = `C:\Program Files (x86)\dataflux\scheck`
 
-	datakitUrl = "https://" + path.Join(DataKitBaseURL,
+	datakitURL = "https://" + path.Join(DataKitBaseURL,
 		fmt.Sprintf("scheck-%s-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH, DataKitVersion))
 
 	l = logger.DefaultSLogger("installer")
@@ -42,7 +41,9 @@ var (
 	flagInstallLog = flag.String("install-log", "", "install log")
 
 	flagOffline = flag.Bool("offline", false, "offline install mode")
-	flagSrcs    = flag.String("srcs", fmt.Sprintf("./scheck-%s-%s-%s.tar.gz,./data.tar.gz", runtime.GOOS, runtime.GOARCH, DataKitVersion), `local path of scheck and agent install files`)
+	flagSrcs    = flag.String("srcs",
+		fmt.Sprintf("./scheck-%s-%s-%s.tar.gz,./data.tar.gz", runtime.GOOS, runtime.GOARCH, DataKitVersion),
+		`local path of scheck and agent install files`)
 )
 
 const (
@@ -53,6 +54,84 @@ func main() {
 
 	flag.Parse()
 
+	parseLog()
+
+	dkservice.ServiceExecutable = filepath.Join(global.InstallDir, checkBin)
+	if runtime.GOOS == global.OSWindows {
+		dkservice.ServiceExecutable += ".exe"
+	}
+
+	svc, err := dkservice.NewService()
+	if err != nil {
+		l.Errorf("new %s service failed: %s", runtime.GOOS, err.Error())
+		return
+	}
+
+	l.Info("stoping scheck...")
+	if err = service.Control(svc, "stop"); err != nil {
+		l.Warnf("stop service: %s, ignored", err.Error())
+	}
+
+	mvOldDatakit(svc)
+
+	applyFlags()
+
+	// create install dir if not exists
+	if err = os.MkdirAll(global.InstallDir, os.ModeDir|os.ModePerm); err != nil {
+		l.Warnf("makeDirAll %v", err)
+	}
+
+	if *flagOffline && *flagSrcs != "" {
+		for _, f := range strings.Split(*flagSrcs, ",") {
+			_ = install.ExtractDatakit(f, global.InstallDir)
+		}
+	} else {
+		install.CurDownloading = checkBin
+		if err = install.Download(datakitURL, global.InstallDir, true, true, false); err != nil {
+			l.Errorf("err = %v", err)
+			return
+		}
+		// download version
+		vURL := "https://" + path.Join(DataKitBaseURL, "version")
+		if err = install.Download(vURL, filepath.Join(global.InstallDir, "version"), false, true, true); err != nil {
+			l.Errorf("err = %v", err)
+			return
+		}
+
+	}
+	parseUpgrade(svc)
+
+	global.CreateSymlinks()
+
+	if *flagUpgrade { // upgrade new version
+		l.Info(":) Upgrade Success!")
+	} else {
+		l.Info(":) Install Success!")
+	}
+
+}
+
+func parseUpgrade(svc service.Service) {
+	if *flagUpgrade {
+		l.Infof("Upgrading to version %s...", DataKitVersion)
+		if err := install.UpgradeDatakit(svc); err != nil {
+			l.Fatalf("upgrade scheck: %s, ignored", err.Error())
+		}
+	} else {
+		l.Infof("Installing version %s...", DataKitVersion)
+		install.NewScheck(svc)
+	}
+
+	if !*flagInstallOnly {
+		l.Infof("starting service %s...", dkservice.ServiceName)
+		if err := service.Control(svc, "start"); err != nil {
+			l.Warnf("star service: %s, ignored", err.Error())
+		}
+	}
+
+}
+
+func parseLog() {
 	if *flagInstallLog == "" {
 		lopt := logger.OPT_DEFAULT | logger.OPT_STDOUT
 		if runtime.GOOS != "windows" { // disable color on windows(some color not working under windows)
@@ -69,76 +148,6 @@ func main() {
 		}
 		install.Init()
 	}
-
-	dkservice.ServiceExecutable = filepath.Join(global.InstallDir, checkBin)
-	if runtime.GOOS == global.OSWindows {
-		dkservice.ServiceExecutable += ".exe"
-	}
-
-	svc, err := dkservice.NewService()
-	if err != nil {
-		l.Errorf("new %s service failed: %s", runtime.GOOS, err.Error())
-		return
-	}
-
-	l.Info("stoping scheck...")
-	if err := service.Control(svc, "stop"); err != nil {
-		l.Warnf("stop service: %s, ignored", err.Error())
-	}
-
-	mvOldDatakit(svc)
-
-	applyFlags()
-
-	// create install dir if not exists
-	if err := os.MkdirAll(global.InstallDir, 0775); err != nil {
-		l.Warnf("makeDirAll %v", err)
-	}
-
-	if *flagOffline && *flagSrcs != "" {
-		for _, f := range strings.Split(*flagSrcs, ",") {
-			_ = install.ExtractDatakit(f, global.InstallDir)
-		}
-	} else {
-		install.CurDownloading = checkBin
-		if err := install.Download(datakitUrl, global.InstallDir, true, true, false); err != nil {
-			l.Errorf("err = %v", err)
-			return
-		}
-		// download version
-		vUrl := "https://" + path.Join(DataKitBaseURL, "version")
-		if err := install.Download(vUrl, filepath.Join(global.InstallDir, "version"), false, true, true); err != nil {
-			l.Errorf("err = %v", err)
-			return
-		}
-
-	}
-
-	if *flagUpgrade {
-		l.Infof("Upgrading to version %s...", DataKitVersion)
-		if err := install.UpgradeDatakit(svc); err != nil {
-			l.Fatalf("upgrade scheck: %s, ignored", err.Error())
-		}
-	} else {
-		l.Infof("Installing version %s...", DataKitVersion)
-		install.InstallNewDatakit(svc)
-	}
-
-	if !*flagInstallOnly {
-		l.Infof("starting service %s...", dkservice.ServiceName)
-		if err = service.Control(svc, "start"); err != nil {
-			l.Warnf("star service: %s, ignored", err.Error())
-		}
-	}
-
-	config.CreateSymlinks()
-
-	if *flagUpgrade { // upgrade new version
-		l.Info(":) Upgrade Success!")
-	} else {
-		l.Info(":) Install Success!")
-	}
-
 }
 
 func applyFlags() {
@@ -150,7 +159,7 @@ func applyFlags() {
 Golang Version: %s
        BaseUrl: %s
        scheck: %s
-`, global.Version, git.BuildAt, git.Golang, DataKitBaseURL, datakitUrl)
+`, global.Version, git.BuildAt, git.Golang, DataKitBaseURL, datakitURL)
 		os.Exit(0)
 	}
 
@@ -159,7 +168,7 @@ Golang Version: %s
 
 		install.CurDownloading = checkBin
 
-		if err := install.Download(datakitUrl,
+		if err := install.Download(datakitURL,
 			fmt.Sprintf("scheck-%s-%s-%s.tar.gz",
 				runtime.GOOS, runtime.GOARCH, DataKitVersion), true, true, true); err != nil {
 			return

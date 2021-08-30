@@ -6,16 +6,22 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
 
 	lua "github.com/yuin/gopher-lua"
-
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
-	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/cgroup"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
+)
+
+const (
+	LuaLocalLibPath = "lib"
+	PublicLuaLib    = "?.lua"
+	PanicBuf        = 2048
 )
 
 var (
@@ -23,16 +29,11 @@ var (
 	l   = logger.DefaultSLogger("check")
 )
 
-type (
-	Checker struct {
-		rulesDir      string
-		customRuleDir string
-		taskScheduler *TaskScheduler
-		ruleMux       sync.Mutex
-		manifestMux   sync.Mutex
-		loading       int32
-	}
-)
+type Checker struct {
+	rulesDir      string
+	customRuleDir string
+	taskScheduler *TaskScheduler
+}
 
 // Start
 func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
@@ -45,10 +46,10 @@ func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOut
 }
 
 func newChecker(confsys *config.System) *Checker {
-	lua.LuaPathDefault = filepath.Join(confsys.RuleDir, "/lib/?.lua")
+	lua.LuaPathDefault = filepath.Join(confsys.RuleDir, LuaLocalLibPath, PublicLuaLib)
 	_, err := os.Stat(confsys.CustomRuleLibDir)
 	if err == nil {
-		dir := filepath.Join(confsys.CustomRuleLibDir, "?.lua")
+		dir := filepath.Join(confsys.CustomRuleLibDir, PublicLuaLib)
 		lua.LuaPathDefault += ";" + dir
 	}
 
@@ -66,10 +67,6 @@ func newChecker(confsys *config.System) *Checker {
 	return c
 }
 
-func (c *Checker) doDelRule(r *Rule) {
-	c.taskScheduler.removeRule(r)
-}
-
 func GetManifestByName(fileName string) (*RuleManifest, error) {
 	if Chk != nil && Chk.taskScheduler != nil {
 		rule := Chk.taskScheduler.GetRuleByName(fileName)
@@ -79,14 +76,14 @@ func GetManifestByName(fileName string) (*RuleManifest, error) {
 		}
 	}
 
-	return GetManifest(filepath.Join("./rules.d/", fileName))
+	return GetManifest(filepath.Join(global.InstallDir, global.DefRulesDir, fileName))
 
 }
 
 func GetManifest(filename string) (*RuleManifest, error) {
 
-	if !strings.HasSuffix(filename, ".manifest") {
-		filename += ".manifest"
+	if !strings.HasSuffix(filename, global.LuaManifestExt) {
+		filename += global.LuaManifestExt
 	}
 	m := &RuleManifest{path: filename}
 	if err := m.parse(); err != nil {
@@ -97,7 +94,7 @@ func GetManifest(filename string) (*RuleManifest, error) {
 func (c *Checker) start(ctx context.Context) {
 	defer func() {
 		if e := recover(); e != nil {
-			buf := make([]byte, 2048)
+			buf := make([]byte, PanicBuf)
 			n := runtime.Stack(buf, false)
 			l.Errorf("panic %s", e)
 			l.Errorf("%s", string(buf[:n]))
@@ -122,4 +119,10 @@ func (c *Checker) start(ctx context.Context) {
 	firstTrigger()
 	<-ctx.Done()
 	c.taskScheduler.Stop()
+}
+
+func InitLuaGlobalFunc() {
+	Init()
+	system.Init()
+	utils.Init()
 }

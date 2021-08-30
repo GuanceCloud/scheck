@@ -37,8 +37,8 @@ const (
    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
    # ##远程server，例：http(s)://your.url
   [scoutput.http]
-    enable = {{.ScOutput.Http.Enable}}
-    output = "{{.ScOutput.Http.Output}}"
+    enable = {{.ScOutput.HTTP.Enable}}
+    output = "{{.ScOutput.HTTP.Output}}"
   [scoutput.log]
     # ##可配置本地存储
     enable = {{.ScOutput.Log.Enable}}
@@ -92,12 +92,12 @@ type System struct {
 }
 
 type ScOutput struct {
-	Http   *Http   `toml:"http,omitempty"`
+	HTTP   *HTTP   `toml:"http,omitempty"`
 	Log    *Log    `toml:"log,omitempty"`
 	AliSls *AliSls `toml:"alisls,omitempty"`
 }
 
-type Http struct {
+type HTTP struct {
 	Enable bool   `toml:"enable"`
 	Output string `toml:"output,omitempty"`
 }
@@ -143,13 +143,13 @@ func DefaultConfig() *Config {
 			DisableLog:       false,
 		},
 		ScOutput: &ScOutput{
-			Http: &Http{
+			HTTP: &HTTP{
 				Enable: true,
 				Output: "http://127.0.0.1:9529/v1/write/security",
 			},
 			Log: &Log{
 				Enable: true,
-				Output: fmt.Sprintf("file://%s", filepath.Join("/var/log/scheck", "event.log")),
+				Output: fmt.Sprintf("file://%s", filepath.Join(global.DefLogPath, "event.log")),
 			},
 			AliSls: &AliSls{
 				ProjectName:  "zhuyun-scheck",
@@ -158,14 +158,14 @@ func DefaultConfig() *Config {
 		},
 		Logging: &Logging{
 			LogLevel: "info",
-			Log:      filepath.Join("/var/log/scheck", "log"),
+			Log:      filepath.Join(global.DefLogPath, "log"),
 			Rotate:   0, //默认32M
 		},
 		Cgroup: &Cgroup{Enable: false, CPUMax: 10, CPUMin: 5, MEM: 100},
 	}
 
 	// windows
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == global.OSWindows {
 		c.Logging.Log = filepath.Join(global.InstallDir, "log")
 		c.System.RuleDir = filepath.Join(global.InstallDir, "rules.d")
 		c.System.CustomRuleDir = filepath.Join(global.InstallDir, "custom.rules.d")
@@ -268,76 +268,18 @@ func (c *Config) setLogging() {
 func initDir() {
 	_, err := os.Stat(Cfg.System.CustomRuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.CustomRuleDir, 0644)
+		_ = os.MkdirAll(Cfg.System.CustomRuleDir, os.ModeDir|os.ModePerm)
 	}
 
 	_, err = os.Stat(Cfg.System.RuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.RuleDir, 0644)
+		_ = os.MkdirAll(Cfg.System.RuleDir, os.ModeDir|os.ModePerm)
 	}
 
-}
-
-func CreateSymlinks() {
-
-	var x [][2]string
-
-	if runtime.GOOS == "windows" {
-		x = [][2]string{
-			[2]string{
-				filepath.Join(global.InstallDir, "scheck.exe"),
-				`C:\WINDOWS\system32\scheck.exe`,
-			},
-		}
-	} else {
-		x = [][2]string{
-			[2]string{
-				filepath.Join(global.InstallDir, "scheck"),
-				"/usr/local/bin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(global.InstallDir, "scheck"),
-				"/usr/local/sbin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(global.InstallDir, "scheck"),
-				"/sbin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(global.InstallDir, "scheck"),
-				"/usr/sbin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(global.InstallDir, "scheck"),
-				"/usr/bin/scheck",
-			},
-		}
-	}
-
-	for _, item := range x {
-		if err := symlink(item[0], item[1]); err != nil {
-			l.Warnf("create scheck symlink: %s -> %s: %s, ignored", item[1], item[0], err.Error())
-		}
-	}
-
-}
-
-func symlink(src, dst string) error {
-
-	l.Debugf("remove link %s...", dst)
-	if err := os.Remove(dst); err != nil {
-		l.Warnf("%s, ignored", err)
-	}
-
-	return os.Symlink(src, dst)
 }
 
 func tmplToFile(c *Config, fpath string) {
-	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModeDir|os.ModePerm)
 	if err != nil {
 		l.Fatalf("open file err =%v", err)
 	}
