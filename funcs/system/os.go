@@ -685,3 +685,18 @@ func (p *provider) rpmQuery(l *lua.LState) int {
 	l.Push(lua.LString(buf.String()))
 	return 1
 }
+
+func (p *provider) sleep(l *lua.LState) int {
+	num := 0
+	lv := l.Get(1)
+	if lv.Type() != lua.LTNil {
+		if lv.Type() != lua.LTNumber {
+			l.TypeError(1, lua.LTNumber)
+			return lua.MultRet
+		} else {
+			num = int(lv.(lua.LNumber))
+		}
+	}
+	time.Sleep(time.Duration(num) * time.Second)
+	return 0
+}
