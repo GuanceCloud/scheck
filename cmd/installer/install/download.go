@@ -115,9 +115,7 @@ func doExtract(r io.Reader, to string) error {
 					return err
 				}
 			}
-
 		case tar.TypeReg:
-
 			if err := os.MkdirAll(filepath.Dir(target), os.ModeDir|os.ModePerm); err != nil {
 				l.Error(err)
 				return err
@@ -139,7 +137,6 @@ func doExtract(r io.Reader, to string) error {
 			if err := f.Close(); err != nil {
 				l.Warnf("f.Close(): %v, ignored", err)
 			}
-
 		default:
 			l.Warnf("unexpected file %s", target)
 		}

@@ -1,9 +1,6 @@
 package install
 
-import (
-	"testing"
-)
-
+/*
 func TestPreEnableHostobjectInput(t *testing.T) {
 	for _, cloud := range []string{
 		"aws", "tencent", "aliyun", "unknown", "",
@@ -14,7 +11,7 @@ func TestPreEnableHostobjectInput(t *testing.T) {
 	}
 }
 
-/*
+
 func TestUpgradeMainConfigure(t *testing.T) {
 	cases := []struct {
 		c, expect *config.Config

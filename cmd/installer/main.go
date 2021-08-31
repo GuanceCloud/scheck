@@ -32,29 +32,22 @@ var (
 )
 
 var (
-	flagUpgrade = flag.Bool("upgrade", false, ``)
-
+	flagUpgrade      = flag.Bool("upgrade", false, ``)
 	flagInfo         = flag.Bool("info", false, "show installer info")
 	flagDownloadOnly = flag.Bool("download-only", false, `download scheck only, not install`)
 	flagInstallOnly  = flag.Bool("install-only", false, "install only, not start")
-
-	flagInstallLog = flag.String("install-log", "", "install log")
-
-	flagOffline = flag.Bool("offline", false, "offline install mode")
-	flagSrcs    = flag.String("srcs",
+	flagInstallLog   = flag.String("install-log", "", "install log")
+	flagOffline      = flag.Bool("offline", false, "offline install mode")
+	flagSrcs         = flag.String("srcs",
 		fmt.Sprintf("./scheck-%s-%s-%s.tar.gz,./data.tar.gz", runtime.GOOS, runtime.GOARCH, DataKitVersion),
 		`local path of scheck and agent install files`)
-)
-
-const (
-	checkBin = "scheck"
 )
 
 func main() {
 	flag.Parse()
 	parseLog()
 
-	dkservice.ServiceExecutable = filepath.Join(global.InstallDir, checkBin)
+	dkservice.ServiceExecutable = filepath.Join(global.InstallDir, global.AppBin)
 	if runtime.GOOS == global.OSWindows {
 		dkservice.ServiceExecutable += ".exe"
 	}
@@ -70,7 +63,7 @@ func main() {
 		l.Warnf("stop service: %s, ignored", err.Error())
 	}
 
-	mvOldDatakit(svc)
+	mvOldScheck(svc)
 	applyFlags()
 
 	// create install dir if not exists
@@ -83,7 +76,7 @@ func main() {
 			_ = install.ExtractDatakit(f, global.InstallDir)
 		}
 	} else {
-		install.CurDownloading = checkBin
+		install.CurDownloading = global.AppBin
 		if err = install.Download(datakitURL, global.InstallDir, true, true, false); err != nil {
 			l.Errorf("err = %v", err)
 			return
@@ -159,7 +152,7 @@ Golang Version: %s
 	if *flagDownloadOnly {
 		install.DownloadOnly = true
 
-		install.CurDownloading = checkBin
+		install.CurDownloading = global.AppBin
 
 		if err := install.Download(datakitURL,
 			fmt.Sprintf("scheck-%s-%s-%s.tar.gz",
@@ -171,7 +164,7 @@ Golang Version: %s
 	}
 }
 
-func mvOldDatakit(svc service.Service) {
+func mvOldScheck(svc service.Service) {
 	olddir := oldInstallDir
 	switch runtime.GOOS + "/" + runtime.GOARCH {
 	case global.OSArchWinAmd64:
@@ -182,6 +175,7 @@ func mvOldDatakit(svc service.Service) {
 
 	if _, err := os.Stat(olddir); err != nil {
 		l.Debugf("path %s not exists, ingored", olddir)
+		return
 	}
 
 	if err := service.Control(svc, "uninstall"); err != nil {
