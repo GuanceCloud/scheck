@@ -131,7 +131,6 @@ type Cgroup struct {
 }
 
 func DefaultConfig() *Config {
-
 	c := &Config{
 		System: &System{
 			RuleDir:          "/usr/local/scheck/rules.d",
@@ -159,7 +158,7 @@ func DefaultConfig() *Config {
 		Logging: &Logging{
 			LogLevel: "info",
 			Log:      filepath.Join(global.DefLogPath, "log"),
-			Rotate:   0, //默认32M
+			Rotate:   0, // 默认32M
 		},
 		Cgroup: &Cgroup{Enable: false, CPUMax: 10, CPUMin: 5, MEM: 100},
 	}
@@ -238,7 +237,7 @@ func (c *Config) Init() {
 	initDir()
 }
 
-//init log
+// init log
 func (c *Config) setLogging() {
 	// set global log root
 	if c.Logging.Log == "stdout" || c.Logging.Log == "" { // set log to disk file
@@ -275,7 +274,6 @@ func initDir() {
 	if err != nil {
 		_ = os.MkdirAll(Cfg.System.RuleDir, os.ModeDir|os.ModePerm)
 	}
-
 }
 
 func tmplToFile(c *Config, fpath string) {
@@ -288,7 +286,7 @@ func tmplToFile(c *Config, fpath string) {
 	if err != nil {
 		l.Fatalf("make template err=%v", err)
 	}
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == global.OSWindows {
 		c.System.RuleDir = strings.ReplaceAll(c.System.RuleDir, "\\", "\\\\")
 		c.System.CustomRuleLibDir = strings.ReplaceAll(c.System.CustomRuleLibDir, "\\", "\\\\")
 		c.System.CustomRuleDir = strings.ReplaceAll(c.System.CustomRuleDir, "\\", "\\\\")
@@ -300,7 +298,6 @@ func tmplToFile(c *Config, fpath string) {
 	if err != nil {
 		l.Fatalf("execute err=%v", err)
 	}
-	//_, err = f.WriteString(buf.String())
 	_, err = f.Write(buf.Bytes())
 	if err != nil {
 		l.Fatalf("err:=%v", err)

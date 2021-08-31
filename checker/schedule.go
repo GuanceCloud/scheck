@@ -16,18 +16,17 @@ var (
 	pool       *statePool
 )
 
-//only exec cron timer cron
 type TaskScheduler struct {
 	rulesDir        string
 	customRuleDir   string
 	customRulesTime map[string]int64 // key:rules name .val:lastModify time int64
-	tasks           map[string]*Rule //key:fileName
+	tasks           map[string]*Rule // key:fileName
 	manifests       map[string]*RuleManifest
 	stop            chan struct{}
 	lock            sync.Mutex
 }
 
-//return a Controller Scheduler
+// NewTaskScheduler: return a Controller Scheduler
 func NewTaskScheduler(rulesDir, customRuleDir string, hotUpdate bool) *TaskScheduler {
 	schedule := &TaskScheduler{
 		rulesDir:        rulesDir,
@@ -42,7 +41,6 @@ func NewTaskScheduler(rulesDir, customRuleDir string, hotUpdate bool) *TaskSched
 	if hotUpdate {
 		go schedule.hotUpdate()
 	}
-
 	return schedule
 }
 
@@ -62,7 +60,6 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		if strings.HasSuffix(file.Name(), ".lua") {
 			if ruleDir == scheduler.customRuleDir {
 				rulename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-
 				if t, ok := scheduler.customRulesTime[rulename]; ok {
 					if t == fileModify(path) {
 						continue
@@ -80,12 +77,11 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 	}
 	if len(scheduler.tasks) == 0 {
 		l.Warnf("There are no rules in the folder to load! . system exit at three second !!!")
-		time.Sleep(time.Second * 3)
-		os.Exit(0)
+		os.Exit(-1)
 	}
 }
 
-//stop all
+// stop all
 func (scheduler *TaskScheduler) Stop() {
 	scheduler.stop <- struct{}{}
 }
@@ -100,14 +96,13 @@ func (scheduler *TaskScheduler) doAndReset(key string) {
 	}
 }
 
-//run task list
+// run task list
 func (scheduler *TaskScheduler) run() {
 	if len(scheduler.tasks) == 0 {
 		l.Warnf("schedules is empty....")
 		return
 	}
 	for {
-		time.Sleep(time.Second / 2)
 		now := time.Now()
 		task, key := scheduler.GetTask()
 		runTime := task.RunTime
@@ -138,6 +133,7 @@ func (scheduler *TaskScheduler) run() {
 		}
 	}
 }
+
 func (scheduler *TaskScheduler) GetRuleByName(filename string) *Rule {
 	for key, task := range scheduler.tasks {
 		if key == filename {
@@ -147,7 +143,7 @@ func (scheduler *TaskScheduler) GetRuleByName(filename string) *Rule {
 	return nil
 }
 
-//return a task and key In task list
+// return a task and key In task list
 func (scheduler *TaskScheduler) GetTask() (task *Rule, tempKey string) {
 	min := int64(0)
 	tempKey = ""
@@ -211,6 +207,7 @@ func GetRuleNum() int {
 	}
 	return 0
 }
+
 func fileModify(filePath string) int64 {
 	fileInfo, _ := os.Stat(filePath)
 	ruleModify := fileInfo.ModTime().Unix()

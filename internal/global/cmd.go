@@ -17,7 +17,7 @@ import (
 func SavePid() error {
 	pidFile := filepath.Join(InstallDir, PidExt)
 	if isRuning(pidFile) {
-		return fmt.Errorf("Scheck still running, PID: %s", pidFile)
+		return fmt.Errorf("Scheck still running, PID: " + pidFile)
 	}
 
 	pid := os.Getpid()
@@ -36,7 +36,7 @@ func isRuning(pidFile string) bool {
 		return false
 	}
 
-	oidPid, err = strconv.ParseInt(string(cont), 10, 32)
+	oidPid, err = strconv.ParseInt(string(cont), ParseBase, ParseBitSize)
 	if err != nil {
 		return false
 	}
@@ -49,11 +49,9 @@ func isRuning(pidFile string) bool {
 
 func getBinName() string {
 	bin := AppBin
-
 	if runtime.GOOS == OSWindows {
 		bin += WindowsExt
 	}
-
 	return bin
 }
 
@@ -133,7 +131,6 @@ func CreateSymlinks() {
 			fmt.Printf("create scheck symlink: %s -> %s: %s, ignored", item[1], item[0], err.Error())
 		}
 	}
-
 }
 
 func symlink(src, dst string) error {
@@ -141,6 +138,5 @@ func symlink(src, dst string) error {
 	if err := os.Remove(dst); err != nil {
 		fmt.Printf("%s, ignored \n", err)
 	}
-
 	return os.Symlink(src, dst)
 }

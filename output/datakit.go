@@ -46,10 +46,10 @@ func (dk *DatakitWriter) ReadMsg(measurement string, tags map[string]string, fie
 		return
 	}
 	dk.samSig <- &sample{data: data}
-
 }
 
 func (dk *DatakitWriter) start() {
+	var timeSleep = 10
 	for {
 		select {
 		case sam := <-dk.samSig:
@@ -58,7 +58,7 @@ func (dk *DatakitWriter) start() {
 				dk.ToUpstream(dk.pending...)
 				dk.pending = make([]*sample, 0)
 			}
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Duration(timeSleep) * time.Second):
 			if len(dk.pending) != 0 {
 				dk.ToUpstream(dk.pending...)
 				dk.pending = make([]*sample, 0)
@@ -92,8 +92,6 @@ func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 
-	postbeg := time.Now()
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		l.Errorf("%s", err)
@@ -101,27 +99,13 @@ func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 	}
 
 	defer resp.Body.Close()
-	respbody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		l.Errorf("%s", err)
 		return
 	}
-
-	switch resp.StatusCode / 100 {
-	case 2:
-		l.Debugf("post %d to %s ok(gz: %v), cost %v, response: %s",
-			len(body), dk.httpURL, gz, time.Since(postbeg), string(respbody))
-		return
-
-	case 4:
+	if resp.StatusCode != http.StatusOK {
 		l.Errorf("post %d to %s failed(HTTP: %d): %s, cost %v, data dropped",
-			len(body), dk.httpURL, resp.StatusCode, string(respbody), time.Since(postbeg))
-		return
-
-	case 5:
-		l.Errorf("post %d to %s failed(HTTP: %s): %s, cost %v",
-			len(body), dk.httpURL, resp.Status, string(respbody), time.Since(postbeg))
-		return
+			len(body), dk.httpURL, resp.StatusCode, string(respBody), time.Since(time.Now()))
 	}
-
 }

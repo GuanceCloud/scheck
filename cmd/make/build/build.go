@@ -30,6 +30,7 @@ var (
 		`windows/386`,
 		`windows/amd64`,
 	}
+	ArchLen        = 2
 	ReleaseVersion = git.Version
 	CommandName    = "go"
 )
@@ -52,7 +53,6 @@ var (
 )
 
 func prepare() *versionDesc {
-
 	_ = os.RemoveAll(BuildDir)
 	if err := os.MkdirAll(BuildDir, os.ModePerm); err != nil {
 		l.Fatalf("MkdirAll %s error, err: %s", BuildDir, err)
@@ -109,9 +109,8 @@ func Compile() {
 	}
 
 	for idx := range archs {
-
 		parts := strings.Split(archs[idx], "/")
-		if len(parts) != 2 {
+		if len(parts) != ArchLen {
 			l.Fatalf("invalid arch %q", parts)
 		}
 
@@ -158,7 +157,6 @@ func calcMD5(path string) string {
 }
 
 func compileArch(bin, goos, goarch, dir, version string) {
-
 	output := filepath.Join(dir, bin)
 
 	if goos == global.OSWindows {
@@ -233,6 +231,5 @@ func runEnv(args, env []string) ([]byte, error) {
 	if env != nil {
 		cmd.Env = append(os.Environ(), env...)
 	}
-
 	return cmd.CombinedOutput()
 }

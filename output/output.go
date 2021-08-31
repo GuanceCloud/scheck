@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 
 	ifxcli "github.com/influxdata/influxdb1-client/v2"
@@ -28,7 +30,6 @@ type sample struct {
 }
 
 func newOutputer(scOutPut *config.ScOutput) {
-
 	uploads = make(map[string]outPuterInterface)
 
 	flag := false
@@ -37,29 +38,27 @@ func newOutputer(scOutPut *config.ScOutput) {
 		flag = true
 	}
 	if scOutPut.HTTP != nil && scOutPut.HTTP.Enable {
-		uploads["http"] = newDatakitWriter(scOutPut.HTTP.Output, 100)
+		uploads["http"] = newDatakitWriter(scOutPut.HTTP.Output, global.DefOutputPending)
 		flag = true
 	}
 	if scOutPut.AliSls != nil && scOutPut.AliSls.Enable {
 		if scOutPut.AliSls.AccessKeyID == "" || scOutPut.AliSls.AccessKeySecret == "" || scOutPut.AliSls.EndPoint == "" {
 			l.Errorf("%s", "access_key_id or access_key_secret or endpoint cannot be empty ")
 		} else {
-			uploads["sls"] = newSls(scOutPut.AliSls, 100)
+			uploads["sls"] = newSls(scOutPut.AliSls, global.DefOutputPending)
 			flag = true
 		}
-
 	}
 	if !flag {
 		uploads["stdout"] = newLocalLog(scOutPut.Log.Output)
 	}
-
 }
 
 func Start(scOutPut *config.ScOutput) {
 	l = logger.SLogger("output")
 	newOutputer(scOutPut)
-
 }
+
 func Close() {
 	for _, upload := range uploads {
 		upload.Stop()
@@ -82,7 +81,7 @@ func SendMetric(measurement string, tags map[string]string, fields map[string]in
 }
 
 func buildBody(data []byte) (body []byte, gzon bool, err error) {
-	if len(data) > 1024 { // should not gzip on file output
+	if len(data) > global.KB { // should not gzip on file output
 		if body, err = gzipCompress(data); err != nil {
 			l.Errorf("%s", err.Error())
 			return

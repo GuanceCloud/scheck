@@ -13,6 +13,8 @@ import (
 	"text/template"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	lua "github.com/yuin/gopher-lua"
 
 	"github.com/influxdata/toml"
@@ -26,31 +28,26 @@ type Rule struct {
 	File     string
 	Name     string
 	byteCode *luafuncs.ByteCode
-
 	cron     string
 	mux      sync.Mutex
 	disabled bool
-	interval int64
-	RunTime  int64 //下一次执行时间 单位秒
+	interval int64 // 间隔时间
+	RunTime  int64 // 下一次执行时间 单位秒
 	manifest *RuleManifest
 }
 
 type RuleManifest struct {
-	RuleID   string   `toml:"id"`
-	Category string   `toml:"category"`
-	Level    string   `toml:"level"`
-	Title    string   `toml:"title"`
-	Desc     string   `toml:"desc"`
-	Cron     string   `toml:"cron"`
-	OSArch   []string `toml:"os_arch"`
-	tags     map[string]string
-
-	path string
-
-	tmpl *template.Template
-
-	disabled bool
-
+	RuleID     string   `toml:"id"`
+	Category   string   `toml:"category"`
+	Level      string   `toml:"level"`
+	Title      string   `toml:"title"`
+	Desc       string   `toml:"desc"`
+	Cron       string   `toml:"cron"`
+	OSArch     []string `toml:"os_arch"`
+	tags       map[string]string
+	path       string
+	tmpl       *template.Template
+	disabled   bool
 	lastModify int64
 }
 
@@ -62,7 +59,6 @@ func newRule(path string) *Rule {
 
 // load 从文件夹中加载
 func (r *Rule) load() error {
-
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
@@ -73,7 +69,7 @@ func (r *Rule) load() error {
 	}
 	r.byteCode = bcode
 
-	//load default manifest for cron info
+	// load default manifest for cron info
 	ruledir := filepath.Dir(r.File)
 	rulename := strings.TrimSuffix(filepath.Base(r.File), filepath.Ext(r.File))
 	r.Name = rulename
@@ -86,7 +82,6 @@ func (r *Rule) load() error {
 	}
 
 	if err = manifest.load(); err != nil {
-		//err = fmt.Errorf("fail to load %s, %s", manifestPath, err)
 		l.Errorf("fail to load %s, %s", manifestPath, err)
 		return err
 	}
@@ -129,7 +124,6 @@ func (r *Rule) RunJob() {
 	}
 
 	pool.putPool(state)
-
 }
 
 func newManifest(path string) *RuleManifest {
@@ -139,7 +133,6 @@ func newManifest(path string) *RuleManifest {
 }
 
 func (rm *RuleManifest) load() error {
-
 	fi, err := os.Stat(rm.path)
 	if err != nil {
 		l.Errorf("%s", err)
@@ -164,16 +157,13 @@ func (rm *RuleManifest) load() error {
 }
 
 func (rm *RuleManifest) parse() (err error) {
-
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("parse panic, %v", e)
 			l.Errorf("%s", err)
 		}
 	}()
-
 	rm1 := *rm
-
 	var contents []byte
 	var tbl *ast.Table
 	contents, err = ioutil.ReadFile(rm1.path)
@@ -198,7 +188,7 @@ func (rm *RuleManifest) parse() (err error) {
 		"cron":     false,
 		"os_arch":  false,
 	}
-	//屏蔽字段
+	// 屏蔽字段
 	invalidField := map[string]bool{
 		"description":  false,
 		"riskitems":    false,
@@ -241,36 +231,35 @@ func (rm *RuleManifest) setRequireKey(tbl *ast.Table, requireKeys map[string]boo
 			continue
 		}
 		str := ""
-		if err := ensureFieldString(k, v, &str); err != nil {
+		err := ensureFieldString(k, v, &str)
+		if err != nil {
 			return
-		} else {
-			switch k {
-			case "id":
-				rm.RuleID = str
-			case "category":
-				rm.Category = str
-			case "level":
-				rm.Level = str
-			case "title":
-				rm.Title = str
-			case "desc":
-				rm.Desc = str
-			case "cron":
-				if str == "" {
-					str = config.Cfg.System.Cron
-				}
-				rm.Cron = str
-			case "os_arch":
-				arr, err := ensureFieldStrings(k, v)
-				if err != nil {
-					l.Warnf("os_arch is err = %v", err)
-				}
-				rm.OSArch = arr
-
+		}
+		switch k {
+		case "id":
+			rm.RuleID = str
+		case "category":
+			rm.Category = str
+		case "level":
+			rm.Level = str
+		case "title":
+			rm.Title = str
+		case "desc":
+			rm.Desc = str
+		case "cron":
+			if str == "" {
+				str = config.Cfg.System.Cron
 			}
-			if str != "" {
-				requireKeys[k] = true
+			rm.Cron = str
+		case "os_arch":
+			arr, err := ensureFieldStrings(k, v)
+			if err != nil {
+				l.Warnf("os_arch is err = %v", err)
 			}
+			rm.OSArch = arr
+		}
+		if str != "" {
+			requireKeys[k] = true
 		}
 	}
 }
@@ -283,11 +272,9 @@ func (rm *RuleManifest) setTag(tbl *ast.Table, requireKeys, invalidField map[str
 		if _, ok := requireKeys[k]; ok {
 			continue
 		}
-
 		if v == nil {
 			continue
 		}
-
 		if k == "disabled" {
 			bval := false
 			if err := ensureFieldBool(k, v, &bval); err != nil {
@@ -324,7 +311,6 @@ func (rm *RuleManifest) setTag(tbl *ast.Table, requireKeys, invalidField map[str
 			}
 		}
 	}
-
 	if !omithost {
 		if hostname == "" {
 			hostname, _ = os.Hostname()
@@ -341,14 +327,13 @@ func ensureFieldString(k string, v interface{}, s *string) error {
 			return nil
 		}
 		if str, ok := kv.Value.(*ast.Array); ok {
-
 			*s = str.Source()
 			return nil
 		}
 	}
-
 	return fmt.Errorf("unknown value for field '%s', expecting string", k)
 }
+
 func ensureFieldStrings(k string, v interface{}) ([]string, error) {
 	arr := make([]string, 0)
 	if kv, ok := v.(*ast.KeyValue); ok {
@@ -362,6 +347,7 @@ func ensureFieldStrings(k string, v interface{}) ([]string, error) {
 
 	return nil, fmt.Errorf("unknown value for field '%s', expecting string", k)
 }
+
 func ensureFieldBool(k string, v interface{}, b *bool) error {
 	var err error
 	if kv, ok := v.(*ast.KeyValue); ok {
@@ -391,14 +377,12 @@ func checkInterval(cronStr string) int64 {
 	for idx, f := range fields {
 		parts := strings.Split(f, "/")
 		if len(parts) == 2 && parts[0] == "*" {
-			interval, err := strconv.ParseInt(parts[1], 10, 64)
+			interval, err := strconv.ParseInt(parts[1], global.ParseBase, global.ParseBitSize)
 			if err == nil && interval > 0 {
 				intervals[idx] = interval
 			}
-		} else {
-			if f != "*" {
-				return 0
-			}
+		} else if f != "*" {
+			return 0
 		}
 	}
 	timeDurations := []int64{
@@ -413,12 +397,11 @@ func checkInterval(cronStr string) int64 {
 			return v * timeDurations[k]
 		}
 	}
-
 	return 0
 }
 
 var cronMaps = map[int]int64{
-	0: 1, //second
+	0: 1, // second
 	1: 60,
 	2: 60 * 60,
 	3: 60 * 60 * 24,
@@ -433,13 +416,11 @@ func checkRunTime(cronStr string) int64 {
 	for idx, f := range fields {
 		parts := strings.Split(f, "/")
 		if len(parts) == 2 && parts[0] == "*" {
-			interval, err := strconv.ParseInt(parts[1], 10, 64)
+			interval, err := strconv.ParseInt(parts[1], global.ParseBase, global.ParseBitSize)
 			if err == nil && interval > 0 {
-
 				nextRunTime += (cronMaps[idx]) * interval
 			}
 		}
-
 	}
 	// 1 1 2 * *
 	if nextRunTime == 0 {
@@ -451,6 +432,5 @@ func checkRunTime(cronStr string) int64 {
 		}
 		nextRunTime = swap
 	}
-
 	return nextRunTime
 }

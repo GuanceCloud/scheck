@@ -23,17 +23,12 @@ import (
 )
 
 var (
-	flagFuncs   = flag.Bool("funcs", false, `show all supported lua-extend functions`)
-	flagVersion = flag.Bool("version", false, `show version`)
-
-	flagCheckMD5 = flag.Bool("check-md5", false, `md5 checksum`)
-
-	flagCfgSample = flag.Bool("config-sample", false, `show config sample`)
-
-	flagConfig = flag.String("config", "", "configuration file to load")
-
-	flagTestRule = flag.String("test", ``, `the name of a rule, without file extension`)
-
+	flagFuncs           = flag.Bool("funcs", false, `show all supported lua-extend functions`)
+	flagVersion         = flag.Bool("version", false, `show version`)
+	flagCheckMD5        = flag.Bool("check-md5", false, `md5 checksum`)
+	flagCfgSample       = flag.Bool("config-sample", false, `show config sample`)
+	flagConfig          = flag.String("config", "", "configuration file to load")
+	flagTestRule        = flag.String("test", ``, `the name of a rule, without file extension`)
 	flagRulesToDoc      = flag.Bool("doc", false, `Generate doc document from manifest file`)
 	flagRulesToTemplate = flag.Bool("tpl", false, `Generate doc document from template file`)
 	flagOutDir          = flag.String("dir", "", `document Exported directory`)
@@ -70,7 +65,6 @@ func main() {
 		l.Errorf("start service failed: %s", err.Error())
 		return
 	}
-
 }
 
 func goPprof() {
@@ -78,7 +72,6 @@ func goPprof() {
 }
 
 func applyFlags() {
-
 	if *flagVersion {
 		fmt.Printf(`
        Version: %s
@@ -92,7 +85,6 @@ ReleasedInputs: %s
 
 		os.Exit(0)
 	}
-
 	if *flagCheckMD5 {
 		global.CheckMd5(ReleaseType)
 		os.Exit(0)
@@ -135,7 +127,6 @@ ReleasedInputs: %s
 		}
 		os.Exit(0)
 	}
-
 }
 
 func parseConfig() {
@@ -161,7 +152,6 @@ func parseConfig() {
 }
 
 func run() {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -187,5 +177,4 @@ func run() {
 	}()
 	wg.Wait()
 	service.Stop()
-
 }

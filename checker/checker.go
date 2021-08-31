@@ -38,9 +38,7 @@ type Checker struct {
 // Start
 func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
 	l = logger.SLogger("checker")
-
 	Chk = newChecker(confSys)
-
 	output.Start(outputpath)
 	Chk.start(ctx)
 }
@@ -77,11 +75,9 @@ func GetManifestByName(fileName string) (*RuleManifest, error) {
 	}
 
 	return GetManifest(filepath.Join(global.InstallDir, global.DefRulesDir, fileName))
-
 }
 
 func GetManifest(filename string) (*RuleManifest, error) {
-
 	if !strings.HasSuffix(filename, global.LuaManifestExt) {
 		filename += global.LuaManifestExt
 	}
@@ -91,6 +87,7 @@ func GetManifest(filename string) (*RuleManifest, error) {
 	}
 	return m, nil
 }
+
 func (c *Checker) start(ctx context.Context) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -98,7 +95,6 @@ func (c *Checker) start(ctx context.Context) {
 			n := runtime.Stack(buf, false)
 			l.Errorf("panic %s", e)
 			l.Errorf("%s", string(buf[:n]))
-
 		}
 		output.Close()
 		l.Info("checker exit")

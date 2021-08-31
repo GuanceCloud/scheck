@@ -54,7 +54,6 @@ func NewScriptRunTime() *ScriptRunTime {
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
 	if err := LoadLuaLibs(ls); err != nil {
 		ls.Close()
-		//l.Errorf("LoadLuaLibs err=%v \n ", err)
 		return nil
 	}
 	luajson.Preload(ls)
@@ -129,7 +128,7 @@ func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 		return nil, err
 	}
 	SetScriptGlobalConfig(ls, cfg)
-	luajson.Preload(ls) //for json parse
+	luajson.Preload(ls) // for json parse
 	for _, p := range funcs.FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
@@ -141,9 +140,7 @@ func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 }
 
 func LoadLuaLibs(ls *lua.LState) error {
-
 	for _, lib := range supportLuaLibs {
-
 		err := ls.CallByParam(lua.P{
 			Fn:      ls.NewFunction(lib.fn),
 			NRet:    1,
@@ -176,7 +173,7 @@ func TestLua(rulepath string) {
 	lua.LuaPathDefault = filepath.Join(global.InstallDir, global.DefRulesDir, "lib", "?.lua")
 
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
-	if err := LoadLuaLibs(ls); err != nil {
+	if err = LoadLuaLibs(ls); err != nil {
 		ls.Close()
 		fmt.Printf("LoadLuaLibs err=%v \n ", err)
 		return
@@ -194,5 +191,4 @@ func TestLua(rulepath string) {
 	if err = ls.PCall(0, lua.MultRet, nil); err != nil {
 		fmt.Printf("testLua err=%v \n", err)
 	}
-
 }

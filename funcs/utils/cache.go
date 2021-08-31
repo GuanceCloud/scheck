@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 
 	log "github.com/sirupsen/logrus"
@@ -153,7 +155,6 @@ func (p *provider) setGlobalCache(l *lua.LState) int {
 }
 
 func (p *provider) getGlobalCache(l *lua.LState) int {
-
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -171,7 +172,6 @@ func (p *provider) getGlobalCache(l *lua.LState) int {
 }
 
 func (p *provider) setCache(l *lua.LState) int {
-
 	globalCfg := luafuncs.GetScriptGlobalConfig(l)
 	if globalCfg == nil || globalCfg.RulePath == "" {
 		return 0
@@ -182,14 +182,14 @@ func (p *provider) setCache(l *lua.LState) int {
 		return 0
 	}
 
-	lv := l.Get(1)
+	lv := l.Get(global.LuaArgIdx1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
 		return 0
 	}
 	key := string(lv.(lua.LString))
 
-	lv = l.Get(2)
+	lv = l.Get(global.LuaArgIdx2)
 	if lv == lua.LNil {
 		_ = sc.setKey(key, nil)
 		return 0
@@ -213,7 +213,6 @@ func (p *provider) setCache(l *lua.LState) int {
 }
 
 func (p *provider) getCache(l *lua.LState) int {
-
 	globalCfg := luafuncs.GetScriptGlobalConfig(l)
 	if globalCfg == nil || globalCfg.RulePath == "" {
 		return 0

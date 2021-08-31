@@ -19,7 +19,6 @@ type statePool struct {
 }
 
 func InitStatePool(initCap, totCap int) {
-
 	p := &statePool{
 		states:     make([]*luafuncs.ScriptRunTime, 0),
 		poolStatus: make(map[int]bool),
@@ -39,9 +38,8 @@ func InitStatePool(initCap, totCap int) {
 	pool = p
 }
 
-//从池子中获取一个lua state
+// 从池子中获取一个lua state
 func (p *statePool) getState() *luafuncs.ScriptRunTime {
-
 	var w *luafuncs.ScriptRunTime
 	waiting := false
 

@@ -36,6 +36,7 @@ func newLocalLog(filePath string) *localLog {
 	l.Infof("init log ok! path=%s", filePath)
 	return local
 }
+
 func (log *localLog) Stop() {
 	_ = log.outputFile.Close()
 }
@@ -53,9 +54,7 @@ func (log *localLog) ReadMsg(measurement string, tags map[string]string, fields 
 }
 
 func (log *localLog) ToUpstream(sam ...*sample) {
-
 	if _, err := log.outputFile.Write(append(sam[0].data, byte('\n'))); err != nil {
 		l.Errorf("%s", err)
 	}
-
 }

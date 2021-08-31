@@ -4,11 +4,10 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 const (
-	KB     = 1024
-	MB     = KB * 1024
 	cpuMax = 100
 	cpuMin = 0
 	DefMEM = 200
@@ -46,7 +45,7 @@ func Run() {
 			return
 		}
 
-		available := vm.Available / uint64(MB)
+		available := vm.Available / uint64(global.MB)
 		if uint64(config.Cfg.Cgroup.MEM) > available {
 			l.Errorf("MEM should less than Available")
 			return

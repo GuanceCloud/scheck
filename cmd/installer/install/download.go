@@ -30,8 +30,6 @@ func (wc *writeCounter) PrintProgress() {
 }
 
 func Download(from, to string, isGzip, progress, downloadOnly bool) error {
-	// disable SSL verify for some bad client
-	//cli := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 	cli := http.DefaultClient
 	req, err := http.NewRequest("GET", from, nil)
 	if err != nil {

@@ -51,9 +51,7 @@ const (
 )
 
 func main() {
-
 	flag.Parse()
-
 	parseLog()
 
 	dkservice.ServiceExecutable = filepath.Join(global.InstallDir, checkBin)
@@ -73,7 +71,6 @@ func main() {
 	}
 
 	mvOldDatakit(svc)
-
 	applyFlags()
 
 	// create install dir if not exists
@@ -97,7 +94,6 @@ func main() {
 			l.Errorf("err = %v", err)
 			return
 		}
-
 	}
 	parseUpgrade(svc)
 
@@ -108,7 +104,6 @@ func main() {
 	} else {
 		l.Info(":) Install Success!")
 	}
-
 }
 
 func parseUpgrade(svc service.Service) {
@@ -128,7 +123,6 @@ func parseUpgrade(svc service.Service) {
 			l.Warnf("star service: %s, ignored", err.Error())
 		}
 	}
-
 }
 
 func parseLog() {
@@ -151,7 +145,6 @@ func parseLog() {
 }
 
 func applyFlags() {
-
 	if *flagInfo {
 		fmt.Printf(`
        Version: %s
@@ -176,7 +169,6 @@ Golang Version: %s
 
 		os.Exit(0)
 	}
-
 }
 
 func mvOldDatakit(svc service.Service) {
@@ -195,5 +187,4 @@ func mvOldDatakit(svc service.Service) {
 	if err := service.Control(svc, "uninstall"); err != nil {
 		l.Warnf("uninstall service scheck failed: %s, ignored", err.Error())
 	}
-
 }

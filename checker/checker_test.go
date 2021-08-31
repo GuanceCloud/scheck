@@ -105,7 +105,6 @@ func (r *testRule) updateScript(ruledir string) error {
 
 func mockRules() (string, []*testRule) {
 	var testRules []*testRule
-
 	for i := 1; i <= 200; i++ {
 		testRules = append(testRules, newTestRule(i, `*/10 * * * *`, luaTempStr))
 	}
@@ -127,14 +126,11 @@ func mockRules() (string, []*testRule) {
 			return "", nil
 		}
 	}
-
 	return ruleDir, testRules
 }
 
 func TestChecker(t *testing.T) {
-
 	log.SetLevel(log.DebugLevel)
-
 	ruleDir, rules := mockRules()
 	if ruleDir == "" || len(rules) == 0 {
 		return
@@ -144,11 +140,9 @@ func TestChecker(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	_ = cancel
 	Start(ctx, nil, &config.ScOutput{})
-
 }
 
 func TestParse(t *testing.T) {
-
 	p := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
 	cronStr := `* */1 * * *`
 

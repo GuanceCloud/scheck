@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 
@@ -28,14 +30,12 @@ func (p *provider) Catalog() string {
 }
 
 func (p *provider) trigger(ls *lua.LState) int {
-
 	cfg := luafuncs.GetScriptGlobalConfig(ls)
-
 	var manifestFileName string
 	var templateTable *lua.LTable
 	templateVals := map[string]string{}
 
-	lv := ls.Get(1)
+	lv := ls.Get(global.LuaArgIdx1)
 	if lv != lua.LNil {
 		switch lv.Type() {
 		case lua.LTTable:
@@ -45,7 +45,7 @@ func (p *provider) trigger(ls *lua.LState) int {
 		}
 	}
 
-	lv = ls.Get(2)
+	lv = ls.Get(global.LuaArgIdx2)
 	if lv.Type() == lua.LTTable {
 		templateTable = lv.(*lua.LTable)
 	}
@@ -64,7 +64,6 @@ func (p *provider) trigger(ls *lua.LState) int {
 	}
 
 	if manifestFileName == "" {
-		//use the default manifest
 		manifestFileName = cfg.RulePath
 	}
 
@@ -82,22 +81,19 @@ func (p *provider) trigger(ls *lua.LState) int {
 		if err = manifest.tmpl.Execute(buf, templateTable); err != nil {
 			ls.RaiseError("fail to apple template, %s", err)
 			return lua.MultRet
-		} else {
-			message = buf.String()
 		}
+		message = buf.String()
 	}
 	fields["message"] = message
 	if err = output.SendMetric(manifest.RuleID, tags, fields, tm); err != nil {
 		ls.RaiseError("%s", err)
 		return lua.MultRet
 	}
-
 	return 0
 }
 
 func makeManifestTags(manifest *RuleManifest) map[string]string {
 	tags := map[string]string{}
-
 	tags["title"] = manifest.Title
 	tags["level"] = manifest.Level
 	tags["category"] = manifest.Category
@@ -108,8 +104,8 @@ func makeManifestTags(manifest *RuleManifest) map[string]string {
 		}
 	}
 	return tags
-
 }
+
 func firstTrigger() {
 	tags := map[string]string{}
 	tm := time.Now().UTC()
@@ -128,7 +124,6 @@ func firstTrigger() {
 	message := fmt.Sprintf("scheck started, %d rules ready at %s", luas, formatTime)
 	fields["message"] = message
 	_ = output.SendMetric("0000-scheck-start", tags, fields, tm)
-
 }
 
 func Init() {

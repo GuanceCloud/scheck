@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -35,7 +37,7 @@ func apiDecode(l *lua.LState) int {
 	if err != nil {
 		l.Push(lua.LNil)
 		l.Push(lua.LString(err.Error()))
-		return 2
+		return global.LuaRet2
 	}
 	l.Push(value)
 	return 1
@@ -48,7 +50,7 @@ func apiEncode(l *lua.LState) int {
 	if err != nil {
 		l.Push(lua.LNil)
 		l.Push(lua.LString(err.Error()))
-		return 2
+		return global.LuaRet2
 	}
 	l.Push(lua.LString(string(data)))
 	return 1
@@ -134,7 +136,7 @@ func (j jsonValue) MarshalJSON() (data []byte, err error) {
 	default:
 		err = invalidTypeError(j.LValue.Type())
 	}
-	return
+	return data, err
 }
 
 // Decode converts the JSON encoded data to Lua values.

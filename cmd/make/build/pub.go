@@ -63,7 +63,6 @@ func tarFiles(goos, goarch string) {
 }
 
 func getCurrentVersionInfo(urlSrt string) *versionDesc {
-
 	l.Infof("get current online version: %s", urlSrt)
 
 	// #nosec
@@ -125,9 +124,7 @@ func PubDatakit() {
 
 // installAllArchs : tar files and collect OSS upload/backup info
 func installAllArchs(archs []string) map[string]string {
-
 	ossfiles := map[string]string{
-		//path.Join(PubDir, Release, "version"): path.Join(OSSPath, "version"),
 		path.Join(OSSPath, "version"):                                     path.Join(PubDir, Release, "version"),
 		path.Join(OSSPath, "install.sh"):                                  "install.sh",
 		path.Join(OSSPath, "install.ps1"):                                 "install.ps1",
@@ -141,7 +138,7 @@ func installAllArchs(archs []string) map[string]string {
 			continue
 		}
 		parts := strings.Split(arch, "/")
-		if len(parts) != 2 {
+		if len(parts) != ArchLen {
 			l.Fatalf("invalid arch %q", parts)
 		}
 		goos, goarch := parts[0], parts[1]
@@ -157,7 +154,6 @@ func installAllArchs(archs []string) map[string]string {
 		if goos == global.OSWindows {
 			installerExe = fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, git.Version)
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
-
 		} else {
 			installerExe = fmt.Sprintf("installer-%s-%s-%s", goos, goarch, git.Version)
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
@@ -187,8 +183,9 @@ func InitOC() *cliutils.OssCli {
 	if ak == "" || sk == "" {
 		l.Fatalf("oss access key or secret key missing, tag=%s", strings.ToUpper(Release))
 	}
-	ossSlice := strings.SplitN(DownloadAddr, "/", 2)
-	if len(ossSlice) != 2 {
+	var split = 2 // at most 2 substrings
+	ossSlice := strings.SplitN(DownloadAddr, "/", split)
+	if len(ossSlice) != split {
 		l.Fatalf("downloadAddr:%s err", DownloadAddr)
 	}
 	OSSPath = ossSlice[1]
@@ -205,9 +202,7 @@ func InitOC() *cliutils.OssCli {
 	if err := oc.Init(); err != nil {
 		l.Fatal(err)
 	}
-
 	return oc
-
 }
 
 func uploadToOSS(ossFiles map[string]string, oc *cliutils.OssCli) {
@@ -219,7 +214,6 @@ func uploadToOSS(ossFiles map[string]string, oc *cliutils.OssCli) {
 	}
 
 	for k, v := range ossFiles {
-
 		fi, _ := os.Stat(v)
 		l.Debugf("upload %s(%s)...", v, humanize.Bytes(uint64(fi.Size())))
 		l.Debugf("key: %s, value: %s", k, v)

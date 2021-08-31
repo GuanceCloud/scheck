@@ -62,10 +62,9 @@ func (t *Tmp) htmlURL(i []string) string {
 		matches := spaceRe.FindAllStringSubmatch(v, -1)
 		if matches != nil {
 			for _, v := range matches {
-				title = string(v[0][1 : len(v[0])-1])
+				title = v[0][1 : len(v[0])-1]
 			}
 			spaceRe, _ := regexp.Compile(regexpHTTP)
-			// matched, err := regexp.MatchString("[^\\[\\]\\(\\)]+", s)
 			matches := spaceRe.FindAllStringSubmatch(v, -1)
 			if matches != nil {
 				url = matches[0][0]
@@ -91,19 +90,18 @@ func (t *Tmp) GetTemplate() string {
 		"inc":     t.arrayTostring,
 		"htmlUrl": t.htmlURL,
 	}
-	//pahtList := strings.Split(t.Path, "/")
 	// Create template, add template function, add parsing template text
 	tpl, err := GetTpl(t.box, t.Path)
 	if err != nil {
 		l.Fatalf("GetTpl err=%s", err.Error())
 	}
-	tmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
+	newTmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
 	if err != nil {
 		l.Fatalf("parsing: %s", err.Error())
 	}
 	buf := new(bytes.Buffer)
 
-	err = tmpl.Execute(buf, t.Obj)
+	err = newTmpl.Execute(buf, t.Obj)
 	if err != nil {
 		l.Fatalf("execution: %s", err.Error())
 	}
@@ -152,7 +150,6 @@ func (m *Markdown) TemplateDecodeFile() error {
 	If the error returned is of another type, it is uncertain whether it exists
 */
 func PathExists(filePath string) (bool, error) {
-
 	_, err := os.Stat(filePath)
 	if err == nil {
 		return true, nil
@@ -198,7 +195,6 @@ func CreateFile(content, file string) error {
 	file = doFilepath(file)
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
 	if err != nil {
-
 		l.Fatalf("fail to open file err=%v", err)
 		return err
 	}
@@ -212,7 +208,6 @@ func CreateFile(content, file string) error {
 }
 func doFilepath(file string) string {
 	return strings.ReplaceAll(file, "\\", "/")
-
 }
 
 type Summary struct {
@@ -299,7 +294,6 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 	}
 
 	_ = CreateFile(yuque.GetTemplate(), yuquePath)
-
 }
 
 /*
@@ -320,7 +314,6 @@ func ScheckCoreSyncDisk(ruleDir string) {
 			l.Debugf("The current scriptbox length is %d \n", len(ScriptBox.List()))
 			for _, name := range ScriptBox.List() {
 				if content, err := ScriptBox.Find(name); err == nil {
-					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
 					name = strings.ReplaceAll(name, "\\", "/")
 					// Processing multi-level directories
 					paths := strings.Split(name, "/")
@@ -333,18 +326,14 @@ func ScheckCoreSyncDisk(ruleDir string) {
 							}
 						}
 					}
-					// Write file
 					_ = CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
-
 				}
 			}
 		}
 	}
-
 }
 
 func ScheckDocSyncDisk(filePath string) error {
-
 	// Create a directory and synchronize Lua scripts to disk
 	if _, err := os.Stat(filePath); err != nil {
 		if err := os.Mkdir(filePath, os.ModeDir); err == nil {
@@ -359,7 +348,6 @@ func ScheckDocSyncDisk(filePath string) error {
 			// Processing multi-level directories
 			paths := strings.Split(name, "/")
 			if len(paths) > 1 {
-				// Splice catalog
 				libDir := fmt.Sprintf("%s/%s", filePath, strings.Join(paths[0:len(paths)-1], "/"))
 				if _, err := os.Stat(libDir); err != nil {
 					if err := os.MkdirAll(libDir, os.ModeDir|os.ModePerm); err != nil {
