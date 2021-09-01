@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="主机用户密码状态发生改变"
 desc="{{ .Content }} 主机名用户密码状态发生改变"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

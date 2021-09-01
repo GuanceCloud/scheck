@@ -3,7 +3,7 @@ category="system"
 level="critical"
 title="全局环境变量文件是否存在"
 desc="{{.Content}} 被删除"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

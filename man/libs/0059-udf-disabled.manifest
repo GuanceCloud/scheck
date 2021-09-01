@@ -3,7 +3,7 @@ category="storage"
 level="warn"
 title="udf 被启用"
 desc="{{.Content}}被启用，应关闭"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

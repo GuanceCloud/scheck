@@ -123,7 +123,9 @@ func firstTrigger() {
 
 	luas := GetRuleNum()
 	formatTime := time.Now().Format("2006-01-02 15:04:05")
-	message := fmt.Sprintf("scheck 程序启动，当前共%d个lua进入巡检队列，启动时间为：%s", luas, formatTime)
+
+	message := fmt.Sprintf("scheck started, %d rules ready at %s", luas, formatTime)
+
 	fields["message"] = message
 	_ = output.SendMetric("0000-scheck-start", tags, fields, tm)
 

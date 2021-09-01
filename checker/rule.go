@@ -99,7 +99,7 @@ func (r *Rule) load() error {
 		}
 	}
 	if !runLua {
-		return fmt.Errorf("manifest中不支持当前操作系统")
+		return fmt.Errorf(" The OS:%s cannot load this manifest :%s ", runtime.GOOS, r.Name)
 	}
 
 	r.cron = manifest.Cron
@@ -181,6 +181,7 @@ func (m *RuleManifest) parse() (err error) {
 		l.Warnf("read file err=%v", err)
 		return
 	}
+	// 去掉有可能在UTF8编码中存在的BOM头
 	contents = bytes.TrimPrefix(contents, []byte("\xef\xbb\xbf"))
 	tbl, err = toml.Parse(contents)
 	if err != nil {
@@ -237,7 +238,7 @@ func (m *RuleManifest) parse() (err error) {
 			case "os_arch":
 				arr, err := ensureFieldStrings(k, v, &str)
 				if err != nil {
-					l.Warnf("获取os_arch字段失败err = %v", err)
+					l.Warnf("os_arch is err = %v", err)
 				}
 				rm.OSArch = arr
 

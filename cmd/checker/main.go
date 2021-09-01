@@ -59,9 +59,11 @@ func main() {
 	applyFlags()
 	if config.TryLoadConfig(*flagConfig) {
 		config.LoadConfig(*flagConfig)
+
 	}
-	if checkServiceExist() {
-		l.Fatalf("service scheck is running!!!")
+	if err := securityChecker.SavePid(); err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
 	}
 	config.Cfg.Init()
 	l = logger.SLogger("main")
