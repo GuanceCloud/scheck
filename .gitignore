@@ -27,4 +27,5 @@ git/git.go
 install.sh
 install.ps1
 .docs
-/man/man-packr.go
+/check.err
+

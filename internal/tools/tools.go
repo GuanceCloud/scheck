@@ -1,4 +1,4 @@
-package man
+package tools
 
 import (
 	"bytes"
@@ -10,6 +10,8 @@ import (
 	"strings"
 	"text/template"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 
 	"github.com/BurntSushi/toml"
@@ -18,12 +20,10 @@ import (
 )
 
 var (
-	l = logger.SLogger("tool")
+	l          = logger.DefaultSLogger("tool")
+	regexpStr  = "\\[(.*)\\]"
+	regexpHTTP = "(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]"
 )
-
-func SetLog() {
-	l = logger.DefaultSLogger("tool")
-}
 
 type Params struct {
 	Version        string
@@ -52,27 +52,26 @@ func (t *Tmp) arrayTostring(i []string) string {
 	return str
 }
 
-func (t *Tmp) htmlUrl(i []string) string {
+func (t *Tmp) htmlURL(i []string) string {
 	str := ""
 	for _, v := range i {
 		title := ""
 		url := ""
-		spaceRe, _ := regexp.Compile("\\[(.*)\\]")
-		// matched, err := regexp.MatchString("[^\\[\\]\\(\\)]+", s)
+		spaceRe := regexp.MustCompile(regexpStr)
+
 		matches := spaceRe.FindAllStringSubmatch(v, -1)
 		if matches != nil {
 			for _, v := range matches {
-				title = string(v[0][1 : len(v[0])-1])
+				title = v[0][1 : len(v[0])-1]
 			}
-			spaceRe, _ := regexp.Compile("(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]")
-			// matched, err := regexp.MatchString("[^\\[\\]\\(\\)]+", s)
+			spaceRe, _ := regexp.Compile(regexpHTTP)
 			matches := spaceRe.FindAllStringSubmatch(v, -1)
 			if matches != nil {
 				url = matches[0][0]
 				str += fmt.Sprintf("<a href=\"%s\" target=\"_blank\">%s</a>\n<br/>", url, title)
 			}
 		} else {
-			spaceRe, _ := regexp.Compile("(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]")
+			spaceRe, _ := regexp.Compile(regexpHTTP)
 			matches := spaceRe.FindAllStringSubmatch(v, -1)
 			if matches != nil {
 				url = matches[0][0]
@@ -89,20 +88,22 @@ func (t *Tmp) GetTemplate() string {
 	funcMap := template.FuncMap{
 		// The name "inc" is what the function will be called in the template text.
 		"inc":     t.arrayTostring,
-		"htmlUrl": t.htmlUrl,
+		"htmlUrl": t.htmlURL,
 	}
-	//pahtList := strings.Split(t.Path, "/")
 	// Create template, add template function, add parsing template text
 	tpl, err := GetTpl(t.box, t.Path)
-	tmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
 	if err != nil {
-		l.Fatalf("parsing: %s", err)
+		l.Fatalf("GetTpl err=%s", err.Error())
+	}
+	newTmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
+	if err != nil {
+		l.Fatalf("parsing: %s", err.Error())
 	}
 	buf := new(bytes.Buffer)
 
-	err = tmpl.Execute(buf, t.Obj)
+	err = newTmpl.Execute(buf, t.Obj)
 	if err != nil {
-		l.Fatalf("execution: %s", err)
+		l.Fatalf("execution: %s", err.Error())
 	}
 	return buf.String()
 }
@@ -125,7 +126,7 @@ type Markdown struct {
 	Defaultvalue []string `toml:"defaultvalue"`
 	References   []string `toml:"references"`
 	Cis          []string `toml:"CIS"`
-	Id           string
+	ID           string
 	path         string
 }
 
@@ -148,9 +149,8 @@ func (m *Markdown) TemplateDecodeFile() error {
 	If the returned error type is judged as true using OS. Isnotexist(), the file or folder does not exist
 	If the error returned is of another type, it is uncertain whether it exists
 */
-func PathExists(path string) (bool, error) {
-
-	_, err := os.Stat(path)
+func PathExists(filePath string) (bool, error) {
+	_, err := os.Stat(filePath)
 	if err == nil {
 		return true, nil
 	}
@@ -160,45 +160,41 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func ScheckDir(id string, outputPath string) {
-	path := fmt.Sprintf("%s/%s", outputPath, id)
+func ScheckDir(id, outputPath string) {
+	filePath := fmt.Sprintf("%s/%s", outputPath, id)
 
-	bool, _ := PathExists(path)
-	if !bool {
-		err := os.Mkdir(path, os.ModePerm)
+	exist, _ := PathExists(filePath)
+	if !exist {
+		err := os.Mkdir(filePath, os.ModePerm)
 		if err != nil {
-			l.Fatalf("%s Creation failed", path)
+			l.Fatalf("%s Creation failed", filePath)
 		}
 	}
 }
 
-func IsAppand(file_path string) bool {
-	files, _ := ioutil.ReadFile(file_path)
-	if strings.Index(string(files), "fitOs") >= 0 {
-		return true
-	}
-	return false
+func IsAppand(filePath string) bool {
+	files, _ := ioutil.ReadFile(filePath)
+	return bytes.Contains(files, []byte("fitOs"))
 }
 
-func ScheckList(dir_path string) []string {
-	files, _ := ioutil.ReadDir(dir_path)
+func ScheckList(dirPath string) []string {
+	files, _ := ioutil.ReadDir(dirPath)
 	manifest := make([]string, 0)
 	for _, f := range files {
-		scId := strings.Split(f.Name(), ".manifest")
-		if path.Ext(f.Name()) == ".manifest" {
-			if IsAppand(fmt.Sprintf("%s%s", dir_path, f.Name())) {
-				manifest = append(manifest, scId[0])
+		scID := strings.Split(f.Name(), global.LuaManifestExt)
+		if path.Ext(f.Name()) == global.LuaManifestExt {
+			if IsAppand(fmt.Sprintf("%s%s", dirPath, f.Name())) {
+				manifest = append(manifest, scID[0])
 			}
 		}
 	}
 	return manifest
 }
 
-func CreateFile(content string, file string) error {
+func CreateFile(content, file string) error {
 	file = doFilepath(file)
-	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, 0644)
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
 	if err != nil {
-
 		l.Fatalf("fail to open file err=%v", err)
 		return err
 	}
@@ -212,7 +208,6 @@ func CreateFile(content string, file string) error {
 }
 func doFilepath(file string) string {
 	return strings.ReplaceAll(file, "\\", "/")
-
 }
 
 type Summary struct {
@@ -221,7 +216,7 @@ type Summary struct {
 
 func DfTemplate(filesName []string, outputPath string) {
 	if _, err := os.Stat(outputPath); err != nil {
-		if err := os.MkdirAll(outputPath, 0775); err != nil {
+		if err := os.MkdirAll(outputPath, os.ModeDir|os.ModePerm); err != nil {
 			l.Fatalf("%s create dir : %s", outputPath, err)
 		}
 	}
@@ -230,16 +225,16 @@ func DfTemplate(filesName []string, outputPath string) {
 		yamlPath := fmt.Sprintf("%s/%s/manifest.yaml", outputPath, v)
 		metaPath := fmt.Sprintf("%s/%s/meta.md", outputPath, v)
 		id := strings.Split(v, "-")[0]
-		md := Markdown{path: v, Id: id}
-		md.TemplateDecodeFile()
+		md := Markdown{path: v, ID: id}
+		_ = md.TemplateDecodeFile()
 		if len(md.Description) < 1 {
 			continue
 		}
 		yaml := Tmp{Path: "manifest.tpl", Obj: md, box: TemplateBox}
 		meta := Tmp{Path: "md.tpl", Obj: md, box: TemplateBox}
 		ScheckDir(v, outputPath)
-		CreateFile(yaml.GetTemplate(), yamlPath)
-		CreateFile(meta.GetTemplate(), metaPath)
+		_ = CreateFile(yaml.GetTemplate(), yamlPath)
+		_ = CreateFile(meta.GetTemplate(), metaPath)
 		count++
 	}
 
@@ -249,7 +244,7 @@ func DfTemplate(filesName []string, outputPath string) {
 // The parameter is a file list without a file suffix
 func ToMakeMdFile(filesName []string, outputPath string) {
 	if _, err := os.Stat(outputPath); err != nil {
-		if err := os.MkdirAll(outputPath, 0775); err != nil {
+		if err := os.MkdirAll(outputPath, os.ModeDir|os.ModePerm); err != nil {
 			l.Fatalf("%s create dir : %s", outputPath, err)
 		}
 	}
@@ -264,7 +259,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 	count := 0
 	for _, v := range filesName {
 		id := strings.Split(v, "-")[0]
-		md := Markdown{path: v, Id: id}
+		md := Markdown{path: v, ID: id}
 		if err := md.TemplateDecodeFile(); err != nil {
 			l.Fatalf("err:%s", err)
 		}
@@ -278,7 +273,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		}
 		yuquemd := Tmp{Path: "yuquemd.tpl", Obj: md, box: TemplateBox}
 		if _, err := os.Stat(outputPath); err != nil {
-			if err := os.MkdirAll(outputPath, 0775); err != nil {
+			if err := os.MkdirAll(outputPath, os.ModeDir|os.ModePerm); err != nil {
 				l.Fatalf("%s create dir : %s", outputPath, err)
 			}
 		}
@@ -298,8 +293,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		fmt.Println(err)
 	}
 
-	CreateFile(yuque.GetTemplate(), yuquePath)
-
+	_ = CreateFile(yuque.GetTemplate(), yuquePath)
 }
 
 /*
@@ -316,61 +310,58 @@ func ScheckCoreSyncDisk(ruleDir string) {
 	}
 	// Create a directory and synchronize Lua scripts to disk
 	if _, err := os.Stat(ruleDir); err != nil {
-		if err := os.Mkdir(ruleDir, 0775); err == nil {
+		if err := os.Mkdir(ruleDir, os.ModeDir); err == nil {
 			l.Debugf("The current scriptbox length is %d \n", len(ScriptBox.List()))
 			for _, name := range ScriptBox.List() {
 				if content, err := ScriptBox.Find(name); err == nil {
-					//CreateFile(string(content),fmt.Sprintf("%s/%s"))
 					name = strings.ReplaceAll(name, "\\", "/")
 					// Processing multi-level directories
 					paths := strings.Split(name, "/")
 					if len(paths) > 1 {
 						// Splice catalog
-						lib_dir := fmt.Sprintf("%s/%s", ruleDir, strings.Join(paths[0:len(paths)-1], "/"))
-						if _, err := os.Stat(lib_dir); err != nil {
-							if err := os.MkdirAll(lib_dir, 0775); err != nil {
-								l.Fatalf("%s create dir : %s", lib_dir, err)
+						libDir := fmt.Sprintf("%s/%s", ruleDir, strings.Join(paths[0:len(paths)-1], "/"))
+						if _, err := os.Stat(libDir); err != nil {
+							if err := os.MkdirAll(libDir, os.ModeDir|os.ModePerm); err != nil {
+								l.Fatalf("%s create dir : %s", libDir, err)
 							}
 						}
 					}
-					// Write file
-					CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
-
+					_ = CreateFile(string(content), fmt.Sprintf("%s/%s", ruleDir, name))
 				}
 			}
 		}
 	}
-
 }
 
-func ScheckDocSyncDisk(path string) error {
-
+func ScheckDocSyncDisk(filePath string) error {
 	// Create a directory and synchronize Lua scripts to disk
-	if _, err := os.Stat(path); err != nil {
-		if err := os.Mkdir(path, 0775); err == nil {
+	if _, err := os.Stat(filePath); err != nil {
+		if err := os.Mkdir(filePath, os.ModeDir); err == nil {
 			// Traversal Lua script name
 			l.Debug("The current scriptbox length is %d \n", len(ScriptBox.List()))
 		}
 	}
 	for _, name := range DocBox.List() {
-		if content, err := DocBox.Find(name); err == nil {
+		content, err := DocBox.Find(name)
+		if err == nil {
 			name = strings.ReplaceAll(name, "\\", "/")
 			// Processing multi-level directories
 			paths := strings.Split(name, "/")
 			if len(paths) > 1 {
-				// Splice catalog
-				lib_dir := fmt.Sprintf("%s/%s", path, strings.Join(paths[0:len(paths)-1], "/"))
-				if _, err := os.Stat(lib_dir); err != nil {
-					if err := os.MkdirAll(lib_dir, 0775); err != nil {
-						l.Fatalf("%s create dir : %s", lib_dir, err)
+				libDir := fmt.Sprintf("%s/%s", filePath, strings.Join(paths[0:len(paths)-1], "/"))
+				if _, err := os.Stat(libDir); err != nil {
+					if err := os.MkdirAll(libDir, os.ModeDir|os.ModePerm); err != nil {
+						l.Fatalf("%s create dir : %s", libDir, err)
 					}
 				}
 			}
 			res := fmt.Sprintf(string(content), git.Version, git.BuildAt)
-			err := CreateFile(res, fmt.Sprintf("%s/%s", path, name))
+			err := CreateFile(res, fmt.Sprintf("%s/%s", filePath, name))
 			if err != nil {
 				l.Fatalf("save file error,err :%s", err)
 			}
+		} else {
+			l.Errorf("cannot find file %s from box", name)
 		}
 	}
 	return nil

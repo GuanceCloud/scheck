@@ -24,7 +24,6 @@ func (a *AliYunLog) conn(aliSls *config.AliSls) {
 }
 
 func (a *AliYunLog) CreateProject() {
-
 	if a.AliSls.ProjectName == "" {
 		a.AliSls.ProjectName = "zhuyun-scheck"
 	}
@@ -39,17 +38,20 @@ func (a *AliYunLog) CreateProject() {
 			l.Errorf("Create project : %s failed %v\n, ", a.AliSls.Description, err)
 		}
 	}
+
 	count := 0
+	maxCount := 10
+	step := 2
 	for {
 		_, err := a.Client.GetProject(a.AliSls.ProjectName)
 		if err == nil {
 			l.Info("%s exist", a.AliSls.ProjectName)
 			break
-		} else if count > 10 {
+		} else if count > maxCount {
 			l.Errorf("Create project timeout ")
 			break
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second * time.Duration(step))
 		count++
 	}
 
@@ -57,8 +59,14 @@ func (a *AliYunLog) CreateProject() {
 		a.AliSls.LogStoreName = "scheck"
 	}
 
+	// ttl is time-to-live(in day) of logs
+	var ttl = 3
+	// shardCnt is the number of shards
+	var shardCnt = 2
+	// maxSplitShard is the max number of shard
+	var maxSplitShard = 6
 	if _, err := a.Client.GetLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName); err != nil {
-		if err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName, 3, 2, true, 6); err != nil {
+		if err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName, ttl, shardCnt, true, maxSplitShard); err != nil {
 			l.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
 		}
 	}
@@ -69,19 +77,18 @@ func (a *AliYunLog) CreateProject() {
 		if err == nil {
 			l.Info("%s exist", a.AliSls.LogStoreName)
 			break
-		} else if logStoreCount > 10 {
+		} else if logStoreCount > maxCount {
 			l.Errorf("Create LogStore timeout ")
 			break
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second * time.Duration(step))
 		logStoreCount++
 	}
-
 }
 
 func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
-
 	indexKey := map[string]sls.IndexKey{}
+	var timeStep = 4
 	for i := range fields {
 		indexKey[i] = sls.IndexKey{
 			Token:         []string{""},
@@ -108,14 +115,14 @@ func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 		}
 		return err
 	}
-	time.Sleep(4 * time.Second)
-
+	time.Sleep(time.Second * time.Duration(timeStep))
 	return nil
 }
 
 func (a *AliYunLog) PutLogs(fields map[string]interface{}) error {
 	logs := []*sls.Log{}
 	content := []*sls.LogContent{}
+	var err error
 	for i := range fields {
 		content = append(content, &sls.LogContent{
 			Key:   proto.String(i),
@@ -131,14 +138,14 @@ func (a *AliYunLog) PutLogs(fields map[string]interface{}) error {
 		Logs: logs,
 	}
 
-	if err := a.Client.PutLogs(a.AliSls.ProjectName, a.AliSls.LogStoreName, loggroup); err == nil {
+	if err = a.Client.PutLogs(a.AliSls.ProjectName, a.AliSls.LogStoreName, loggroup); err == nil {
 		l.Debug("PutLogs success")
-		return nil
 	} else {
 		l.Errorf("PutLogs failed %v\n", err)
-		return err
 	}
+	return err
 }
+
 func newSls(aliSls *config.AliSls, maxpending int) *AliYunLog {
 	ali := &AliYunLog{
 		AliSls:     aliSls,
@@ -169,6 +176,7 @@ func (a *AliYunLog) ReadMsg(measurement string, tags map[string]string, fields m
 	slsBody["timestamp"] = time.Now().UTC()
 	data, err = json.Marshal(slsBody)
 	if err != nil {
+		l.Errorf("Marshal err=%v", err)
 		return
 	}
 
@@ -186,8 +194,7 @@ func (a *AliYunLog) ToUpstream(sams ...*sample) {
 	for _, s := range sams {
 		fields := make(map[string]interface{})
 		if err := json.Unmarshal(s.data, &fields); err != nil {
-			l.Fatalf("data 序列号失败 %s", err)
-
+			l.Errorf("data  Unmarshal err=%v", err)
 		}
 		a.conn(a.AliSls)
 		if err := a.CreateIndex(fields); err != nil {
@@ -196,6 +203,5 @@ func (a *AliYunLog) ToUpstream(sams ...*sample) {
 		if err := a.PutLogs(fields); err != nil {
 			l.Errorf("CreateIndex err %v", err)
 		}
-
 	}
 }

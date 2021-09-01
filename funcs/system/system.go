@@ -1,15 +1,12 @@
 package system
 
-import (
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
-)
+import "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 
 type provider struct {
-	funcs []securityChecker.Func
 }
 
-func (p *provider) Funcs() []securityChecker.Func {
-	funcs := []securityChecker.Func{
+func (p *provider) Funcs() []funcs.Func {
+	return []funcs.Func{
 		{Name: `ls`, Fn: p.ls},
 		{Name: `file_exist`, Fn: p.fileExist},
 		{Name: `file_info`, Fn: p.fileInfo},
@@ -44,13 +41,12 @@ func (p *provider) Funcs() []securityChecker.Func {
 		{Name: `sc_sleep`, Fn: p.sleep},
 	}
 
-	return funcs
 }
 
 func (p *provider) Catalog() string {
 	return "system"
 }
 
-func init() {
-	securityChecker.AddFuncProvider(&provider{})
+func Init() {
+	funcs.AddFuncProvider(&provider{})
 }

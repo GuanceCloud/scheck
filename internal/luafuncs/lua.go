@@ -1,4 +1,4 @@
-package funcs
+package luafuncs
 
 import (
 	"bufio"
@@ -8,8 +8,9 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
-	checker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	luajson "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/json"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 type (
@@ -24,7 +25,7 @@ type (
 	}
 
 	ScriptRunTime struct {
-		Id int
+		ID int
 		Ls *lua.LState
 	}
 )
@@ -54,11 +55,10 @@ func NewScriptRunTime() *ScriptRunTime {
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
 	if err := LoadLuaLibs(ls); err != nil {
 		ls.Close()
-		//l.Errorf("LoadLuaLibs err=%v \n ", err)
 		return nil
 	}
 	luajson.Preload(ls)
-	for _, p := range checker.FuncProviders {
+	for _, p := range funcs.FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}
@@ -129,8 +129,8 @@ func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 		return nil, err
 	}
 	SetScriptGlobalConfig(ls, cfg)
-	luajson.Preload(ls) //for json parse
-	for _, p := range checker.FuncProviders {
+	luajson.Preload(ls) // for json parse
+	for _, p := range funcs.FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}
@@ -141,9 +141,7 @@ func GetScriptRuntime(cfg *ScriptGlobalCfg) (*ScriptRunTime, error) {
 }
 
 func LoadLuaLibs(ls *lua.LState) error {
-
 	for _, lib := range supportLuaLibs {
-
 		err := ls.CallByParam(lua.P{
 			Fn:      ls.NewFunction(lib.fn),
 			NRet:    1,
@@ -167,23 +165,23 @@ func LoadLuaLibs(ls *lua.LState) error {
 // testLua
 func TestLua(rulepath string) {
 	rulepath, _ = filepath.Abs(rulepath)
-	rulepath = rulepath + ".lua"
+	rulepath += global.LuaExt
 	byteCode, err := CompilesScript(rulepath)
 	if err != nil {
 		fmt.Printf("Compile lua scripterr=%v \n", err)
 		return
 	}
-	lua.LuaPathDefault = "./rules.d/lib/?.lua"
+	lua.LuaPathDefault = filepath.Join(global.InstallDir, global.DefRulesDir, "lib", "?.lua")
 
 	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
-	if err := LoadLuaLibs(ls); err != nil {
+	if err = LoadLuaLibs(ls); err != nil {
 		ls.Close()
 		fmt.Printf("LoadLuaLibs err=%v \n ", err)
 		return
 	}
 	SetScriptGlobalConfig(ls, &ScriptGlobalCfg{RulePath: rulepath})
 	luajson.Preload(ls)
-	for _, p := range checker.FuncProviders {
+	for _, p := range funcs.FuncProviders {
 		for _, f := range p.Funcs() {
 			ls.Register(f.Name, lua.LGFunction(f.Fn))
 		}
@@ -194,5 +192,4 @@ func TestLua(rulepath string) {
 	if err = ls.PCall(0, lua.MultRet, nil); err != nil {
 		fmt.Printf("testLua err=%v \n", err)
 	}
-
 }

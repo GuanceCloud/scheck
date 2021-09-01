@@ -1,7 +1,6 @@
-package securityChecker
+package funcs
 
 import (
-	"fmt"
 	"io"
 	"strings"
 
@@ -30,10 +29,10 @@ func DumpSupportLuaFuncs(w io.Writer) {
 	names := []string{}
 	for _, p := range FuncProviders {
 		for _, f := range p.Funcs() {
-			names = append(names, fmt.Sprintf("%s", f.Name))
+			names = append(names, f.Name)
 		}
 	}
 	s := strings.Join(names, "\n")
 	s += "\n"
-	w.Write([]byte(s))
+	_, _ = w.Write([]byte(s))
 }

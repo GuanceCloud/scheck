@@ -16,16 +16,12 @@ github.com/cenkalti/backoff
 github.com/containerd/cgroups
 github.com/containerd/cgroups/stats/v1
 # github.com/coreos/go-systemd/v22 v22.3.2
-## explicit
 github.com/coreos/go-systemd/v22/dbus
 # github.com/docker/go-units v0.4.0
 github.com/docker/go-units
 # github.com/dustin/go-humanize v1.0.0
 ## explicit
 github.com/dustin/go-humanize
-# github.com/fsnotify/fsnotify v1.5.1
-## explicit
-github.com/fsnotify/fsnotify
 # github.com/go-kit/kit v0.10.0
 github.com/go-kit/kit/log
 github.com/go-kit/kit/log/level
@@ -41,6 +37,7 @@ github.com/go-sql-driver/mysql
 ## explicit
 github.com/gobuffalo/logger
 # github.com/gobuffalo/packd v1.0.0
+## explicit
 github.com/gobuffalo/packd
 github.com/gobuffalo/packd/internal/takeon/github.com/markbates/errx
 # github.com/gobuffalo/packr/v2 v2.8.1
@@ -53,44 +50,12 @@ github.com/gobuffalo/packr/v2/jam/parser
 github.com/gobuffalo/packr/v2/plog
 # github.com/godbus/dbus/v5 v5.0.4
 github.com/godbus/dbus/v5
-# github.com/gogf/gf v1.16.5
-## explicit
-github.com/gogf/gf/container/glist
-github.com/gogf/gf/container/gmap
-github.com/gogf/gf/container/gqueue
-github.com/gogf/gf/container/gset
-github.com/gogf/gf/container/gtree
-github.com/gogf/gf/container/gtype
-github.com/gogf/gf/container/gvar
-github.com/gogf/gf/crypto/gmd5
-github.com/gogf/gf/debug/gdebug
-github.com/gogf/gf/encoding/gbinary
-github.com/gogf/gf/encoding/ghash
-github.com/gogf/gf/errors/gerror
-github.com/gogf/gf/internal/command
-github.com/gogf/gf/internal/empty
-github.com/gogf/gf/internal/intlog
-github.com/gogf/gf/internal/json
-github.com/gogf/gf/internal/rwmutex
-github.com/gogf/gf/internal/structs
-github.com/gogf/gf/internal/utils
-github.com/gogf/gf/os/gcache
-github.com/gogf/gf/os/gcmd
-github.com/gogf/gf/os/gfsnotify
-github.com/gogf/gf/os/gtime
-github.com/gogf/gf/os/gtimer
-github.com/gogf/gf/text/gregex
-github.com/gogf/gf/text/gstr
-github.com/gogf/gf/util/gconv
-github.com/gogf/gf/util/grand
-github.com/gogf/gf/util/gutil
 # github.com/gogo/protobuf v1.3.2
 ## explicit
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 # github.com/golang/protobuf v1.5.2
-## explicit
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
@@ -105,8 +70,6 @@ github.com/influxdata/influxdb1-client/v2
 ## explicit
 github.com/influxdata/toml
 github.com/influxdata/toml/ast
-# github.com/json-iterator/go v1.1.11
-## explicit
 # github.com/kardianos/service v1.2.0
 ## explicit
 github.com/kardianos/service
@@ -157,6 +120,8 @@ github.com/shirou/gopsutil/process
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
+# github.com/spf13/cobra v1.2.1
+## explicit
 # github.com/tklauser/go-sysconf v0.3.7
 ## explicit
 github.com/tklauser/go-sysconf
@@ -172,12 +137,6 @@ github.com/yuin/gopher-lua/pm
 ## explicit
 gitlab.jiagouyun.com/cloudcare-tools/cliutils
 gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger
-# go.opentelemetry.io/otel v1.0.0-RC2
-go.opentelemetry.io/otel/attribute
-go.opentelemetry.io/otel/codes
-go.opentelemetry.io/otel/internal
-# go.opentelemetry.io/otel/trace v1.0.0-RC2
-go.opentelemetry.io/otel/trace
 # go.uber.org/atomic v1.7.0
 go.uber.org/atomic
 # go.uber.org/multierr v1.6.0
@@ -190,8 +149,6 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
-## explicit
 # golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 golang.org/x/net/context
 # golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
@@ -243,6 +200,5 @@ google.golang.org/protobuf/types/known/anypb
 google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/natefinch/lumberjack.v2 v2.0.0
-gopkg.in/natefinch/lumberjack.v2
-# gopkg.in/yaml.v2 v2.4.0
 ## explicit
+gopkg.in/natefinch/lumberjack.v2

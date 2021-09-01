@@ -6,19 +6,21 @@ import (
 	"os"
 	"time"
 
-	lua "github.com/yuin/gopher-lua"
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
+
+	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
 
 type provider struct {
-	funcs []securityChecker.Func
 }
 
-func (p *provider) Funcs() []securityChecker.Func {
-	return []securityChecker.Func{
+func (p *provider) Funcs() []funcs.Func {
+	return []funcs.Func{
 		{Name: `trigger`, Fn: p.trigger},
 	}
 }
@@ -28,14 +30,11 @@ func (p *provider) Catalog() string {
 }
 
 func (p *provider) trigger(ls *lua.LState) int {
-
-	cfg := funcs.GetScriptGlobalConfig(ls)
-
+	cfg := luafuncs.GetScriptGlobalConfig(ls)
 	var manifestFileName string
 	var templateTable *lua.LTable
 	templateVals := map[string]string{}
-
-	lv := ls.Get(1)
+	lv := ls.Get(global.LuaArgIdx1)
 	if lv != lua.LNil {
 		switch lv.Type() {
 		case lua.LTTable:
@@ -45,7 +44,7 @@ func (p *provider) trigger(ls *lua.LState) int {
 		}
 	}
 
-	lv = ls.Get(2)
+	lv = ls.Get(global.LuaArgIdx2)
 	if lv.Type() == lua.LTTable {
 		templateTable = lv.(*lua.LTable)
 	}
@@ -64,7 +63,6 @@ func (p *provider) trigger(ls *lua.LState) int {
 	}
 
 	if manifestFileName == "" {
-		//use the default manifest
 		manifestFileName = cfg.RulePath
 	}
 
@@ -73,11 +71,28 @@ func (p *provider) trigger(ls *lua.LState) int {
 		ls.RaiseError("%s", err)
 		return lua.MultRet
 	}
-
 	fields := map[string]interface{}{}
-	tags := map[string]string{}
 	tm := time.Now().UTC()
+	message := manifest.Desc
+	tags := makeManifestTags(manifest)
+	if manifest.tmpl != nil {
+		buf := bytes.NewBufferString("")
+		if err = manifest.tmpl.Execute(buf, templateTable); err != nil {
+			ls.RaiseError("fail to apple template, %s", err)
+			return lua.MultRet
+		}
+		message = buf.String()
+	}
+	fields["message"] = message
+	if err = output.SendMetric(manifest.RuleID, tags, fields, tm); err != nil {
+		ls.RaiseError("%s", err)
+		return lua.MultRet
+	}
+	return 0
+}
 
+func makeManifestTags(manifest *RuleManifest) map[string]string {
+	tags := map[string]string{}
 	tags["title"] = manifest.Title
 	tags["level"] = manifest.Level
 	tags["category"] = manifest.Category
@@ -87,25 +102,7 @@ func (p *provider) trigger(ls *lua.LState) int {
 			tags[k] = v
 		}
 	}
-	message := manifest.Desc
-
-	if manifest.tmpl != nil {
-		buf := bytes.NewBufferString("")
-		if err = manifest.tmpl.Execute(buf, templateVals); err != nil {
-			ls.RaiseError("fail to apple template, %s", err)
-			return lua.MultRet
-		} else {
-			message = buf.String()
-		}
-	}
-	fields["message"] = message
-
-	if err = output.SendMetric(manifest.RuleID, tags, fields, tm); err != nil {
-		ls.RaiseError("%s", err)
-		return lua.MultRet
-	}
-
-	return 0
+	return tags
 }
 
 func firstTrigger() {
@@ -123,13 +120,11 @@ func firstTrigger() {
 
 	luas := GetRuleNum()
 	formatTime := time.Now().Format("2006-01-02 15:04:05")
-
 	message := fmt.Sprintf("scheck started, %d rules ready at %s", luas, formatTime)
-
 	fields["message"] = message
 	_ = output.SendMetric("0000-scheck-start", tags, fields, tm)
-
 }
-func init() {
-	securityChecker.AddFuncProvider(&provider{})
+
+func Init() {
+	funcs.AddFuncProvider(&provider{})
 }

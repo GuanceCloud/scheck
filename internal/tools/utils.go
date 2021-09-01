@@ -1,4 +1,4 @@
-package securityChecker
+package tools
 
 import (
 	"bytes"

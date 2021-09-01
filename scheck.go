@@ -1,9 +1,10 @@
-package securityChecker
+package securitychecker
 
 import (
 	"fmt"
 	"github.com/shirou/gopsutil/process"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,9 +45,8 @@ var (
 )
 
 func SavePid() error {
-
 	if isRuning() {
-		return fmt.Errorf("Scheck still running, PID: %s", pidFile)
+		return fmt.Errorf("scheck still running, PID: %s", pidFile)
 	}
 
 	pid := os.Getpid()
@@ -65,18 +65,14 @@ func isRuning() bool {
 		return false
 	}
 
-	oidPid, err = strconv.ParseInt(string(cont), 10, 32)
+	oidPid, err = strconv.ParseInt(string(cont), global.ParseBase, 32)
 	if err != nil {
 		return false
 	}
 
 	p, _ = process.NewProcess(int32(oidPid))
 	name, _ = p.Name()
-
-	if name == getBinName() {
-		return true
-	}
-	return false
+	return name == getBinName()
 }
 
 func getBinName() string {

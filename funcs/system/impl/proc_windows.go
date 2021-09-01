@@ -106,15 +106,6 @@ type (
 		Shell string
 	}
 
-	lastItemInfo struct {
-		username string
-		pid      int
-		typ      int
-		tty      string
-		tm       int64
-		host     string
-	}
-
 	SocketInfo struct {
 		Socket    string
 		Family    int
@@ -182,14 +173,12 @@ func getSimpleProcStat(pid int) (*SimpleProcStat, error) {
 	start := strings.LastIndex(content, ")")
 	if start == -1 || len(content) <= start+2 {
 		err = fmt.Errorf("Invalid /proc/stat header")
-		//log.Errorf("%s", err)
 		return nil, err
 	}
 
 	details := strings.Split(content[start+2:], " ")
 	if len(details) <= 19 {
 		err = fmt.Errorf("Invalid /proc/stat content")
-		//log.Errorf("%s", err)
 		return nil, err
 	}
 

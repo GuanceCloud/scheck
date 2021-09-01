@@ -1,18 +1,20 @@
 package cgroup
 
 import (
-	"os"
-	"runtime"
-	"time"
-
 	"github.com/shirou/gopsutil/mem"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+)
+
+const (
+	cpuMax = 100
+	cpuMin = 0
+	DefMEM = 200
 )
 
 var (
-	l  = logger.DefaultSLogger("cgroup")
-	MB = int64(1024 * 1024)
+	l = logger.DefaultSLogger("cgroup")
 )
 
 func Run() {
@@ -22,8 +24,8 @@ func Run() {
 		return
 	}
 
-	if !(0 < config.Cfg.Cgroup.CPUMax && config.Cfg.Cgroup.CPUMax < 100) ||
-		!(0 < config.Cfg.Cgroup.CPUMin && config.Cfg.Cgroup.CPUMin < 100) {
+	if !(float64(cpuMin) < config.Cfg.Cgroup.CPUMax && config.Cfg.Cgroup.CPUMax < float64(cpuMax)) ||
+		!(float64(cpuMin) < config.Cfg.Cgroup.CPUMin && config.Cfg.Cgroup.CPUMin < float64(cpuMax)) {
 		l.Errorf("CPUMax and CPUMin should be in range of (0.0, 100.0)")
 		return
 	}
@@ -34,7 +36,7 @@ func Run() {
 	}
 	if config.Cfg.Cgroup.MEM != -1 {
 		if config.Cfg.Cgroup.MEM == 0 {
-			config.Cfg.Cgroup.MEM = 200
+			config.Cfg.Cgroup.MEM = DefMEM
 		}
 
 		vm, err := mem.VirtualMemory()
@@ -43,7 +45,7 @@ func Run() {
 			return
 		}
 
-		available := vm.Available / uint64(MB)
+		available := vm.Available / uint64(global.MB)
 		if uint64(config.Cfg.Cgroup.MEM) > available {
 			l.Errorf("MEM should less than Available")
 			return
@@ -51,25 +53,4 @@ func Run() {
 	}
 
 	start()
-}
-
-var blocks = make([][1024 * 512]byte, 0)
-
-func memTest() {
-	time.Sleep(time.Second)
-	for {
-		var m1 runtime.MemStats
-		runtime.ReadMemStats(&m1)
-
-		if m1.Alloc > uint64(1024*1024*30) {
-			os.Exit(0)
-		} else {
-			blocks = append(blocks, [1024 * 512]byte{})
-		}
-		time.Sleep(time.Second * 2)
-	}
-
-}
-func bToMb(b uint64) uint64 {
-	return b / uint64(MB)
 }
