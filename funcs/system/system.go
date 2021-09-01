@@ -37,6 +37,8 @@ func (p *provider) Funcs() []funcs.Func {
 		{Name: `rpm_list`, Fn: p.rpmList},
 		{Name: `rpm_query`, Fn: p.rpmQuery},
 		{Name: `grep`, Fn: p.grep},
+		{Name: `sc_path_watch`, Fn: p.pathWatch},
+		{Name: `sc_sleep`, Fn: p.sleep},
 	}
 
 }

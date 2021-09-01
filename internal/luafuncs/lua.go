@@ -38,6 +38,7 @@ var (
 		{lua.StringLibName, lua.OpenString, nil},
 		{lua.MathLibName, lua.OpenMath, nil},
 		{lua.DebugLibName, lua.OpenDebug, nil},
+		{lua.ChannelLibName, lua.OpenChannel, nil},
 		{lua.OsLibName, lua.OpenOs, []string{"exit", "execute", "remove", "rename", "setenv", "setlocale"}},
 	}
 )
