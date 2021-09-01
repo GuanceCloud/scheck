@@ -60,6 +60,7 @@ func main() {
 	if config.Cfg.System.Pprof {
 		go goPprof()
 	}
+
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())

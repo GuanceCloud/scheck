@@ -92,7 +92,6 @@ func getCurrentVersionInfo(urlSrt string) *versionDesc {
 
 func PubDatakit() {
 	start := time.Now()
-
 	oc := InitOC()
 	var archs []string
 	// 请求线上版本信息

@@ -34,7 +34,6 @@ func (p *provider) trigger(ls *lua.LState) int {
 	var manifestFileName string
 	var templateTable *lua.LTable
 	templateVals := map[string]string{}
-
 	lv := ls.Get(global.LuaArgIdx1)
 	if lv != lua.LNil {
 		switch lv.Type() {

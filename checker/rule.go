@@ -122,7 +122,6 @@ func (r *Rule) RunJob() {
 	if err := state.Ls.PCall(0, lua.MultRet, nil); err != nil {
 		l.Errorf("lua.state run  err=%v ", err)
 	}
-
 	pool.putPool(state)
 }
 
@@ -152,7 +151,6 @@ func (rm *RuleManifest) load() error {
 		}
 		rm.lastModify = time.Now().Unix()
 	}
-
 	return nil
 }
 
@@ -412,7 +410,6 @@ var cronInterval = []int64{60, 60, 24, 30, 1, 1}
 func checkRunTime(cronStr string) int64 {
 	nextRunTime := int64(0)
 	fields := strings.Fields(cronStr)
-
 	for idx, f := range fields {
 		parts := strings.Split(f, "/")
 		if len(parts) == 2 && parts[0] == "*" {

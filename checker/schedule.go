@@ -16,6 +16,7 @@ var (
 	pool       *statePool
 )
 
+// only exec cron timer cron
 type TaskScheduler struct {
 	rulesDir        string
 	customRuleDir   string
@@ -161,7 +162,6 @@ func (scheduler *TaskScheduler) GetTask() (task *Rule, tempKey string) {
 		}
 		if min > tTime {
 			tempKey = key
-
 			min = tTime
 			continue
 		}

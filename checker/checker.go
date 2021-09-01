@@ -87,7 +87,6 @@ func GetManifest(filename string) (*RuleManifest, error) {
 	}
 	return m, nil
 }
-
 func (c *Checker) start(ctx context.Context) {
 	defer func() {
 		if e := recover(); e != nil {

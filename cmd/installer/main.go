@@ -148,18 +148,14 @@ Golang Version: %s
 `, global.Version, git.BuildAt, git.Golang, DataKitBaseURL, datakitURL)
 		os.Exit(0)
 	}
-
 	if *flagDownloadOnly {
 		install.DownloadOnly = true
-
 		install.CurDownloading = global.AppBin
-
 		if err := install.Download(datakitURL,
 			fmt.Sprintf("scheck-%s-%s-%s.tar.gz",
 				runtime.GOOS, runtime.GOARCH, DataKitVersion), true, true, true); err != nil {
 			return
 		}
-
 		os.Exit(0)
 	}
 }
@@ -175,7 +171,6 @@ func mvOldScheck(svc service.Service) {
 
 	if _, err := os.Stat(olddir); err != nil {
 		l.Debugf("path %s not exists, ingored", olddir)
-		return
 	}
 
 	if err := service.Control(svc, "uninstall"); err != nil {
