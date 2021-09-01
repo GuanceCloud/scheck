@@ -2,6 +2,7 @@ package checker
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -113,8 +114,8 @@ func (r *Rule) RunJob() {
 	state := pool.getState()
 	// to set filePath
 	var lt lua.LTable
-	lt.RawSetString("rulefile", lua.LString(r.Name))
-	state.Ls.SetGlobal("__this_configuration", &lt)
+	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
+	state.Ls.SetGlobal(global.LuaConfiguration, &lt)
 
 	l.Debugf("rule name: %s is running!!!", r.Name)
 	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
@@ -123,6 +124,27 @@ func (r *Rule) RunJob() {
 		l.Errorf("lua.state run  err=%v ", err)
 	}
 	pool.putPool(state)
+}
+
+func (r *Rule) RunOnce(cxt context.Context, c chan string) {
+	if pool == nil {
+		l.Warn("the statePool is nil!!!")
+		return
+	}
+	state := pool.getNewState()
+	state.Ls.SetContext(cxt)
+
+	var lt lua.LTable
+	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
+	state.Ls.SetGlobal(global.LuaConfiguration, &lt)
+
+	l.Debugf("rule name: %s is running at once", r.Name)
+	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
+	state.Ls.Push(lFunc)
+	if err := state.Ls.PCall(0, lua.MultRet, nil); err != nil {
+		l.Errorf("lua.state run  err=%v ", err)
+		c <- r.Name
+	}
 }
 
 func newManifest(path string) *RuleManifest {

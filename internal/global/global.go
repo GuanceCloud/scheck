@@ -2,6 +2,7 @@ package global
 
 import (
 	"runtime"
+	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 )
@@ -32,11 +33,16 @@ const (
 
 // 公用参数：go和lua的相互调用函数使用的常量、文件操作使用的mode参数、等
 const (
-	LuaRet1    = 1
-	LuaRet2    = 2
-	LuaArgIdx1 = 1
-	LuaArgIdx2 = 2
-	LuaArgIdx3 = 3
+	LuaRet1                    = 1
+	LuaRet2                    = 2
+	LuaArgIdx1                 = 1
+	LuaArgIdx2                 = 2
+	LuaArgIdx3                 = 3
+	LuaConfiguration           = "__this_configuration"
+	LuaConfigurationKey        = "ruleFile"
+	LuaStatusFile              = ".status.json"
+	LuaStatusOutFile           = "./%s.lua_status.md"
+	LuaStatusWriteFileInterval = time.Minute * 5
 
 	FileModeRW       = 0644
 	FileModeMkdir    = 0666
@@ -52,7 +58,9 @@ const (
 
 var (
 	Version            = git.Version
-	InstallDir         = optionalInstallDir[runtime.GOOS+"/"+runtime.GOARCH]
+	LocalGOOS          = runtime.GOOS
+	LocalGOARCH        = runtime.GOARCH
+	InstallDir         = optionalInstallDir[LocalGOOS+"/"+LocalGOARCH]
 	optionalInstallDir = map[string]string{
 		OSArchWinAmd64: `C:\\Program Files\\scheck`,
 		OSArchWin386:   `C:\\Program Files (x86)\\scheck`,

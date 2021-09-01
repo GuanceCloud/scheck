@@ -104,16 +104,16 @@ type ScriptGlobalCfg struct {
 
 func SetScriptGlobalConfig(l *lua.LState, cfg *ScriptGlobalCfg) {
 	var t lua.LTable
-	t.RawSetString("rulefile", lua.LString(cfg.RulePath))
-	l.SetGlobal("__this_configuration", &t)
+	t.RawSetString(global.LuaConfigurationKey, lua.LString(cfg.RulePath))
+	l.SetGlobal(global.LuaConfiguration, &t)
 }
 
 func GetScriptGlobalConfig(l *lua.LState) *ScriptGlobalCfg {
-	lv := l.GetGlobal("__this_configuration")
+	lv := l.GetGlobal(global.LuaConfiguration)
 	if lv.Type() == lua.LTTable {
 		t := lv.(*lua.LTable)
 		var cfg ScriptGlobalCfg
-		v := t.RawGetString("rulefile")
+		v := t.RawGetString(global.LuaConfigurationKey)
 		if v.Type() == lua.LTString {
 			cfg.RulePath = string(v.(lua.LString))
 		}

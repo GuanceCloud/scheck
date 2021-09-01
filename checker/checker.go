@@ -102,7 +102,7 @@ func (c *Checker) start(ctx context.Context) {
 	l.Infof("scheduler start")
 
 	go c.taskScheduler.run()
-
+	go c.taskScheduler.runOther()
 	select {
 	case <-ctx.Done():
 		return
