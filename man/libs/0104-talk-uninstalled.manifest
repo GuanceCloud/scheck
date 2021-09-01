@@ -4,7 +4,7 @@ level="warn"
 title="talk客户端被安装"
 desc="{{.Content}} 存在风险，建议检查后进行卸载"
 #desc="{{.Content}} 未安装，建议检查后进行安装"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/logger"
 )
 
 var (
@@ -49,7 +49,7 @@ var (
 	BuildInstallDir = "build/install"
 	PubDir          = "pub"
 	AppBin          = "scheck"
-	OSSPath         = "security-checker"
+	OSSPath         = "scheck"
 	Archs           string
 	Release         string
 	MainEntry       string
@@ -60,8 +60,13 @@ var (
 func prepare() *versionDesc {
 
 	os.RemoveAll(BuildDir)
-	_ = os.MkdirAll(BuildDir, os.ModePerm)
-	_ = os.MkdirAll(filepath.Join(PubDir, Release), os.ModePerm)
+	if err := os.MkdirAll(BuildDir, os.ModePerm); err != nil {
+		l.Fatalf("MkdirAll %s error, err: %s", BuildDir, err)
+	}
+	l.Info("PubDir: %s", filepath.Join(PubDir, Release))
+	if err := os.MkdirAll(filepath.Join(PubDir, Release), os.ModePerm); err != nil {
+		l.Fatalf("MkdirAll %s error, err: %s", PubDir, err)
+	}
 
 	// create version info
 	vd := &versionDesc{
@@ -204,19 +209,12 @@ func compileArch(bin, goos, goarch, dir, version string) {
 	}
 }
 
-type installInfo struct {
-	Name         string
-	DownloadAddr string
-	Version      string
-}
-
 func buidAllInstaller(outdir, goos, goarch string) {
 	buildInstaller(outdir, goos, goarch, installerExe)
 	buildInstaller(outdir, goos, goarch, noVerInstallerExe)
 }
-func buildInstaller(outdir, goos, goarch, installerName string) {
 
-	// ------------ 生成系统的install文件------------
+func buildInstaller(outdir, goos, goarch, installerName string) {
 	args := []string{
 		"go", "build",
 		"-o", filepath.Join(outdir, installerName),

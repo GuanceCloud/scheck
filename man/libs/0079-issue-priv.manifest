@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="确保issue权限(-rw-r--r--)"
 desc="{{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 

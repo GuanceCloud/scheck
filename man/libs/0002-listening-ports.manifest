@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="新端口打开或关闭（2.0 版本将被废弃）"
 desc="{{.Content}}"
-cron="1 */1 * * *"
+cron="1 */5 * * *"
 # 开关
 disabled=false
 
