@@ -44,7 +44,7 @@ const (
 
 	format = "|`%s`|%s|%s|%s|%s|%d|%d|%d|"
 
-	end = "> lua scripts运行情况放在文件 `%s` 中，文件的格式是markdown,可用过编译器或者浏览器等打开"
+	end = "\n > lua scripts运行情况放在文件 `%s` 中，文件的格式是markdown,可用过编译器或者浏览器等打开"
 )
 
 var (
