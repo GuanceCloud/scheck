@@ -3,8 +3,10 @@ package luafuncs
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
@@ -191,5 +193,25 @@ func TestLua(rulepath string) {
 	ls.Push(lfunc)
 	if err = ls.PCall(0, lua.MultRet, nil); err != nil {
 		fmt.Printf("testLua err=%v \n", err)
+	}
+}
+
+// CheckLua check all custom lua.
+func CheckLua(CustomRuleDir string) {
+	fileInfos, err := ioutil.ReadDir(CustomRuleDir)
+	if err != nil {
+		l.Errorf("%v", err)
+		return
+	}
+	for _, info := range fileInfos {
+		if info.IsDir() {
+			continue
+		}
+		if strings.HasSuffix(info.Name(), ".lua") {
+			_, err := CompilesScript(filepath.Join(CustomRuleDir, info.Name()))
+			if err != nil {
+				l.Errorf("name of lua :%s compiles is err:%v", info.Name(), err)
+			}
+		}
 	}
 }

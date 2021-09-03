@@ -8,16 +8,20 @@ package utils
 
 import (
 	"bytes"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
-	"time"
+
 	//"io"
 	"encoding/binary"
 	"errors"
 	"fmt"
 
-	lua "github.com/yuin/gopher-lua"
 	"net"
+
+	lua "github.com/yuin/gopher-lua"
+
 	//"path/filepath"
 	"strings"
 )
@@ -54,7 +58,7 @@ It's assumed to be a handshake packet
 func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 	timeoutDuration := 100 * time.Millisecond
 	// net 读超时设置
-	conn.SetReadDeadline(time.Now().Add(timeoutDuration))
+	_ = conn.SetReadDeadline(time.Now().Add(timeoutDuration))
 
 	data := make([]byte, 1024)
 	_, err := conn.Read(data)
@@ -102,7 +106,7 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 		return errors.New("Only version 10 is supported. Unknown procotcol version!")
 	}
 
-	position += 1
+	position++
 
 	/*
 		Extract server version, by finding the terminal character (0x00) index,
@@ -132,13 +136,13 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 		return errors.New("Unable to decode filler value")
 	}
 
-	position += 1
+	position++
 
 	capabilitiesFlags1 := payload[position : position+2]
 	position += 2
 
 	r.CharacterSet = payload[position]
-	position += 1
+	position++
 
 	r.StatusFlags = binary.LittleEndian.Uint16(payload[position : position+2])
 	position += 2
@@ -152,9 +156,9 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 	*/
 	capLow := binary.LittleEndian.Uint16(capabilitiesFlags1)
 	capHi := binary.LittleEndian.Uint16(capabilityFlags2)
-	cap := uint32(capLow) | uint32(capHi)<<16
+	capL := uint32(capLow) | uint32(capHi)<<16
 
-	r.CapabilitiesFlags = CapabilityFlag(cap)
+	r.CapabilitiesFlags = CapabilityFlag(capL)
 
 	if r.CapabilitiesFlags&clientPluginAuth != 0 {
 		r.AuthPluginDataLen = payload[position]
@@ -197,7 +201,6 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 }
 
 func (r InitialHandshakePacket) String() string {
-
 	var fields []string
 	fields = append(fields, fmt.Sprintf("ProtocolVersion: %d", r.ProtocolVersion))
 	fields = append(fields, fmt.Sprintf("ServerVersion: %s", r.ServerVersion))
@@ -308,7 +311,6 @@ func Max(x, y int) int {
 }
 
 func (p *provider) mysqlPortsList(l *lua.LState) int {
-
 	var result lua.LTable
 	listenPorts := impl.GetListeningPorts()
 	for i := range listenPorts {
@@ -346,5 +348,4 @@ func (p *provider) mysqlPortsList(l *lua.LState) int {
 	}
 	l.Push(&result)
 	return 1
-
 }

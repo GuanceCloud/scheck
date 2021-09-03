@@ -121,14 +121,34 @@ func (r *Rule) RunJob() {
 	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
 	state.Ls.SetGlobal(global.LuaConfiguration, &lt)
 
-	l.Debugf("rule name: %s is running!!!", r.Name)
+	cxt, cancel := context.WithTimeout(context.Background(), global.LuaScriptTimeout)
+	defer cancel()
+	state.Ls.SetContext(cxt)
+
 	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
 	state.Ls.Push(lFunc)
-	err := state.Ls.PCall(0, lua.MultRet, nil)
-	if err != nil {
-		l.Errorf("lua.state run  err=%v ", err)
+	errChan := make(chan bool)
+	var err error
+	go func() {
+		l.Debugf("rule name: %s is running!!!", r.Name)
+		if err = state.Ls.PCall(0, lua.MultRet, nil); err != nil {
+			errChan <- false
+		} else {
+			errChan <- true
+		}
+	}()
+	select {
+	case <-cxt.Done():
+		l.Errorf("run lua script:%s is timeout!", r.Name)
+	case b := <-errChan:
+		if !b {
+			l.Errorf("lua.state run  err=%v ", err)
+		}
 	}
 	go luafuncs.UpdateStatus(r.Name, time.Since(now), err != nil)
+
+	state.Ls.RemoveContext()
+
 	pool.putPool(state)
 }
 

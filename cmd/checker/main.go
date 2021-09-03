@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -36,6 +37,7 @@ var (
 	flagOutDir          = flag.String("dir", "", `document Exported directory`)
 	flagRunStatus       = flag.Bool("luastatus", false, `Exported all Lua status of markdown`)
 	flagRunStatusSort   = flag.String("sort", "", `Exported all Lua status of markdown`)
+	flagCheck           = flag.Bool("check", false, `Check :Parse and Compiles all Script `)
 )
 
 var (
@@ -49,7 +51,7 @@ func main() {
 	flag.Parse()
 	applyFlags()
 	parseConfig()
-
+	parseCheck()
 	if config.TryLoadConfig(*flagConfig) {
 		config.LoadConfig(*flagConfig)
 	}
@@ -136,6 +138,14 @@ ReleasedInputs: %s
 	if *flagRunStatus {
 		fmt.Println(luafuncs.ExportAsMD(*flagRunStatusSort))
 		os.Exit(0)
+	}
+
+}
+
+func parseCheck() {
+	if *flagCheck {
+		config.LoadConfig(*flagConfig)
+		luafuncs.CheckLua(config.Cfg.System.CustomRuleDir)
 	}
 }
 
