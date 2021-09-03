@@ -42,11 +42,11 @@ const (
 	LuaConfigurationKey        = "ruleFile"
 	LuaStatusFile              = ".status.json"
 	LuaStatusOutFile           = "./%s.lua_status.md"
-	LuaStatusWriteFileInterval = time.Minute * 2
-
-	FileModeRW       = 0644
-	FileModeMkdir    = 0666
-	FileModeMkdirAll = 0755
+	LuaStatusWriteFileInterval = time.Minute * 5
+	LuaCronDisable             = "disable"
+	FileModeRW                 = 0644
+	FileModeMkdir              = 0666
+	FileModeMkdirAll           = 0755
 
 	KB = 1024
 	MB = KB * 1024

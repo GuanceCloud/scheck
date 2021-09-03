@@ -99,7 +99,7 @@ func (r *Rule) load() error {
 	}
 
 	r.cron = manifest.Cron
-	if r.cron == "" || r.cron == "disable" {
+	if r.cron == "" || r.cron == global.LuaCronDisable {
 		r.interval = -1
 	} else {
 		r.interval = checkRunTime(r.cron)

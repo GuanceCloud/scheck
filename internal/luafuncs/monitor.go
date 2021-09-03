@@ -119,12 +119,12 @@ func (m *Monitor) timeToSave(tickTime time.Duration) {
 			continue
 		}
 		if len(bts) == 0 {
-			wbts, err := m.MonitorMarshal()
+			bts, err = m.MonitorMarshal()
 			if err != nil {
 				l.Errorf("marshal err =%v", err)
 				continue
 			}
-			err = ioutil.WriteFile(m.jsonFile, wbts, global.FileModeRW)
+			err = ioutil.WriteFile(m.jsonFile, bts, global.FileModeRW)
 			if err != nil {
 				l.Errorf("write err =%v", err)
 			}
@@ -156,14 +156,14 @@ func (m *Monitor) timeToSave(tickTime time.Duration) {
 func (m *Monitor) MonitorMarshal() ([]byte, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	wbts, err := json.Marshal(m.Scripts)
+	bts, err := json.Marshal(m.Scripts)
 	for name, script := range m.Scripts {
 		m.Scripts[name] = newScriptStatus(script.Name, script.Interval)
 	}
 	if err != nil {
 		return nil, err
 	}
-	return wbts, nil
+	return bts, nil
 }
 
 func (m *Monitor) merge(oldScripts map[string]*Script) {
@@ -268,15 +268,15 @@ type RunStatusMonitor struct {
 	ScriptsSortBy string
 }
 
-func (rsm RunStatusMonitor) Len() int {
+func (rsm *RunStatusMonitor) Len() int {
 	return len(rsm.Scripts)
 }
 
-func (rsm RunStatusMonitor) Swap(i, j int) {
+func (rsm *RunStatusMonitor) Swap(i, j int) {
 	rsm.Scripts[i], rsm.Scripts[j] = rsm.Scripts[j], rsm.Scripts[i]
 }
 
-func (rsm RunStatusMonitor) Less(i, j int) bool {
+func (rsm *RunStatusMonitor) Less(i, j int) bool {
 	switch rsm.ScriptsSortBy {
 	case "", "count":
 		return rsm.Scripts[j].RunCount < rsm.Scripts[i].RunCount
@@ -348,7 +348,8 @@ func ExportAsMD(sortBy string) string {
 	sort.Sort(runstatus)
 	for i := 0; i < len(runstatus.Scripts); i++ {
 		sc := runstatus.Scripts[i]
-		rows = append(rows, fmt.Sprintf(format, sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
+		rows = append(rows,
+			fmt.Sprintf(format, sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
 	if runstatus.ScriptsSortBy == "name" {
 		sort.Strings(rows)
