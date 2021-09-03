@@ -99,7 +99,11 @@ func (r *Rule) load() error {
 	}
 
 	r.cron = manifest.Cron
-	r.interval = checkRunTime(r.cron)
+	if r.cron == "" || r.cron == "disable" {
+		r.interval = -1
+	} else {
+		r.interval = checkRunTime(r.cron)
+	}
 	r.disabled = manifest.disabled
 	r.RunTime = time.Now().Unix() + r.interval
 	return nil
@@ -110,7 +114,7 @@ func (r *Rule) RunJob() {
 		l.Warn("the statePool is nil!!!")
 		return
 	}
-
+	now := time.Now()
 	state := pool.getState()
 	// to set filePath
 	var lt lua.LTable
@@ -120,9 +124,11 @@ func (r *Rule) RunJob() {
 	l.Debugf("rule name: %s is running!!!", r.Name)
 	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
 	state.Ls.Push(lFunc)
-	if err := state.Ls.PCall(0, lua.MultRet, nil); err != nil {
+	err := state.Ls.PCall(0, lua.MultRet, nil)
+	if err != nil {
 		l.Errorf("lua.state run  err=%v ", err)
 	}
+	go luafuncs.UpdateStatus(r.Name, time.Since(now), err != nil)
 	pool.putPool(state)
 }
 

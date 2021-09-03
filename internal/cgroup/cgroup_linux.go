@@ -5,6 +5,8 @@ import (
 	"runtime"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"github.com/containerd/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/shirou/gopsutil/cpu"
@@ -24,7 +26,7 @@ func start() {
 
 	quotaHigh := int64(float64(period) * high)
 	quotaLow := int64(float64(period) * low)
-	memLimit := int64(config.Cfg.Cgroup.MEM) * MB
+	memLimit := int64(config.Cfg.Cgroup.MEM) * global.MB
 	swap := memLimit
 	pid := os.Getpid()
 

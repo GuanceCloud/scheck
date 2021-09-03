@@ -1,4 +1,4 @@
-package tools
+package man
 
 import (
 	"path"
@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	ScriptBox   = packr.New("libs", "../../man/libs")
-	DocBox      = packr.New("doc", "../../man/doc")
-	TemplateBox = packr.New("template", "../../man/template")
+	ScriptBox   = packr.New("libs", "./libs")
+	DocBox      = packr.New("doc", "./doc")
+	TemplateBox = packr.New("template", "./template")
 )
 
 // GetAllName 返回配置中的所有lua列表 去除后缀名的格式

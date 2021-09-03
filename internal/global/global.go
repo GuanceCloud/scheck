@@ -42,7 +42,7 @@ const (
 	LuaConfigurationKey        = "ruleFile"
 	LuaStatusFile              = ".status.json"
 	LuaStatusOutFile           = "./%s.lua_status.md"
-	LuaStatusWriteFileInterval = time.Minute * 5
+	LuaStatusWriteFileInterval = time.Minute * 2
 
 	FileModeRW       = 0644
 	FileModeMkdir    = 0666
@@ -73,9 +73,13 @@ var (
 	}
 
 	// DefLogPath is default config
-	DefLogPath  = "/var/log/scheck"
-	DefRulesDir = "rules.d"
+	DefLogPath      = "/var/log/scheck"
+	DefRulesDir     = "rules.d"
+	LuaLocalLibPath = "lib"
+	PublicLuaLib    = "?.lua"
 
 	DefPprofPort     = ":6060"
 	DefOutputPending = 100
+	DefLuaPoolCap    = 15
+	DefLuaPoolMaxCap = 20
 )

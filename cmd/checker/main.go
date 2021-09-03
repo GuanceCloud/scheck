@@ -11,6 +11,8 @@ import (
 	"sync"
 	"syscall"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
@@ -32,6 +34,8 @@ var (
 	flagRulesToDoc      = flag.Bool("doc", false, `Generate doc document from manifest file`)
 	flagRulesToTemplate = flag.Bool("tpl", false, `Generate doc document from template file`)
 	flagOutDir          = flag.String("dir", "", `document Exported directory`)
+	flagRunStatus       = flag.Bool("luastatus", false, `Exported all Lua status of markdown`)
+	flagRunStatusSort   = flag.String("sort", "", `Exported all Lua status of markdown`)
 )
 
 var (
@@ -113,19 +117,24 @@ ReleasedInputs: %s
 
 	if *flagRulesToDoc {
 		if *flagOutDir == "" {
-			tools.ToMakeMdFile(tools.GetAllName(), "doc")
+			man.ToMakeMdFile(man.GetAllName(), "doc")
 		} else {
-			tools.ToMakeMdFile(tools.GetAllName(), *flagOutDir)
+			man.ToMakeMdFile(man.GetAllName(), *flagOutDir)
 		}
 		os.Exit(0)
 	}
 
 	if *flagRulesToTemplate {
 		if *flagOutDir == "" {
-			tools.DfTemplate(tools.GetAllName(), "C://Users/gitee")
+			man.DfTemplate(man.GetAllName(), "C://Users/gitee")
 		} else {
-			tools.DfTemplate(tools.GetAllName(), *flagOutDir)
+			man.DfTemplate(man.GetAllName(), *flagOutDir)
 		}
+		os.Exit(0)
+	}
+
+	if *flagRunStatus {
+		fmt.Println(luafuncs.ExportAsMD(*flagRunStatusSort))
 		os.Exit(0)
 	}
 }
@@ -162,7 +171,7 @@ func run() {
 			wg.Done()
 		}()
 
-		tools.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
+		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		checker.Start(ctx, config.Cfg.System, config.Cfg.ScOutput)
 	}()
 

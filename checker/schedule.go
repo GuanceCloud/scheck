@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
+
 	cron "github.com/robfig/cron/v3"
 )
 
@@ -75,6 +77,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			}
 			if !r.disabled {
 				scheduler.addRule(r)
+				luafuncs.Add(r.Name, r.interval)
 			}
 		}
 	}
@@ -141,7 +144,7 @@ func (scheduler *TaskScheduler) run() {
 }
 
 // runOther: if rule.cron=disable then rule run once.
-func (scheduler *TaskScheduler) runOther() {
+func (scheduler *TaskScheduler) runOnce() {
 	if len(scheduler.onceTasks) == 0 {
 		l.Warnf("schedules  is empty....")
 		return
