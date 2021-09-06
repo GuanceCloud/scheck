@@ -12,8 +12,7 @@ import (
 	"sync"
 	"syscall"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
-
+	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
@@ -23,6 +22,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/tools"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
 )
 
 var (

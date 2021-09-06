@@ -30,6 +30,7 @@ func (p *provider) Funcs() []funcs.Func {
 		{Name: `shell_history`, Fn: p.shellHistory},
 		{Name: `iptables`, Fn: p.ipTables},
 		{Name: `interface_addresses`, Fn: p.interfaceAddresses},
+		{Name: `http_get`, Fn: p.httpGet},
 		{Name: `listening_ports`, Fn: p.listeningPorts},
 		{Name: `crontab`, Fn: p.crontab},
 		{Name: `uname`, Fn: p.uname},

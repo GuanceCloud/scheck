@@ -3,14 +3,14 @@
 package system
 
 import (
-	lua "github.com/yuin/gopher-lua"
 	"os"
+
+	lua "github.com/yuin/gopher-lua"
 )
 
 func fileInfo2Table(fi os.FileInfo) *lua.LTable {
-	//	st := fi.Sys().(*syscall.Stat_t)
-
 	var file lua.LTable
+	var fileModeL = 9
 	//file.RawSetString("filename", lua.LString(fi.Name()))
 	//file.RawSetString("size", lua.LNumber(fi.Size()))
 	//file.RawSetString("block_size", lua.LNumber(st.Blksize))
@@ -28,7 +28,7 @@ func fileInfo2Table(fi os.FileInfo) *lua.LTable {
 
 	typ := "-"
 	mod := fi.Mode().String()
-	if len(mod) > 9 {
+	if len(mod) > fileModeL {
 		typ = mod[0:1]
 	}
 	file.RawSetString("type", lua.LString(typ))

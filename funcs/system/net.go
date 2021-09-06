@@ -201,7 +201,6 @@ func (p *provider) interfaceAddresses(l *lua.LState) int {
 }
 
 func (p *provider) httpGet(l *lua.LState) int {
-
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)

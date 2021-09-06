@@ -555,10 +555,11 @@ func (p *provider) sysctl(l *lua.LState) int {
 
 	lines := strings.Split(buf.String(), "\n")
 	var result lua.LTable
+	var lineL = 2
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, "=")
-		if len(fields) < 2 {
+		if len(fields) < lineL {
 			continue
 		}
 		k := strings.TrimSpace(fields[0])
