@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/installer/install"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	ihttp "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/http"
 	dkservice "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
 )
 
@@ -34,10 +36,11 @@ var (
 var (
 	flagUpgrade      = flag.Bool("upgrade", false, ``)
 	flagInfo         = flag.Bool("info", false, "show installer info")
-	flagDownloadOnly = flag.Bool("download-only", false, `download scheck only, not install`)
+	flagDownloadOnly = flag.Bool("download-only", false, "download scheck only, not install")
 	flagInstallOnly  = flag.Bool("install-only", false, "install only, not start")
 	flagInstallLog   = flag.String("install-log", "", "install log")
 	flagOffline      = flag.Bool("offline", false, "offline install mode")
+	flagProxy        = flag.String("proxy", "", "http proxy http://ip:port for scheck")
 	flagSrcs         = flag.String("srcs",
 		fmt.Sprintf("./scheck-%s-%s-%s.tar.gz,./data.tar.gz", runtime.GOOS, runtime.GOARCH, DataKitVersion),
 		`local path of scheck and agent install files`)
@@ -70,6 +73,19 @@ func main() {
 	if err = os.MkdirAll(global.InstallDir, os.ModeDir|os.ModePerm); err != nil {
 		l.Warnf("makeDirAll %v", err)
 	}
+	cliopt := &ihttp.Options{
+		InsecureSkipVerify: true, // ignore SSL error
+	}
+	if *flagProxy != "" {
+		u, err := url.Parse(*flagProxy)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+		cliopt.ProxyURL = u
+	}
+
+	cli := ihttp.Cli(cliopt)
 
 	if *flagOffline && *flagSrcs != "" {
 		for _, f := range strings.Split(*flagSrcs, ",") {
@@ -77,13 +93,13 @@ func main() {
 		}
 	} else {
 		install.CurDownloading = global.AppBin
-		if err = install.Download(datakitURL, global.InstallDir, true, true, false); err != nil {
+		if err = install.Download(cli, datakitURL, global.InstallDir, true, true, false); err != nil {
 			l.Errorf("err = %v", err)
 			return
 		}
 		// download version
 		vURL := "https://" + path.Join(DataKitBaseURL, "version")
-		if err = install.Download(vURL, filepath.Join(global.InstallDir, "version"), false, true, true); err != nil {
+		if err = install.Download(cli, vURL, filepath.Join(global.InstallDir, "version"), false, true, true); err != nil {
 			l.Errorf("err = %v", err)
 			return
 		}
@@ -148,10 +164,25 @@ Golang Version: %s
 `, global.Version, git.BuildAt, git.Golang, DataKitBaseURL, datakitURL)
 		os.Exit(0)
 	}
+	cliopt := &ihttp.Options{
+		InsecureSkipVerify: true, // ignore SSL error
+	}
+
+	if *flagProxy != "" {
+		u, err := url.Parse(*flagProxy)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+		cliopt.ProxyURL = u
+	}
+
+	cli := ihttp.Cli(cliopt)
+
 	if *flagDownloadOnly {
 		install.DownloadOnly = true
 		install.CurDownloading = global.AppBin
-		if err := install.Download(datakitURL,
+		if err := install.Download(cli, datakitURL,
 			fmt.Sprintf("scheck-%s-%s-%s.tar.gz",
 				runtime.GOOS, runtime.GOARCH, DataKitVersion), true, true, true); err != nil {
 			return
