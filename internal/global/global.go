@@ -55,6 +55,7 @@ const (
 	GB = MB * 1024
 
 	ParseBase    = 10
+	ParseBase16  = 16
 	ParseBitSize = 64
 )
 

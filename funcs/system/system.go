@@ -41,7 +41,6 @@ func (p *provider) Funcs() []funcs.Func {
 		{Name: `sc_path_watch`, Fn: p.pathWatch},
 		{Name: `sc_sleep`, Fn: p.sleep},
 	}
-
 }
 
 func (p *provider) Catalog() string {

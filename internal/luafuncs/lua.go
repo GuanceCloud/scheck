@@ -164,7 +164,6 @@ func LoadLuaLibs(ls *lua.LState) error {
 	return nil
 }
 
-// testLua
 func TestLua(rulepath string) {
 	rulepath, _ = filepath.Abs(rulepath)
 	rulepath += global.LuaExt
@@ -197,8 +196,8 @@ func TestLua(rulepath string) {
 }
 
 // CheckLua check all custom lua.
-func CheckLua(CustomRuleDir string) {
-	fileInfos, err := ioutil.ReadDir(CustomRuleDir)
+func CheckLua(customRuleDir string) {
+	fileInfos, err := ioutil.ReadDir(customRuleDir)
 	if err != nil {
 		l.Errorf("%v", err)
 		return
@@ -208,7 +207,7 @@ func CheckLua(CustomRuleDir string) {
 			continue
 		}
 		if strings.HasSuffix(info.Name(), ".lua") {
-			_, err := CompilesScript(filepath.Join(CustomRuleDir, info.Name()))
+			_, err := CompilesScript(filepath.Join(customRuleDir, info.Name()))
 			if err != nil {
 				l.Errorf("name of lua :%s compiles is err:%v", info.Name(), err)
 			}

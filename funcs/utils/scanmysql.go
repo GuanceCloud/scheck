@@ -9,24 +9,17 @@ package utils
 
 import (
 	"bytes"
-	"time"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
-	log "github.com/sirupsen/logrus"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
-
-	//"io"
 	"encoding/binary"
 	"errors"
 	"fmt"
-
 	"net"
-
-	lua "github.com/yuin/gopher-lua"
-
-	//"path/filepath"
 	"strings"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 /*

@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // nolint
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -139,7 +139,6 @@ ReleasedInputs: %s
 		fmt.Println(luafuncs.ExportAsMD(*flagRunStatusSort))
 		os.Exit(0)
 	}
-
 }
 
 func parseCheck() {

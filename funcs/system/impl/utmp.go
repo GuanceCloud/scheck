@@ -29,7 +29,7 @@ type (
 		_       [2]byte
 		Pid     int32
 		Device  [lineSize]byte
-		Id      [4]byte
+		ID      [4]byte
 		User    [nameSize]byte
 		Host    [hostSize]byte
 		Exit    ExitStatus
@@ -44,7 +44,7 @@ type (
 		Type    int
 		Pid     int
 		Device  string
-		Id      string
+		ID      string
 		User    string
 		Host    string
 		Exit    ExitStatus
@@ -56,7 +56,6 @@ type (
 
 func ParseUtmp(file io.Reader) ([]*Utmp, error) {
 	var us []*Utmp
-
 	for {
 		u, readErr := readLine(file)
 		if readErr != nil {
@@ -67,7 +66,6 @@ func ParseUtmp(file io.Reader) ([]*Utmp, error) {
 		}
 		us = append(us, newUtmp(u))
 	}
-
 	return us, nil
 }
 
@@ -79,15 +77,15 @@ func readLine(file io.Reader) (*utmpImpl, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return u, nil
 }
 
 func (r *utmpImpl) addr() net.IP {
-	ip := make(net.IP, 16)
+	ipLen := 16
+	ip := make(net.IP, ipLen)
 	// no error checking: reading from r.AddrV6 cannot fail
 	_ = binary.Read(bytes.NewReader(r.AddrV6[:]), binary.BigEndian, ip)
-	if bytes.Equal(ip[4:], net.IPv6zero[4:]) {
+	if ip[4:].Equal(net.IPv6zero[4:]) {
 		// IPv4 address, shorten the slice so that net.IP behaves correctly:
 		ip = ip[:4]
 	}
@@ -99,7 +97,7 @@ func newUtmp(u *utmpImpl) *Utmp {
 		Type:    int(u.Type),
 		Pid:     int(u.Pid),
 		Device:  string(u.Device[:getByteLen(u.Device[:])]),
-		Id:      string(u.Id[:getByteLen(u.Id[:])]),
+		ID:      string(u.ID[:getByteLen(u.ID[:])]),
 		User:    string(u.User[:getByteLen(u.User[:])]),
 		Host:    string(u.Host[:getByteLen(u.Host[:])]),
 		Exit:    u.Exit,
@@ -111,7 +109,7 @@ func newUtmp(u *utmpImpl) *Utmp {
 
 // get byte \0 index
 func getByteLen(byteArray []byte) int {
-	n := bytes.IndexByte(byteArray[:], 0)
+	n := bytes.IndexByte(byteArray, 0)
 	if n == -1 {
 		return 0
 	}

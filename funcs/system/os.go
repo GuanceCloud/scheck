@@ -333,18 +333,15 @@ func (p *provider) shellHistory(l *lua.LState) int {
 			return lua.MultRet
 		}
 		targetUser = lv.String()
-
 	}
 
 	users, err := impl.GetUserDetail(targetUser)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
-	} else {
-		if len(users) == 0 {
-			l.RaiseError("user '%s' not exists", targetUser)
-			return lua.MultRet
-		}
+	} else if len(users) == 0 {
+		l.RaiseError("user '%s' not exists", targetUser)
+		return lua.MultRet
 	}
 
 	shellHistoryFiles := []string{
@@ -365,7 +362,6 @@ func (p *provider) shellHistory(l *lua.LState) int {
 		}
 
 		for _, f := range shellHistoryFiles {
-
 			cmds, err := impl.GenShellHistoryFromFile(filepath.Join(u.Home, f))
 			if err != nil {
 				l.RaiseError("%s", err)

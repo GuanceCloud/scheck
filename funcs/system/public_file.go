@@ -58,13 +58,12 @@ func (p *provider) ls(l *lua.LState) int {
 		}
 	} else {
 		_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-
-			}
-			if info != nil {
-				file := fileInfo2Table(info)
-				file.RawSetString("path", lua.LString(path))
-				files.Append(file)
+			if err == nil {
+				if info != nil {
+					file := fileInfo2Table(info)
+					file.RawSetString("path", lua.LString(path))
+					files.Append(file)
+				}
 			}
 			return nil
 		})
@@ -131,7 +130,6 @@ func (p *provider) readFile(l *lua.LState) int {
 }
 
 func (p *provider) fileHash(l *lua.LState) int {
-
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
