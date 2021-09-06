@@ -177,19 +177,20 @@ func (m *Monitor) merge(oldScripts map[string]*Script) {
 			// 从文件中读取后 没有该脚本的运行数据，就以新的数据为准
 			continue
 		}
-		for _, rt := range nsc.runTimes {
-			if rt > max {
-				max = rt
-			}
-			if rt < min {
+		for i, rt := range nsc.runTimes {
+			if i == 0 {
 				min = rt
+			} else if rt < min {
+				min = rt
+			} else if rt > max {
+				max = rt
 			}
 			tot += rt
 		}
 		if oldScripts[name].RuntimeMax > max {
 			max = oldScripts[name].RuntimeMax
 		}
-		if oldScripts[name].RuntimeMin < min {
+		if oldScripts[name].RuntimeMin != 0 && oldScripts[name].RuntimeMin < min {
 			min = oldScripts[name].RuntimeMax
 		}
 		tot += osc.RuntimeAvg * int64(osc.RunCount)
