@@ -361,7 +361,9 @@ func ExportAsMD(sortBy string) string {
 	for i := 0; i < len(runstatus.Scripts); i++ {
 		sc := runstatus.Scripts[i]
 		rows = append(rows,
-			fmt.Sprintf(format, sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin, sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
+			fmt.Sprintf(format,
+				sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
+				sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
 	if runstatus.ScriptsSortBy == "name" {
 		sort.Strings(rows)

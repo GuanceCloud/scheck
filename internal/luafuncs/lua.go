@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/influxdata/toml"
+	"github.com/influxdata/toml/ast"
+
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
@@ -218,10 +221,62 @@ func CheckLua(customRuleDir string) {
 				errCount++
 			}
 		}
+		if strings.HasSuffix(info.Name(), ".manifest") {
+			err := CompilesManifest(filepath.Join(customRuleDir, info.Name()))
+			if err != nil {
+				fmt.Printf("name of manifest :%s compiles is err:%v \n", info.Name(), err)
+				errCount++
+			}
+		}
 	}
 	if errCount != 0 {
 		fmt.Printf("there are %d error here \n", errCount)
 	} else {
 		fmt.Printf("all of the lua rules is ok! \n")
 	}
+}
+
+func CompilesManifest(fileName string) error {
+	var tbl *ast.Table
+	contents, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	tbl, err = toml.Parse(contents)
+	if err != nil {
+		return err
+	}
+	requireKeys := map[string]bool{
+		"id":       false,
+		"category": false,
+		"level":    false,
+		"title":    false,
+		"desc":     false,
+		"cron":     false,
+		"os_arch":  false,
+	}
+	for k := range requireKeys {
+		v := tbl.Fields[k]
+		if v == nil {
+			continue
+		}
+		str := ""
+		if kv, ok := v.(*ast.KeyValue); ok {
+			if s, ok := kv.Value.(*ast.String); ok {
+				str = s.Value
+			}
+			if s, ok := kv.Value.(*ast.Array); ok {
+				str = s.Source()
+			}
+		}
+		if str != "" {
+			requireKeys[k] = true
+		}
+	}
+	for name, ok := range requireKeys {
+		if !ok {
+			return fmt.Errorf("field name=%s can find", name)
+		}
+	}
+	return nil
 }
