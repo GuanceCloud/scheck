@@ -38,11 +38,11 @@ const (
 `
 
 	temp = `
-| lua名称 | 状态 | 平均用时   | 最大用时 | 上次运行时间 | 总运行次数  | 错误次数 | 上报次数 |
-| ----   | :----:   | :----: | :----:       | :----: | :---: | :----:   | :---:    |
+| lua名称 | 状态 | 平均用时   | 最大用时 | 最小用时 | 上次运行时间 | 总运行次数  | 错误次数 | 上报次数 |
+| ----   | :----:   | :----: | :----:       | :----:       | :----: | :---: | :----:   | :---:    |
 `
 
-	format = "|`%s`|%s|%s|%s|%s|%d|%d|%d|"
+	format = "|`%s`|%s|%s|%s|%s|%s|%d|%d|%d|"
 
 	end = "\n > lua scripts运行情况放在文件 `%s` 中，文件的格式是markdown,可用过编译器或者浏览器等打开"
 )
@@ -57,6 +57,7 @@ type Script struct {
 	Status      string `json:"status"`
 	RuntimeAvg  int64  `json:"runtime_avg"`
 	RuntimeMax  int64  `json:"runtime_max"`
+	RuntimeMin  int64  `json:"runtime_min"`
 	LastRuntime int64  `json:"last_runtime"`
 	RunCount    int    `json:"run_count"`
 	ErrCount    int    `json:"err_count"`
@@ -170,6 +171,7 @@ func (m *Monitor) merge(oldScripts map[string]*Script) {
 	for name, nsc := range m.Scripts {
 		tot := int64(0)
 		max := int64(0)
+		min := int64(0)
 		osc, ok := oldScripts[name]
 		if !ok {
 			// 从文件中读取后 没有该脚本的运行数据，就以新的数据为准
@@ -179,14 +181,21 @@ func (m *Monitor) merge(oldScripts map[string]*Script) {
 			if rt > max {
 				max = rt
 			}
+			if rt < min {
+				min = rt
+			}
 			tot += rt
 		}
 		if oldScripts[name].RuntimeMax > max {
 			max = oldScripts[name].RuntimeMax
 		}
+		if oldScripts[name].RuntimeMin < min {
+			min = oldScripts[name].RuntimeMax
+		}
 		tot += osc.RuntimeAvg * int64(osc.RunCount)
 
 		nsc.RuntimeMax = max
+		nsc.RuntimeMin = min
 		nsc.RunCount += osc.RunCount
 		nsc.ErrCount += osc.ErrCount
 		nsc.TriggerNum += osc.TriggerNum
@@ -248,6 +257,7 @@ type OutType struct {
 	Status      string
 	RuntimeAvg  string
 	RuntimeMax  string
+	RuntimeMin  string
 	RunCount    int
 	ErrCount    int
 	TriggerNum  int
@@ -330,10 +340,12 @@ func ExportAsMD(sortBy string) string {
 
 		timeAvg := time.Duration(script.RuntimeAvg).String()
 		timeMax := time.Duration(script.RuntimeMax).String()
+		timeMin := time.Duration(script.RuntimeMin).String()
 		out := &OutType{Name: script.Name,
 			Status:      script.Status,
 			RuntimeAvg:  timeAvg,
 			RuntimeMax:  timeMax,
+			RuntimeMin:  timeMin,
 			RunCount:    script.RunCount,
 			ErrCount:    script.ErrCount,
 			TriggerNum:  script.TriggerNum,
@@ -349,7 +361,7 @@ func ExportAsMD(sortBy string) string {
 	for i := 0; i < len(runstatus.Scripts); i++ {
 		sc := runstatus.Scripts[i]
 		rows = append(rows,
-			fmt.Sprintf(format, sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
+			fmt.Sprintf(format, sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin, sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
 	if runstatus.ScriptsSortBy == "name" {
 		sort.Strings(rows)

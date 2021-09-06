@@ -202,6 +202,11 @@ func CheckLua(customRuleDir string) {
 		l.Errorf("%v", err)
 		return
 	}
+	if len(fileInfos) == 0 {
+		fmt.Printf("there are no lua rules here \n")
+		return
+	}
+	errCount := 0
 	for _, info := range fileInfos {
 		if info.IsDir() {
 			continue
@@ -209,8 +214,14 @@ func CheckLua(customRuleDir string) {
 		if strings.HasSuffix(info.Name(), ".lua") {
 			_, err := CompilesScript(filepath.Join(customRuleDir, info.Name()))
 			if err != nil {
-				l.Errorf("name of lua :%s compiles is err:%v", info.Name(), err)
+				fmt.Printf("name of lua :%s compiles is err:%v \n", info.Name(), err)
+				errCount++
 			}
 		}
+	}
+	if errCount != 0 {
+		fmt.Printf("there are %d error here \n", errCount)
+	} else {
+		fmt.Printf("all of the lua rules is ok! \n")
 	}
 }

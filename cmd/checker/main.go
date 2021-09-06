@@ -145,6 +145,7 @@ func parseCheck() {
 	if *flagCheck {
 		config.LoadConfig(*flagConfig)
 		luafuncs.CheckLua(config.Cfg.System.CustomRuleDir)
+		os.Exit(0)
 	}
 }
 
