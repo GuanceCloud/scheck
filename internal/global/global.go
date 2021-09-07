@@ -1,6 +1,7 @@
 package global
 
 import (
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -81,6 +82,8 @@ var (
 	DefRulesDir     = "rules.d"
 	LuaLocalLibPath = "lib"
 	PublicLuaLib    = "?.lua"
+	DumpFolder      = filepath.Join(InstallDir, "dump")
+	CgroupPeriod    = 1000000
 
 	DefPprofPort     = ":6060"
 	DefOutputPending = 100

@@ -32,9 +32,10 @@ lua 脚本在运行时候
 */
 
 const (
-	tatal = `## scheck lua脚本在运行情况
+	title = `## scheck lua脚本在运行情况
 - scheck 主机名：%s 当前操作系统%s
 - scheck 当前的版本为%s 发布时间%s
+- scheck 已经运行了%s
 - 当前共有%d个lua脚本 其中自带的有%d个 属于用户自定义的有%d个
 - 当前排序的方式为%s,排序方式可分为：运行次数(-count),用时(-time),名称(-name)。默认按照运行次数排序。
 
@@ -72,21 +73,21 @@ type Script struct {
 }
 
 type Monitor struct {
-	Scripts  map[string]*Script
-	outFile  string
-	jsonFile string
-	Auto     bool // 保留
-	lock     sync.Mutex
+	Scripts   map[string]*Script `json:"scripts"`
+	StartTime time.Time          `json:"start_time"`
+	RuleNum   int                `json:"rule_num"`
+	CustomNum int                `json:"custom_num"`
+	outFile   string
+	jsonFile  string
+	lock      sync.Mutex
 }
 
-func newMonitor(outFile string) *Monitor {
-	if outFile == "" {
-		outFile = global.LuaStatusOutFileMD
-	}
+func newMonitor() *Monitor {
 	m := &Monitor{
-		Scripts:  make(map[string]*Script),
-		outFile:  outFile,
-		jsonFile: filepath.Join(global.InstallDir, global.LuaStatusFile),
+		Scripts:   make(map[string]*Script),
+		outFile:   global.LuaStatusOutFileMD,
+		jsonFile:  filepath.Join(global.InstallDir, global.LuaStatusFile),
+		StartTime: time.Now(),
 	}
 	_ = os.Remove(m.jsonFile)
 	_, err := os.Create(m.jsonFile)
@@ -97,9 +98,9 @@ func newMonitor(outFile string) *Monitor {
 }
 
 // Start:监控每一个lua的运行情况
-func Start(outF string) {
+func Start() {
 	l = logger.SLogger("internal.lua")
-	monitor = newMonitor(outF)
+	monitor = newMonitor()
 	go monitor.timeToSave(global.LuaStatusWriteFileInterval)
 }
 
@@ -137,14 +138,14 @@ func (m *Monitor) timeToSave(tickTime time.Duration) {
 		}
 
 		l.Debug("merge script...")
-		oldScript := make(map[string]*Script)
-		err = json.Unmarshal(bts, &oldScript)
+		oldMonitor := new(Monitor)
+		err = json.Unmarshal(bts, oldMonitor)
 		if err != nil {
 			l.Errorf("marshal err =%v", err)
 			continue
 		}
 		m.lock.Lock()
-		m.merge(oldScript)
+		m.mergeOld(oldMonitor.Scripts)
 		m.lock.Unlock()
 
 		newBts, err := m.MonitorMarshal()
@@ -158,10 +159,36 @@ func (m *Monitor) timeToSave(tickTime time.Duration) {
 	}
 }
 
+func (m *Monitor) mergeRuntime() {
+	for name, nsc := range m.Scripts {
+		tot := int64(0)
+		max := int64(0)
+		min := int64(0)
+		for i, rt := range nsc.runTimes {
+			if i == 0 && min == 0 {
+				min = rt
+			}
+			if rt < min {
+				min = rt
+			}
+			if rt > max {
+				max = rt
+			}
+			tot += rt
+		}
+		if tot != 0 {
+			nsc.RuntimeAvg = tot / int64(len(nsc.runTimes))
+		}
+		nsc.RuntimeMax = max
+		nsc.RuntimeMin = min
+		m.Scripts[name] = nsc
+	}
+}
+
 func (m *Monitor) MonitorMarshal() ([]byte, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	bts, err := json.Marshal(m.Scripts)
+	bts, err := json.MarshalIndent(m, "", "	")
 	for name, script := range m.Scripts {
 		m.Scripts[name] = newScriptStatus(script.Name, script.Interval)
 	}
@@ -171,31 +198,22 @@ func (m *Monitor) MonitorMarshal() ([]byte, error) {
 	return bts, nil
 }
 
-func (m *Monitor) merge(oldScripts map[string]*Script) {
+func (m *Monitor) mergeOld(oldScripts map[string]*Script) {
+	m.mergeRuntime()
 	for name, nsc := range m.Scripts {
-		tot := int64(0)
-		max := int64(0)
-		min := int64(0)
+		tot := nsc.RuntimeAvg * int64(nsc.RunCount)
+		max := nsc.RuntimeMax
+		min := nsc.RuntimeMin
 		osc, ok := oldScripts[name]
 		if !ok {
 			// 从文件中读取后 没有该脚本的运行数据，就以新的数据为准
 			continue
 		}
-		for i, rt := range nsc.runTimes {
-			if i == 0 {
-				min = rt
-			} else if rt < min {
-				min = rt
-			} else if rt > max {
-				max = rt
-			}
-			tot += rt
-		}
 		if oldScripts[name].RuntimeMax > max {
 			max = oldScripts[name].RuntimeMax
 		}
 		if oldScripts[name].RuntimeMin != 0 && oldScripts[name].RuntimeMin < min {
-			min = oldScripts[name].RuntimeMax
+			min = oldScripts[name].RuntimeMin
 		}
 		tot += osc.RuntimeAvg * int64(osc.RunCount)
 
@@ -216,7 +234,7 @@ func (m *Monitor) merge(oldScripts map[string]*Script) {
 }
 
 // Add:all rule add to monitor.
-func Add(name string, interval int64) {
+func Add(name string, interval int64, isCustom bool) {
 	ss := newScriptStatus(name, interval)
 	if monitor == nil {
 		return
@@ -224,7 +242,12 @@ func Add(name string, interval int64) {
 	monitor.lock.Lock()
 	defer monitor.lock.Unlock()
 	monitor.Scripts[ss.Name] = ss
-	l.Debug("add to monitor")
+	if isCustom {
+		monitor.CustomNum++
+	} else {
+		monitor.RuleNum++
+	}
+	l.Debugf("name = %s :add to monitor", name)
 }
 
 func UpdateStatus(name string, runTime time.Duration, isErr bool) {
@@ -277,8 +300,6 @@ type RunStatusMonitor struct {
 	SCVersion     string
 	BuildTime     string
 	RunTime       time.Time
-	hostNum       int
-	customNum     int
 	Scripts       []*OutType
 	ScriptsSortBy string
 }
@@ -302,37 +323,28 @@ func (rsm *RunStatusMonitor) Less(i, j int) bool {
 	return rsm.Scripts[j].RunCount < rsm.Scripts[i].RunCount
 }
 
-func getStatus(sortBy string) (out string) {
+func (rsm *RunStatusMonitor) getStatus() (out string) {
 	l.Debug("to export of all lua run status...")
-	sortBy = strings.ToLower(sortBy)
 	bts, err := ioutil.ReadFile(global.LuaStatusFile)
 	if err != nil {
 		l.Errorf("readFile err=%v", err)
 		return ""
 	}
-	scripts := make(map[string]*Script)
-	err = json.Unmarshal(bts, &scripts)
+	monitor := new(Monitor)
+	err = json.Unmarshal(bts, monitor)
 	if err != nil {
 		l.Errorf("marshal err=%v", err)
 		return ""
 	}
-	if len(scripts) == 0 {
+	if len(monitor.Scripts) == 0 {
 		l.Errorf("lua scripts lens is 0")
 		return ""
 	}
 	// 将scripts放到RunStatusMonitor 中
 	now := time.Now()
-	hostName, _ := os.Hostname()
-	runstatus := &RunStatusMonitor{
-		HostName:      hostName,
-		OsArch:        global.LocalGOOS + "/" + global.LocalGOARCH,
-		SCVersion:     global.Version,
-		Scripts:       make([]*OutType, 0),
-		ScriptsSortBy: sortBy,
-	}
 
 	rows := make([]string, 0)
-	for _, script := range scripts {
+	for _, script := range monitor.Scripts {
 		if script.Interval < 0 {
 			continue
 		}
@@ -345,6 +357,7 @@ func getStatus(sortBy string) (out string) {
 		timeAvg := time.Duration(script.RuntimeAvg).String()
 		timeMax := time.Duration(script.RuntimeMax).String()
 		timeMin := time.Duration(script.RuntimeMin).String()
+
 		out := &OutType{Name: script.Name,
 			Status:      script.Status,
 			RuntimeAvg:  timeAvg,
@@ -355,25 +368,26 @@ func getStatus(sortBy string) (out string) {
 			TriggerNum:  script.TriggerNum,
 			LastRuntime: last,
 			Interval:    script.Interval}
-		runstatus.Scripts = append(runstatus.Scripts, out)
+		rsm.Scripts = append(rsm.Scripts, out)
 	}
-	fmtTatal := fmt.Sprintf(tatal,
-		runstatus.HostName, runstatus.OsArch, runstatus.SCVersion, git.BuildAt,
-		runstatus.hostNum+runstatus.customNum, runstatus.hostNum, runstatus.customNum, runstatus.ScriptsSortBy)
+	systemRunTime := humanize.RelTime(monitor.StartTime, now, "ago", "")
+	fmtTatal := fmt.Sprintf(title,
+		rsm.HostName, rsm.OsArch, rsm.SCVersion, git.BuildAt, systemRunTime,
+		monitor.RuleNum+monitor.CustomNum, monitor.RuleNum, monitor.CustomNum, rsm.ScriptsSortBy)
 
-	sort.Sort(runstatus)
-	for i := 0; i < len(runstatus.Scripts); i++ {
-		sc := runstatus.Scripts[i]
+	sort.Sort(rsm)
+	for i := 0; i < len(rsm.Scripts); i++ {
+		sc := rsm.Scripts[i]
 		rows = append(rows,
 			fmt.Sprintf(format,
 				sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
 				sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
-	if runstatus.ScriptsSortBy == "name" {
+	if rsm.ScriptsSortBy == "name" {
 		sort.Strings(rows)
 	}
 	out = fmtTatal + temp + strings.Join(rows, "\n")
-	return
+	return out
 }
 
 // ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
@@ -381,7 +395,20 @@ func ExportAsMD(sortBy string) string {
 	mdFile := fmt.Sprintf(global.LuaStatusOutFileMD, time.Now().Format("20060102-150405"))
 	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
 
-	tot := getStatus(sortBy)
+	hostName, _ := os.Hostname()
+	rsm := RunStatusMonitor{
+		HostName:      hostName,
+		OsArch:        global.LocalGOOS + "/" + global.LocalGOARCH,
+		SCVersion:     global.Version,
+		Scripts:       make([]*OutType, 0),
+		ScriptsSortBy: strings.ToLower(sortBy),
+	}
+
+	tot := rsm.getStatus()
+	if tot == "" {
+		l.Errorf("lua status is null ,wait 5 minter")
+		return ""
+	}
 	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, mdFile), filepath.Join(global.InstallDir, htmlFile))
 
 	// write to (md/html) file

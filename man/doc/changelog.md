@@ -13,9 +13,10 @@
 - pprof功能开关
 - 脚本执行超时时间，超时控制。
 - 统计lua脚本运行信息
-- 增加 lua/manifest check 功能
+- 增加 lua/manifest check 功能：预编译lua脚本+manifest字段检查
 - 增加lua脚本只运行一次的功能
 - 代码目录结构调整
+- proxy功能
 
 优化相关：
 - 内存 性能优化

@@ -55,6 +55,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		l.Errorf("loadRules error ：filepath=%s err=%v", ruleDir, err)
 		return
 	}
+	isCustom := ruleDir == scheduler.customRuleDir
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -63,7 +64,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		r := newRule(path)
 
 		if strings.HasSuffix(file.Name(), ".lua") {
-			if ruleDir == scheduler.customRuleDir {
+			if isCustom {
 				rulename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 				if t, ok := scheduler.customRulesTime[rulename]; ok {
 					if t == fileModify(path) {
@@ -77,7 +78,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			}
 			if !r.disabled {
 				scheduler.addRule(r)
-				luafuncs.Add(r.Name, r.interval)
+				luafuncs.Add(r.Name, r.interval, isCustom)
 			}
 		}
 	}

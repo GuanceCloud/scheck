@@ -12,6 +12,8 @@ import (
 	"sync"
 	"syscall"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/dumperror"
+
 	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
@@ -66,7 +68,7 @@ func main() {
 	if config.Cfg.System.Pprof {
 		go goPprof()
 	}
-
+	dumperror.StartDump()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())

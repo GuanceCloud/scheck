@@ -77,7 +77,8 @@ func main() {
 		InsecureSkipVerify: true, // ignore SSL error
 	}
 	if *flagProxy != "" {
-		u, err := url.Parse(*flagProxy)
+		var u *url.URL
+		u, err = url.Parse(*flagProxy)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(-1)
