@@ -38,7 +38,7 @@ type Checker struct {
 // Start
 func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
 	l = logger.SLogger("checker")
-	luafuncs.Start(global.LuaStatusOutFile)
+	luafuncs.Start(global.LuaStatusOutFileMD)
 	Chk = newChecker(confSys)
 	output.Start(outputpath)
 	Chk.start(ctx)

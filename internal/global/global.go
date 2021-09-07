@@ -41,7 +41,8 @@ const (
 	LuaConfiguration           = "__this_configuration"
 	LuaConfigurationKey        = "ruleFile"
 	LuaStatusFile              = ".status.json"
-	LuaStatusOutFile           = "./%s.lua_status.md"
+	LuaStatusOutFileMD         = "./%s.lua_status.md"
+	LuaStatusOutFileHTML       = "./%s.lua_status.html"
 	LuaStatusWriteFileInterval = time.Minute * 5
 	LuaCronDisable             = "disable"
 	LuaScriptTimeout           = time.Second * 10

@@ -11,6 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
+
 	"github.com/dustin/go-humanize"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
@@ -44,7 +48,7 @@ const (
 
 	format = "|`%s`|%s|%s|%s|%s|%s|%d|%d|%d|"
 
-	end = "\n > lua scripts运行情况放在文件 `%s` 中，文件的格式是markdown,可用过编译器或者浏览器等打开"
+	end = "\n > lua scripts运行情况放在文件: `%s` 文件的格式是markdown, `%s`文件格式为html 可用过编译器或者浏览器等打开"
 )
 
 var (
@@ -77,7 +81,7 @@ type Monitor struct {
 
 func newMonitor(outFile string) *Monitor {
 	if outFile == "" {
-		outFile = global.LuaStatusOutFile
+		outFile = global.LuaStatusOutFileMD
 	}
 	m := &Monitor{
 		Scripts:  make(map[string]*Script),
@@ -239,7 +243,7 @@ func UpdateStatus(name string, runTime time.Duration, isErr bool) {
 		ss.runTimes = append(ss.runTimes, int64(runTime))
 		ss.LastRuntime = time.Now().Unix()
 		monitor.Scripts[name] = ss
-		l.Debug("update to monitor")
+		l.Debugf(" %s update to monitor", name)
 	}
 }
 
@@ -298,8 +302,7 @@ func (rsm *RunStatusMonitor) Less(i, j int) bool {
 	return rsm.Scripts[j].RunCount < rsm.Scripts[i].RunCount
 }
 
-// ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
-func ExportAsMD(sortBy string) string {
+func getStatus(sortBy string) (out string) {
 	l.Debug("to export of all lua run status...")
 	sortBy = strings.ToLower(sortBy)
 	bts, err := ioutil.ReadFile(global.LuaStatusFile)
@@ -369,14 +372,32 @@ func ExportAsMD(sortBy string) string {
 	if runstatus.ScriptsSortBy == "name" {
 		sort.Strings(rows)
 	}
-	tot := fmtTatal + temp + strings.Join(rows, "\n")
+	out = fmtTatal + temp + strings.Join(rows, "\n")
+	return
+}
 
-	outFile := fmt.Sprintf(global.LuaStatusOutFile, time.Now().Format("20060102-150405"))
-	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, outFile))
-	// to .... file
-	err = ioutil.WriteFile(outFile, []byte(tot), global.FileModeRW)
+// ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
+func ExportAsMD(sortBy string) string {
+	mdFile := fmt.Sprintf(global.LuaStatusOutFileMD, time.Now().Format("20060102-150405"))
+	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
+
+	tot := getStatus(sortBy)
+	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, mdFile), filepath.Join(global.InstallDir, htmlFile))
+
+	// write to (md/html) file
+	err := ioutil.WriteFile(mdFile, []byte(tot), global.FileModeRW)
 	if err != nil {
 		l.Errorf("write to file err=%v", err)
 	}
+	_ = ioutil.WriteFile(htmlFile, getHTML(tot), global.FileModeRW)
+
 	return tot
+}
+
+func getHTML(tot string) []byte {
+	psr := parser.NewWithExtensions(parser.CommonExtensions)
+	htmlFlags := html.CommonFlags | html.HrefTargetBlank | html.CompletePage
+	opts := html.RendererOptions{Flags: htmlFlags}
+	renderer := html.NewRenderer(opts)
+	return markdown.ToHTML([]byte(tot), psr, renderer)
 }
