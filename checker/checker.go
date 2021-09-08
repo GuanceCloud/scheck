@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strings"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
 
@@ -19,9 +21,7 @@ import (
 )
 
 const (
-	LuaLocalLibPath = "lib"
-	PublicLuaLib    = "?.lua"
-	PanicBuf        = 2048
+	PanicBuf = 2048
 )
 
 var (
@@ -38,16 +38,17 @@ type Checker struct {
 // Start
 func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
 	l = logger.SLogger("checker")
+	luafuncs.Start()
 	Chk = newChecker(confSys)
 	output.Start(outputpath)
 	Chk.start(ctx)
 }
 
 func newChecker(confsys *config.System) *Checker {
-	lua.LuaPathDefault = filepath.Join(confsys.RuleDir, LuaLocalLibPath, PublicLuaLib)
+	lua.LuaPathDefault = filepath.Join(confsys.RuleDir, global.LuaLocalLibPath, global.PublicLuaLib)
 	_, err := os.Stat(confsys.CustomRuleLibDir)
 	if err == nil {
-		dir := filepath.Join(confsys.CustomRuleLibDir, PublicLuaLib)
+		dir := filepath.Join(confsys.CustomRuleLibDir, global.PublicLuaLib)
 		lua.LuaPathDefault += ";" + dir
 	}
 
@@ -57,11 +58,10 @@ func newChecker(confsys *config.System) *Checker {
 		taskScheduler: NewTaskScheduler(confsys.RuleDir, confsys.CustomRuleDir, confsys.LuaHotUpdate),
 	}
 	if confsys.LuaCap <= 0 || confsys.LuaInitCap <= 0 || confsys.LuaInitCap > confsys.LuaCap {
-		confsys.LuaInitCap = 15
-		confsys.LuaCap = 20
+		confsys.LuaInitCap = global.DefLuaPoolCap
+		confsys.LuaCap = global.DefLuaPoolMaxCap
 	}
 	InitStatePool(confsys.LuaInitCap, confsys.LuaCap)
-
 	return c
 }
 
@@ -87,6 +87,7 @@ func GetManifest(filename string) (*RuleManifest, error) {
 	}
 	return m, nil
 }
+
 func (c *Checker) start(ctx context.Context) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -102,7 +103,7 @@ func (c *Checker) start(ctx context.Context) {
 	l.Infof("scheduler start")
 
 	go c.taskScheduler.run()
-
+	go c.taskScheduler.runOnce()
 	select {
 	case <-ctx.Done():
 		return

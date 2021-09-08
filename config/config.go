@@ -40,6 +40,7 @@ const (
 >>>>>>> slq_dev
   #是否禁用日志
   disable_log = {{.System.DisableLog}}
+  pprof = {{.System.Pprof}}
 
 [scoutput]
    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。

@@ -116,6 +116,7 @@ func (c *scriptCache) getKey(key string) *cacheValue {
 	return c.kvSorage[key]
 }
 
+// nolint:unused
 func (c *scriptCache) clean() {
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -131,7 +132,7 @@ func (p *provider) setGlobalCache(l *lua.LState) int {
 	}
 	key := string(lv.(lua.LString))
 
-	lv = l.Get(2)
+	lv = l.Get(global.LuaArgIdx2)
 	if lv == lua.LNil {
 		_ = globalCache.setKey(key, nil)
 		return 0

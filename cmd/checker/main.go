@@ -5,12 +5,16 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof" // nolint
 	"os"
 	"os/signal"
 	"path/filepath"
 	"sync"
 	"syscall"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/dumperror"
+
+	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
@@ -20,6 +24,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/tools"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
 )
 
 var (
@@ -32,6 +37,9 @@ var (
 	flagRulesToDoc      = flag.Bool("doc", false, `Generate doc document from manifest file`)
 	flagRulesToTemplate = flag.Bool("tpl", false, `Generate doc document from template file`)
 	flagOutDir          = flag.String("dir", "", `document Exported directory`)
+	flagRunStatus       = flag.Bool("luastatus", false, `Exported all Lua status of markdown`)
+	flagRunStatusSort   = flag.String("sort", "", `Exported all Lua status of markdown`)
+	flagCheck           = flag.Bool("check", false, `Check :Parse and Compiles all Script `)
 )
 
 var (
@@ -45,7 +53,7 @@ func main() {
 	flag.Parse()
 	applyFlags()
 	parseConfig()
-
+	parseCheck()
 	if config.TryLoadConfig(*flagConfig) {
 		config.LoadConfig(*flagConfig)
 	}
@@ -60,7 +68,7 @@ func main() {
 	if config.Cfg.System.Pprof {
 		go goPprof()
 	}
-
+	dumperror.StartDump()
 	service.Entry = run
 	if err := service.StartService(); err != nil {
 		l.Errorf("start service failed: %s", err.Error())
@@ -113,19 +121,32 @@ ReleasedInputs: %s
 
 	if *flagRulesToDoc {
 		if *flagOutDir == "" {
-			tools.ToMakeMdFile(tools.GetAllName(), "doc")
+			man.ToMakeMdFile(man.GetAllName(), "doc")
 		} else {
-			tools.ToMakeMdFile(tools.GetAllName(), *flagOutDir)
+			man.ToMakeMdFile(man.GetAllName(), *flagOutDir)
 		}
 		os.Exit(0)
 	}
 
 	if *flagRulesToTemplate {
 		if *flagOutDir == "" {
-			tools.DfTemplate(tools.GetAllName(), "C://Users/gitee")
+			man.DfTemplate(man.GetAllName(), "C://Users/gitee")
 		} else {
-			tools.DfTemplate(tools.GetAllName(), *flagOutDir)
+			man.DfTemplate(man.GetAllName(), *flagOutDir)
 		}
+		os.Exit(0)
+	}
+
+	if *flagRunStatus {
+		fmt.Println(luafuncs.ExportAsMD(*flagRunStatusSort))
+		os.Exit(0)
+	}
+}
+
+func parseCheck() {
+	if *flagCheck {
+		config.LoadConfig(*flagConfig)
+		luafuncs.CheckLua(config.Cfg.System.CustomRuleDir)
 		os.Exit(0)
 	}
 }
@@ -162,7 +183,7 @@ func run() {
 			wg.Done()
 		}()
 
-		tools.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
+		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		checker.Start(ctx, config.Cfg.System, config.Cfg.ScOutput)
 	}()
 

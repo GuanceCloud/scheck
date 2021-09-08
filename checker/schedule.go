@@ -1,12 +1,15 @@
 package checker
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 
 	cron "github.com/robfig/cron/v3"
 )
@@ -22,6 +25,7 @@ type TaskScheduler struct {
 	customRuleDir   string
 	customRulesTime map[string]int64 // key:rules name .val:lastModify time int64
 	tasks           map[string]*Rule // key:fileName
+	onceTasks       map[string]*Rule
 	manifests       map[string]*RuleManifest
 	stop            chan struct{}
 	lock            sync.Mutex
@@ -51,6 +55,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		l.Errorf("loadRules error ：filepath=%s err=%v", ruleDir, err)
 		return
 	}
+	isCustom := ruleDir == scheduler.customRuleDir
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -59,7 +64,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		r := newRule(path)
 
 		if strings.HasSuffix(file.Name(), ".lua") {
-			if ruleDir == scheduler.customRuleDir {
+			if isCustom {
 				rulename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 				if t, ok := scheduler.customRulesTime[rulename]; ok {
 					if t == fileModify(path) {
@@ -73,6 +78,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			}
 			if !r.disabled {
 				scheduler.addRule(r)
+				luafuncs.Add(r.Name, r.interval, isCustom)
 			}
 		}
 	}
@@ -84,6 +90,9 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 
 // stop all
 func (scheduler *TaskScheduler) Stop() {
+	if len(scheduler.onceTasks) != 0 {
+		scheduler.stop <- struct{}{}
+	}
 	scheduler.stop <- struct{}{}
 }
 
@@ -135,6 +144,48 @@ func (scheduler *TaskScheduler) run() {
 	}
 }
 
+// runOther: if rule.cron=disable then rule run once.
+func (scheduler *TaskScheduler) runOnce() {
+	if len(scheduler.onceTasks) == 0 {
+		l.Warnf("schedules  is empty....")
+		return
+	}
+	cxtMap := sync.Map{}                                   // 主动停止通知信号
+	errChan := make(chan string, len(scheduler.onceTasks)) // 被动停止通知信号
+	count := 0                                             // 运行的数量
+	for _, rule := range scheduler.onceTasks {
+		cxt := context.Background()
+		go rule.RunOnce(cxt, errChan)
+		cxtMap.Store(rule.Name, cxt)
+		count++
+	}
+	for {
+		select {
+		case <-scheduler.stop:
+			// all context stop
+			cxtMap.Range(func(key, value interface{}) bool {
+				if cxt, ok := value.(context.Context); ok {
+					cxt.Done()
+				}
+				return false
+			})
+		case <-time.After(time.Minute):
+			// 检查运行数量
+			if len(scheduler.onceTasks) != count {
+				// do something...
+				l.Warnf("Unexpected reduction in number of runs !!! tot=%d run=%d", len(scheduler.onceTasks), count)
+			}
+			if count == 0 {
+				close(errChan)
+			}
+		case name := <-errChan:
+			// to call monitor 。。。
+			count--
+			l.Errorf("rule name = %s is stop!!!", name)
+		}
+	}
+}
+
 func (scheduler *TaskScheduler) GetRuleByName(filename string) *Rule {
 	for key, task := range scheduler.tasks {
 		if key == filename {
@@ -173,7 +224,11 @@ func (scheduler *TaskScheduler) GetTask() (task *Rule, tempKey string) {
 func (scheduler *TaskScheduler) addRule(r *Rule) {
 	scheduler.lock.Lock()
 	defer scheduler.lock.Unlock()
-	scheduler.tasks[r.Name] = r
+	if r.cron == "" || r.cron == "disable" {
+		scheduler.onceTasks[r.Name] = r
+	} else {
+		scheduler.tasks[r.Name] = r
+	}
 	scheduler.manifests[r.Name] = r.manifest
 	scheduler.customRulesTime[r.Name] = fileModify(r.File)
 }

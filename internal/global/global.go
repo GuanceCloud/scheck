@@ -1,7 +1,9 @@
 package global
 
 import (
+	"path/filepath"
 	"runtime"
+	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 )
@@ -32,11 +34,19 @@ const (
 
 // 公用参数：go和lua的相互调用函数使用的常量、文件操作使用的mode参数、等
 const (
-	LuaRet1    = 1
-	LuaRet2    = 2
-	LuaArgIdx1 = 1
-	LuaArgIdx2 = 2
-	LuaArgIdx3 = 3
+	LuaRet1                    = 1
+	LuaRet2                    = 2
+	LuaArgIdx1                 = 1
+	LuaArgIdx2                 = 2
+	LuaArgIdx3                 = 3
+	LuaConfiguration           = "__this_configuration"
+	LuaConfigurationKey        = "ruleFile"
+	LuaStatusFile              = ".status.json"
+	LuaStatusOutFileMD         = "./%s.lua_status.md"
+	LuaStatusOutFileHTML       = "./%s.lua_status.html"
+	LuaStatusWriteFileInterval = time.Minute * 5
+	LuaCronDisable             = "disable"
+	LuaScriptTimeout           = time.Second * 10
 
 	FileModeRW       = 0644
 	FileModeMkdir    = 0666
@@ -47,12 +57,15 @@ const (
 	GB = MB * 1024
 
 	ParseBase    = 10
+	ParseBase16  = 16
 	ParseBitSize = 64
 )
 
 var (
 	Version            = git.Version
-	InstallDir         = optionalInstallDir[runtime.GOOS+"/"+runtime.GOARCH]
+	LocalGOOS          = runtime.GOOS
+	LocalGOARCH        = runtime.GOARCH
+	InstallDir         = optionalInstallDir[LocalGOOS+"/"+LocalGOARCH]
 	optionalInstallDir = map[string]string{
 		OSArchWinAmd64: `C:\\Program Files\\scheck`,
 		OSArchWin386:   `C:\\Program Files (x86)\\scheck`,
@@ -65,9 +78,15 @@ var (
 	}
 
 	// DefLogPath is default config
-	DefLogPath  = "/var/log/scheck"
-	DefRulesDir = "rules.d"
+	DefLogPath      = "/var/log/scheck"
+	DefRulesDir     = "rules.d"
+	LuaLocalLibPath = "lib"
+	PublicLuaLib    = "?.lua"
+	DumpFolder      = filepath.Join(InstallDir, "dump")
+	CgroupPeriod    = 1000000
 
 	DefPprofPort     = ":6060"
 	DefOutputPending = 100
+	DefLuaPoolCap    = 15
+	DefLuaPoolMaxCap = 20
 )

@@ -21,7 +21,7 @@ func SavePid() error {
 	}
 
 	pid := os.Getpid()
-	return ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), os.ModePerm)
+	return ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), FileModeRW)
 }
 
 func isRuning(pidFile string) bool {

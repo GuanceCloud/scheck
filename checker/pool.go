@@ -56,6 +56,8 @@ func (p *statePool) getState() *luafuncs.ScriptRunTime {
 		<-p.freeSignal
 		w = workers[n]
 		p.poolStatus[n] = true
+		p.running++
+		l.Debugf(">> pool get index=%d to running", n)
 	}
 	p.lock.Unlock()
 
@@ -68,13 +70,19 @@ func (p *statePool) getState() *luafuncs.ScriptRunTime {
 		if n >= 0 {
 			w = workers[n]
 			p.poolStatus[n] = true
+			p.running++
 		}
 		p.lock.Unlock()
 	} else if w == nil {
-		w = luafuncs.NewScriptRunTime()
+		l.Debugf(">> pool new state to running")
+		w = p.getNewState()
 		w.ID = -1
 	}
 	return w
+}
+
+func (p *statePool) getNewState() *luafuncs.ScriptRunTime {
+	return luafuncs.NewScriptRunTime()
 }
 
 func (p *statePool) getFreeIndex() int {
@@ -90,7 +98,7 @@ func (p *statePool) getFreeIndex() int {
 func (p *statePool) putPool(srt *luafuncs.ScriptRunTime) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-
+	l.Debugf("put ID=%d to pool amd running =%d", srt.ID, p.running)
 	p.running--
 	if srt.ID == -1 {
 		srt.Ls.Close()

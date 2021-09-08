@@ -7,7 +7,6 @@ import (
 )
 
 func TestUtmp(t *testing.T) {
-
 	f, err := os.Open(`/var/run/utmp`)
 	if err != nil {
 		log.Fatal(err)
@@ -16,16 +15,16 @@ func TestUtmp(t *testing.T) {
 
 	items, err := ParseUtmp(f)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	for _, item := range items {
 		log.Printf("username=%s, tty=%v, host=%v", item.User, item.Device, item.Host)
 	}
-
 }
 
 func TestSockets(t *testing.T) {
-	sockets, err := EnumProcessesOpenSockets(nil)
+	sockets, err := EnumProOpenSockets(nil)
 	if err != nil {
 		log.Fatal(err)
 	}

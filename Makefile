@@ -99,7 +99,7 @@ prepare:
 deps: man gofmt vet
 
 lint: deps
-	@golangci-lint run --skip-dirs="funcs/" | tee check.err # https://golangci-lint.run/usage/install/#local-installation
+	@golangci-lint run | tee check.err # https://golangci-lint.run/usage/install/#local-installation
 
 # local:
 # 	$(call build,linux,amd64)

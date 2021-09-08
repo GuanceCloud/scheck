@@ -3,8 +3,13 @@ package luafuncs
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/influxdata/toml"
+	"github.com/influxdata/toml/ast"
 
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
@@ -104,16 +109,16 @@ type ScriptGlobalCfg struct {
 
 func SetScriptGlobalConfig(l *lua.LState, cfg *ScriptGlobalCfg) {
 	var t lua.LTable
-	t.RawSetString("rulefile", lua.LString(cfg.RulePath))
-	l.SetGlobal("__this_configuration", &t)
+	t.RawSetString(global.LuaConfigurationKey, lua.LString(cfg.RulePath))
+	l.SetGlobal(global.LuaConfiguration, &t)
 }
 
 func GetScriptGlobalConfig(l *lua.LState) *ScriptGlobalCfg {
-	lv := l.GetGlobal("__this_configuration")
+	lv := l.GetGlobal(global.LuaConfiguration)
 	if lv.Type() == lua.LTTable {
 		t := lv.(*lua.LTable)
 		var cfg ScriptGlobalCfg
-		v := t.RawGetString("rulefile")
+		v := t.RawGetString(global.LuaConfigurationKey)
 		if v.Type() == lua.LTString {
 			cfg.RulePath = string(v.(lua.LString))
 		}
@@ -162,7 +167,6 @@ func LoadLuaLibs(ls *lua.LState) error {
 	return nil
 }
 
-// testLua
 func TestLua(rulepath string) {
 	rulepath, _ = filepath.Abs(rulepath)
 	rulepath += global.LuaExt
@@ -192,4 +196,87 @@ func TestLua(rulepath string) {
 	if err = ls.PCall(0, lua.MultRet, nil); err != nil {
 		fmt.Printf("testLua err=%v \n", err)
 	}
+}
+
+// CheckLua check all custom lua.
+func CheckLua(customRuleDir string) {
+	fileInfos, err := ioutil.ReadDir(customRuleDir)
+	if err != nil {
+		l.Errorf("%v", err)
+		return
+	}
+	if len(fileInfos) == 0 {
+		fmt.Printf("there are no lua rules here \n")
+		return
+	}
+	errCount := 0
+	for _, info := range fileInfos {
+		if info.IsDir() {
+			continue
+		}
+		if strings.HasSuffix(info.Name(), ".lua") {
+			_, err := CompilesScript(filepath.Join(customRuleDir, info.Name()))
+			if err != nil {
+				fmt.Printf("name of lua :%s compiles is err:%v \n", info.Name(), err)
+				errCount++
+			}
+		}
+		if strings.HasSuffix(info.Name(), ".manifest") {
+			err := CompilesManifest(filepath.Join(customRuleDir, info.Name()))
+			if err != nil {
+				fmt.Printf("name of manifest :%s compiles is err:%v \n", info.Name(), err)
+				errCount++
+			}
+		}
+	}
+	if errCount != 0 {
+		fmt.Printf("there are %d error here \n", errCount)
+	} else {
+		fmt.Printf("all of the lua rules is ok! \n")
+	}
+}
+
+func CompilesManifest(fileName string) error {
+	var tbl *ast.Table
+	contents, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	tbl, err = toml.Parse(contents)
+	if err != nil {
+		return err
+	}
+	requireKeys := map[string]bool{
+		"id":       false,
+		"category": false,
+		"level":    false,
+		"title":    false,
+		"desc":     false,
+		"cron":     false,
+		"os_arch":  false,
+	}
+	for k := range requireKeys {
+		v := tbl.Fields[k]
+		if v == nil {
+			continue
+		}
+		str := ""
+		if kv, ok := v.(*ast.KeyValue); ok {
+			if s, ok := kv.Value.(*ast.String); ok {
+				str = s.Value
+			}
+			if s, ok := kv.Value.(*ast.Array); ok {
+				str = s.Source()
+			}
+		}
+		if str != "" {
+			requireKeys[k] = true
+		}
+	}
+	for name, ok := range requireKeys {
+		if !ok {
+			return fmt.Errorf("field name=%s can find", name)
+		}
+	}
+	return nil
 }

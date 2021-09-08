@@ -77,7 +77,7 @@ func (p *provider) trigger(ls *lua.LState) int {
 	tags := makeManifestTags(manifest)
 	if manifest.tmpl != nil {
 		buf := bytes.NewBufferString("")
-		if err = manifest.tmpl.Execute(buf, templateTable); err != nil {
+		if err = manifest.tmpl.Execute(buf, templateVals); err != nil {
 			ls.RaiseError("fail to apple template, %s", err)
 			return lua.MultRet
 		}
@@ -88,6 +88,7 @@ func (p *provider) trigger(ls *lua.LState) int {
 		ls.RaiseError("%s", err)
 		return lua.MultRet
 	}
+	go luafuncs.UpdateTriggerCount(cfg.RulePath)
 	return 0
 }
 

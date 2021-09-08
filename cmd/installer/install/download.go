@@ -29,8 +29,7 @@ func (wc *writeCounter) PrintProgress() {
 	}
 }
 
-func Download(from, to string, isGzip, progress, downloadOnly bool) error {
-	cli := http.DefaultClient
+func Download(cli *http.Client, from, to string, isGzip, progress, downloadOnly bool) error {
 	req, err := http.NewRequest("GET", from, nil)
 	if err != nil {
 		return err

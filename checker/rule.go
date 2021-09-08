@@ -2,6 +2,7 @@ package checker
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -98,7 +99,11 @@ func (r *Rule) load() error {
 	}
 
 	r.cron = manifest.Cron
-	r.interval = checkRunTime(r.cron)
+	if r.cron == "" || r.cron == global.LuaCronDisable {
+		r.interval = -1
+	} else {
+		r.interval = checkRunTime(r.cron)
+	}
 	r.disabled = manifest.disabled
 	r.RunTime = time.Now().Unix() + r.interval
 	return nil
@@ -109,20 +114,63 @@ func (r *Rule) RunJob() {
 		l.Warn("the statePool is nil!!!")
 		return
 	}
-
+	now := time.Now()
 	state := pool.getState()
 	// to set filePath
 	var lt lua.LTable
-	lt.RawSetString("rulefile", lua.LString(r.Name))
-	state.Ls.SetGlobal("__this_configuration", &lt)
+	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
+	state.Ls.SetGlobal(global.LuaConfiguration, &lt)
 
-	l.Debugf("rule name: %s is running!!!", r.Name)
+	cxt, cancel := context.WithTimeout(context.Background(), global.LuaScriptTimeout)
+	defer cancel()
+	state.Ls.SetContext(cxt)
+
+	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
+	state.Ls.Push(lFunc)
+	errChan := make(chan bool)
+	var err error
+	go func() {
+		l.Debugf("rule name: %s is running!!!", r.Name)
+		if err = state.Ls.PCall(0, lua.MultRet, nil); err != nil {
+			errChan <- false
+		} else {
+			errChan <- true
+		}
+	}()
+	select {
+	case <-cxt.Done():
+		l.Errorf("run lua script:%s is timeout!", r.Name)
+	case b := <-errChan:
+		if !b {
+			l.Errorf("lua.state run  err=%v ", err)
+		}
+	}
+	go luafuncs.UpdateStatus(r.Name, time.Since(now), err != nil)
+
+	state.Ls.RemoveContext()
+
+	pool.putPool(state)
+}
+
+func (r *Rule) RunOnce(cxt context.Context, c chan string) {
+	if pool == nil {
+		l.Warn("the statePool is nil!!!")
+		return
+	}
+	state := pool.getNewState()
+	state.Ls.SetContext(cxt)
+
+	var lt lua.LTable
+	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
+	state.Ls.SetGlobal(global.LuaConfiguration, &lt)
+
+	l.Debugf("rule name: %s is running at once", r.Name)
 	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
 	state.Ls.Push(lFunc)
 	if err := state.Ls.PCall(0, lua.MultRet, nil); err != nil {
 		l.Errorf("lua.state run  err=%v ", err)
+		c <- r.Name
 	}
-	pool.putPool(state)
 }
 
 func newManifest(path string) *RuleManifest {

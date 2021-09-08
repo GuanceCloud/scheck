@@ -2,17 +2,19 @@ package system
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/md5" // nolint:gosec
 	"encoding/hex"
-	"github.com/fsnotify/fsnotify"
-	"github.com/gogf/gf/os/gfsnotify"
-	lua "github.com/yuin/gopher-lua"
-	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/gogf/gf/os/gfsnotify"
+	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 var (
@@ -30,7 +32,7 @@ func (p *provider) ls(l *lua.LState) int {
 	dir = strings.TrimSpace(dir)
 
 	rescue := false
-	lv = l.Get(2)
+	lv = l.Get(global.LuaArgIdx2)
 	if lv != lua.LNil {
 		if lv.Type() != lua.LTBool {
 			l.TypeError(1, lua.LTBool)
@@ -55,14 +57,13 @@ func (p *provider) ls(l *lua.LState) int {
 			files.Append(file)
 		}
 	} else {
-		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-
-			}
-			if info != nil {
-				file := fileInfo2Table(info)
-				file.RawSetString("path", lua.LString(path))
-				files.Append(file)
+		_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err == nil {
+				if info != nil {
+					file := fileInfo2Table(info)
+					file.RawSetString("path", lua.LString(path))
+					files.Append(file)
+				}
 			}
 			return nil
 		})
@@ -90,7 +91,6 @@ func (p *provider) fileExist(l *lua.LState) int {
 }
 
 func (p *provider) fileInfo(l *lua.LState) int {
-
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -119,18 +119,17 @@ func (p *provider) readFile(l *lua.LState) int {
 
 	path := string(lv.(lua.LString))
 	path = strings.TrimSpace(path)
-	if data, err := ioutil.ReadFile(path); err != nil {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
-	} else {
-		content = string(data)
 	}
+	content = string(data)
 	l.Push(lua.LString(content))
 	return 1
 }
 
 func (p *provider) fileHash(l *lua.LState) int {
-
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -145,7 +144,7 @@ func (p *provider) fileHash(l *lua.LState) int {
 		return lua.MultRet
 	}
 
-	m := md5.New()
+	m := md5.New() // nolint:gosec
 	m.Write(data)
 	result := hex.EncodeToString(m.Sum(nil))
 
@@ -154,7 +153,6 @@ func (p *provider) fileHash(l *lua.LState) int {
 }
 
 func (p *provider) grep(l *lua.LState) int {
-
 	var opts string
 	lv := l.Get(1)
 	if lv != lua.LNil {
@@ -166,7 +164,7 @@ func (p *provider) grep(l *lua.LState) int {
 	}
 
 	var pattern string
-	lv = l.Get(2)
+	lv = l.Get(global.LuaArgIdx2)
 	if lv != lua.LNil {
 		if lv.Type() != lua.LTString {
 			l.TypeError(1, lua.LTString)
@@ -176,7 +174,7 @@ func (p *provider) grep(l *lua.LState) int {
 	}
 
 	var filearg string
-	lv = l.Get(3)
+	lv = l.Get(global.LuaArgIdx3)
 	if lv != lua.LNil {
 		if lv.Type() != lua.LTString {
 			l.TypeError(1, lua.LTString)
@@ -205,7 +203,7 @@ func (p *provider) grep(l *lua.LState) int {
 		if cmd.ProcessState.ExitCode() == 1 {
 			l.Push(lua.LString(""))
 			l.Push(lua.LString(""))
-			return 2
+			return global.LuaRet2
 		}
 		errstr := errbuf.String()
 		if errstr == "" {
@@ -214,11 +212,11 @@ func (p *provider) grep(l *lua.LState) int {
 
 		l.Push(lua.LString(""))
 		l.Push(lua.LString(errstr))
-		return 2
+		return global.LuaRet2
 	}
 	l.Push(lua.LString(buf.String()))
 	l.Push(lua.LString(""))
-	return 2
+	return global.LuaRet2
 }
 
 func fileWatch(path string, scchan lua.LChannel) {
@@ -245,11 +243,11 @@ func fileWatch(path string, scchan lua.LChannel) {
 					if event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename {
 						done <- true
 					}
-				case err, ok := <-watcher.Errors:
+				case werr, ok := <-watcher.Errors:
 					if !ok {
 						return
 					}
-					l.Fatalf("func fileWatch error :%s", err)
+					l.Fatalf("func fileWatch error :%s", werr)
 				}
 			}
 		}()
@@ -260,7 +258,6 @@ func fileWatch(path string, scchan lua.LChannel) {
 		}
 		<-done
 	}()
-
 }
 
 func dirWatch(path string, scchan lua.LChannel) {
@@ -278,15 +275,16 @@ func dirWatch(path string, scchan lua.LChannel) {
 		if err != nil {
 			l.Fatalf("func dirWatch error:%s ", err)
 			return
-		} else {
-			<-done
 		}
+		<-done
 	}()
 }
 
-func (p *provider) pathWatch(L *lua.LState) int {
-	path := L.ToString(1)
-	scchan := L.ToChannel(2)
+func (p *provider) pathWatch(l *lua.LState) int {
+	var strN = 1
+	var chanN = 2
+	path := l.ToString(strN)
+	scchan := l.ToChannel(chanN)
 	fi, err := os.Stat(path)
 	if err != nil {
 		return lua.MultRet
