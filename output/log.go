@@ -62,7 +62,10 @@ func (log *localLog) ReadMsg(measurement string, tags map[string]string, fields 
 }
 
 func (log *localLog) ToUpstream(sam ...*sample) {
-	if _, err := log.outputFile.Write(append(sam[0].data, byte('\n'))); err != nil {
+	timenow := time.Now().Format(" 20060102-150405")
+	date := sam[0].data
+	date = append(date, []byte(timenow)...)
+	if _, err := log.outputFile.Write(append(date, byte('\n'))); err != nil {
 		l.Errorf("%s", err)
 	}
 }

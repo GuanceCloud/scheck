@@ -157,7 +157,7 @@ func (r *Rule) RunOnce(cxt context.Context, c chan string) {
 		l.Warn("the statePool is nil!!!")
 		return
 	}
-	state := pool.getNewState()
+	state := getNewState()
 	state.Ls.SetContext(cxt)
 
 	var lt lua.LTable

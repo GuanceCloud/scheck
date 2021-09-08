@@ -78,7 +78,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			}
 			if !r.disabled {
 				scheduler.addRule(r)
-				luafuncs.Add(r.Name, r.interval, isCustom)
+				luafuncs.Add(r.Name, r.manifest.Category, r.interval, isCustom)
 			}
 		}
 	}

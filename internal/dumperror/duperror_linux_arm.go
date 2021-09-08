@@ -47,7 +47,7 @@ func (dump *dumperror) DumpError() {
 			return
 		}
 		defer logFile.Close()
-		_ = syscall.Dup2(int(logFile.Fd()), int(os.Stderr.Fd()))
+		_ = syscall.Dup3(int(logFile.Fd()), int(os.Stderr.Fd()), 0)
 	}
 }
 

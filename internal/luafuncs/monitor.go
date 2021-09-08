@@ -43,8 +43,8 @@ const (
 `
 
 	temp = `
-| lua名称 | 状态 | 平均用时   | 最大用时 | 最小用时 | 上次运行时间 | 总运行次数  | 错误次数 | 上报次数 |
-| ----   | :----:   | :----: | :----:       | :----:       | :----: | :---: | :----:   | :---:    |
+| lua名称 | 类型 | 状态 | 平均用时   | 最大用时 | 最小用时 | 上次运行时间 | 总运行次数  | 错误次数 | 上报次数 |
+| ----   | :----:   | :----:   | :----: | :----:       | :----:       | :----: | :---: | :----:   | :---:    |
 `
 
 	format = "|`%s`|%s|%s|%s|%s|%s|%d|%d|%d|"
@@ -59,6 +59,7 @@ var (
 
 type Script struct {
 	Name        string `json:"name"`
+	Category    string `json:"category"`
 	Status      string `json:"status"`
 	RuntimeAvg  int64  `json:"runtime_avg"`
 	RuntimeMax  int64  `json:"runtime_max"`
@@ -104,9 +105,10 @@ func Start() {
 	go monitor.timeToSave(global.LuaStatusWriteFileInterval)
 }
 
-func newScriptStatus(name string, interval int64) *Script {
+func newScriptStatus(name, category string, interval int64) *Script {
 	return &Script{
 		Name:     name,
+		Category: category,
 		Status:   "ok",
 		isOnce:   interval < 0,
 		Interval: interval,
@@ -190,7 +192,7 @@ func (m *Monitor) MonitorMarshal() ([]byte, error) {
 	defer m.lock.Unlock()
 	bts, err := json.MarshalIndent(m, "", "	")
 	for name, script := range m.Scripts {
-		m.Scripts[name] = newScriptStatus(script.Name, script.Interval)
+		m.Scripts[name] = newScriptStatus(script.Name, script.Category, script.Interval)
 	}
 	if err != nil {
 		return nil, err
@@ -234,8 +236,8 @@ func (m *Monitor) mergeOld(oldScripts map[string]*Script) {
 }
 
 // Add:all rule add to monitor.
-func Add(name string, interval int64, isCustom bool) {
-	ss := newScriptStatus(name, interval)
+func Add(name, category string, interval int64, isCustom bool) {
+	ss := newScriptStatus(name, category, interval)
 	if monitor == nil {
 		return
 	}
@@ -282,6 +284,7 @@ func UpdateTriggerCount(name string) {
 
 type OutType struct {
 	Name        string
+	Category    string
 	Status      string
 	RuntimeAvg  string
 	RuntimeMax  string
@@ -360,6 +363,7 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 
 		out := &OutType{Name: script.Name,
 			Status:      script.Status,
+			Category:    script.Category,
 			RuntimeAvg:  timeAvg,
 			RuntimeMax:  timeMax,
 			RuntimeMin:  timeMin,
