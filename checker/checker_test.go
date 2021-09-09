@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	cron "github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"text/template"
+
+	cron "github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 )
 
 const (

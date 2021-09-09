@@ -83,9 +83,6 @@ func goPprof() {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-	mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello"))
-	})
 	_ = http.ListenAndServe(global.DefPprofPort, mux)
 }
 

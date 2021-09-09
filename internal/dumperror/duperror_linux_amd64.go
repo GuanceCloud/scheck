@@ -24,7 +24,7 @@ func createDumpError(flag bool) *dumperror {
 			l.Errorf("err=%v", err)
 			return nil
 		}
-		err = os.Mkdir(logFolder, os.ModePerm)
+		err = os.Mkdir(logFolder, global.FileModeMkdir)
 		if err != nil {
 			l.Errorf("cannot mkdir err=%v ", err)
 			return nil

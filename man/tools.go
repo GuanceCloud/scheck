@@ -165,7 +165,7 @@ func ScheckDir(id, outputPath string) {
 
 	exist, _ := PathExists(filePath)
 	if !exist {
-		err := os.Mkdir(filePath, os.ModePerm)
+		err := os.Mkdir(filePath, global.FileModeMkdir)
 		if err != nil {
 			l.Fatalf("%s Creation failed", filePath)
 		}
@@ -310,7 +310,7 @@ func ScheckCoreSyncDisk(ruleDir string) {
 	}
 	// Create a directory and synchronize Lua scripts to disk
 	if _, err := os.Stat(ruleDir); err != nil {
-		if err := os.Mkdir(ruleDir, os.ModeDir); err == nil {
+		if err := os.Mkdir(ruleDir, global.FileModeMkdir); err == nil {
 			l.Debugf("The current scriptbox length is %d \n", len(ScriptBox.List()))
 			for _, name := range ScriptBox.List() {
 				if content, err := ScriptBox.Find(name); err == nil {
@@ -336,7 +336,7 @@ func ScheckCoreSyncDisk(ruleDir string) {
 func ScheckDocSyncDisk(filePath string) error {
 	// Create a directory and synchronize Lua scripts to disk
 	if _, err := os.Stat(filePath); err != nil {
-		if err := os.Mkdir(filePath, os.ModeDir); err == nil {
+		if err := os.Mkdir(filePath, global.FileModeMkdir); err == nil {
 			// Traversal Lua script name
 			l.Debug("The current scriptbox length is %d \n", len(ScriptBox.List()))
 		}

@@ -1,6 +1,7 @@
 package global
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -48,9 +49,9 @@ const (
 	LuaSortByName              = "name"
 	LuaSortBytime              = "time"
 
-	FileModeRW       = 0644
-	FileModeMkdir    = 0666
-	FileModeMkdirAll = 0755
+	FileModeRW       = os.FileMode(0644)
+	FileModeMkdir    = os.FileMode(0666)
+	FileModeMkdirAll = os.FileMode(0755)
 
 	KB = 1024
 	MB = KB * 1024
