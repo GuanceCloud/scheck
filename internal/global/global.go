@@ -44,6 +44,9 @@ const (
 	LuaStatusWriteFileInterval = time.Minute * 5
 	LuaCronDisable             = "disable"
 	LuaScriptTimeout           = time.Second * 10
+	LuaSortByCount             = "count"
+	LuaSortByName              = "name"
+	LuaSortBytime              = "time"
 
 	FileModeRW       = 0644
 	FileModeMkdir    = 0666

@@ -110,7 +110,7 @@ func (c *Checker) start(ctx context.Context) {
 	default:
 	}
 
-	go cgroup.Run()
+	go cgroup.Run(config.Cfg.Cgroup)
 
 	firstTrigger()
 	<-ctx.Done()

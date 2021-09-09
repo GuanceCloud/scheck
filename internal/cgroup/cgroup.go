@@ -17,26 +17,26 @@ var (
 	l = logger.DefaultSLogger("cgroup")
 )
 
-func Run() {
+func Run(cgroup *config.Cgroup) {
 	l = logger.SLogger("cgroup")
 
-	if config.Cfg.Cgroup == nil || !config.Cfg.Cgroup.Enable {
+	if cgroup == nil || !cgroup.Enable {
 		return
 	}
 
-	if !(float64(cpuMin) < config.Cfg.Cgroup.CPUMax && config.Cfg.Cgroup.CPUMax < float64(cpuMax)) ||
-		!(float64(cpuMin) < config.Cfg.Cgroup.CPUMin && config.Cfg.Cgroup.CPUMin < float64(cpuMax)) {
+	if !(float64(cpuMin) < cgroup.CPUMax && cgroup.CPUMax < float64(cpuMax)) ||
+		!(float64(cpuMin) < cgroup.CPUMin && cgroup.CPUMin < float64(cpuMax)) {
 		l.Errorf("CPUMax and CPUMin should be in range of (0.0, 100.0)")
 		return
 	}
 
-	if config.Cfg.Cgroup.CPUMax < config.Cfg.Cgroup.CPUMin {
+	if cgroup.CPUMax < cgroup.CPUMin {
 		l.Errorf("CPUMin should less than CPUMax of the cgroup")
 		return
 	}
-	if config.Cfg.Cgroup.MEM != -1 {
-		if config.Cfg.Cgroup.MEM == 0 {
-			config.Cfg.Cgroup.MEM = DefMEM
+	if cgroup.MEM != -1 {
+		if cgroup.MEM == 0 {
+			cgroup.MEM = DefMEM
 		}
 
 		vm, err := mem.VirtualMemory()
@@ -46,7 +46,7 @@ func Run() {
 		}
 
 		available := vm.Available / uint64(global.MB)
-		if uint64(config.Cfg.Cgroup.MEM) > available {
+		if uint64(cgroup.MEM) > available {
 			l.Errorf("MEM should less than Available")
 			return
 		}

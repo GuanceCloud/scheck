@@ -102,10 +102,12 @@ type HTTP struct {
 	Enable bool   `toml:"enable"`
 	Output string `toml:"output,omitempty"`
 }
+
 type Log struct {
 	Enable bool   `toml:"enable"`
 	Output string `toml:"output,omitempty"`
 }
+
 type AliSls struct {
 	Enable          bool   `toml:"enable"`
 	EndPoint        string `toml:"endpoint"`
@@ -161,7 +163,7 @@ func DefaultConfig() *Config {
 			Log:      filepath.Join(global.DefLogPath, "log"),
 			Rotate:   0, // 默认32M
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 10, CPUMin: 5, MEM: 100},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 10.0, CPUMin: 5.0, MEM: 100},
 	}
 
 	// windows

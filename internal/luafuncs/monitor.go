@@ -37,7 +37,7 @@ const (
 - scheck 当前的版本为%s 发布时间%s
 - scheck 已经运行了%s
 - 当前共有%d个lua脚本 其中自带的有%d个 属于用户自定义的有%d个
-- 当前排序的方式为%s,排序方式可分为：运行次数(-count),用时(-time),名称(-name)。默认按照运行次数排序。
+- 当前排序的方式为%s,排序方式可分为三种：运行次数(-count),用时(-time),名称(-name)。默认按照运行次数排序。
 
 ### 以下为各个lua脚本运行情况：
 `
@@ -398,7 +398,9 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 func ExportAsMD(sortBy string) string {
 	mdFile := fmt.Sprintf(global.LuaStatusOutFileMD, time.Now().Format("20060102-150405"))
 	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
-
+	if sortBy == "" {
+		sortBy = global.LuaSortByCount
+	}
 	hostName, _ := os.Hostname()
 	rsm := RunStatusMonitor{
 		HostName:      hostName,
