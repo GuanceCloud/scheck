@@ -47,7 +47,7 @@ const (
 | ----   | :----:   | :----:   | :----: | :----:       | :----:       | :----: | :---: | :----:   | :---:    |
 `
 
-	format = "|`%s`|%s|%s|%s|%s|%s|%d|%d|%d|"
+	format = "|`%s`|%s|%s|%s|%s|%s|%s|%d|%d|%d|"
 
 	end = "\n > lua scripts运行情况放在文件: `%s` 文件的格式是markdown, `%s`文件格式为html 可用过编译器或者浏览器等打开"
 )
@@ -384,7 +384,7 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 		sc := rsm.Scripts[i]
 		rows = append(rows,
 			fmt.Sprintf(format,
-				sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
+				sc.Name, sc.Category, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
 				sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
 	if rsm.ScriptsSortBy == "name" {

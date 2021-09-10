@@ -93,4 +93,6 @@ var (
 
 	LocalLogMaxAge = time.Hour * 24 * 7
 	LocalLogRotate = time.Hour * 24
+
+	TimeMilli = int64(1000)
 )
