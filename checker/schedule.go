@@ -78,7 +78,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			}
 			if !r.disabled {
 				scheduler.addRule(r)
-				luafuncs.Add(r.Name, r.interval, isCustom)
+				luafuncs.Add(r.Name, r.manifest.Category, r.interval, isCustom)
 			}
 		}
 	}
@@ -101,7 +101,7 @@ func (scheduler *TaskScheduler) doAndReset(key string) {
 	scheduler.lock.Lock()
 	defer scheduler.lock.Unlock()
 	if task, ok := scheduler.tasks[key]; ok {
-		task.RunTime = time.Now().Unix() + task.interval
+		task.RunTime = time.Now().UnixNano()/1e6 + task.interval
 		scheduler.tasks[key] = task
 	}
 }
@@ -116,22 +116,24 @@ func (scheduler *TaskScheduler) run() {
 		now := time.Now()
 		task, key := scheduler.GetTask()
 		runTime := task.RunTime
-		i64 := runTime - now.Unix()
-		if i64 <= 0 {
+		next := runTime - now.UnixNano()/1e6
+		if next <= 0 {
 			if task != nil {
-				go task.RunJob()
+				state := pool.getState()
+				go task.RunJob(state)
 			}
 			scheduler.doAndReset(key)
 			continue
 		}
-		timer := time.NewTimer(time.Second * time.Duration(i64))
-		l.Debugf("scheduler new time.timer, at %d Seconds start...", i64)
+		timer := time.NewTimer(time.Millisecond * time.Duration(next))
+		l.Debugf("scheduler new time.timer, at %d millisecond start...", next)
 		for {
 			select {
 			case <-timer.C:
+				state := pool.getState()
 				scheduler.doAndReset(key)
 				if task != nil {
-					go task.RunJob()
+					go task.RunJob(state)
 					timer.Stop()
 				}
 			case <-scheduler.stop:

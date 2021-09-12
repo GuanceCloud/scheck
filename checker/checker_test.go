@@ -10,10 +10,9 @@ import (
 	"testing"
 	"text/template"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-
 	cron "github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 )
 
 const (
@@ -106,7 +105,7 @@ func (r *testRule) updateScript(ruledir string) error {
 func mockRules() (string, []*testRule) {
 	var testRules []*testRule
 	for i := 1; i <= 200; i++ {
-		testRules = append(testRules, newTestRule(i, `*/10 * * * *`, luaTempStr))
+		testRules = append(testRules, newTestRule(i, `0 */1 * * *`, luaTempStr))
 	}
 
 	var ruleDir string

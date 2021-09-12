@@ -104,10 +104,12 @@ type HTTP struct {
 	Enable bool   `toml:"enable"`
 	Output string `toml:"output,omitempty"`
 }
+
 type Log struct {
 	Enable bool   `toml:"enable"`
 	Output string `toml:"output,omitempty"`
 }
+
 type AliSls struct {
 	Enable          bool   `toml:"enable"`
 	EndPoint        string `toml:"endpoint"`
@@ -163,7 +165,7 @@ func DefaultConfig() *Config {
 			Log:      filepath.Join(global.DefLogPath, "log"),
 			Rotate:   0, // 默认32M
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 10, CPUMin: 5, MEM: 100},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 10.0, CPUMin: 5.0, MEM: 100},
 	}
 
 	// windows
@@ -270,17 +272,17 @@ func (c *Config) setLogging() {
 func initDir() {
 	_, err := os.Stat(Cfg.System.CustomRuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.CustomRuleDir, os.ModeDir|os.ModePerm)
+		_ = os.MkdirAll(Cfg.System.CustomRuleDir, global.FileModeMkdir)
 	}
 
 	_, err = os.Stat(Cfg.System.RuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.RuleDir, os.ModeDir|os.ModePerm)
+		_ = os.MkdirAll(Cfg.System.RuleDir, global.FileModeMkdir)
 	}
 }
 
 func tmplToFile(c *Config, fpath string) {
-	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModeDir|os.ModePerm)
+	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, global.FileModeRW)
 	if err != nil {
 		l.Fatalf("open file err =%v", err)
 	}

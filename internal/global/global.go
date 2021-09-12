@@ -1,6 +1,7 @@
 package global
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -30,10 +31,7 @@ const (
 
 	ReleaseURL = "zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker"
 	TestURL    = "zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker"
-)
 
-// 公用参数：go和lua的相互调用函数使用的常量、文件操作使用的mode参数、等
-const (
 	LuaRet1                    = 1
 	LuaRet2                    = 2
 	LuaArgIdx1                 = 1
@@ -47,10 +45,13 @@ const (
 	LuaStatusWriteFileInterval = time.Minute * 5
 	LuaCronDisable             = "disable"
 	LuaScriptTimeout           = time.Second * 10
+	LuaSortByCount             = "count"
+	LuaSortByName              = "name"
+	LuaSortBytime              = "time"
 
-	FileModeRW       = 0644
-	FileModeMkdir    = 0666
-	FileModeMkdirAll = 0755
+	FileModeRW       = os.FileMode(0644)
+	FileModeMkdir    = os.FileMode(0666)
+	FileModeMkdirAll = os.FileMode(0755)
 
 	KB = 1024
 	MB = KB * 1024
@@ -89,4 +90,9 @@ var (
 	DefOutputPending = 100
 	DefLuaPoolCap    = 15
 	DefLuaPoolMaxCap = 20
+
+	LocalLogMaxAge = time.Hour * 24 * 7
+	LocalLogRotate = time.Hour * 24
+
+	TimeMilli = int64(1000)
 )

@@ -15,7 +15,7 @@ type statePool struct {
 	initCap    int
 	running    int
 	freeSignal chan sig
-	lock       sync.Mutex
+	lock       *sync.Mutex
 }
 
 func InitStatePool(initCap, totCap int) {
@@ -26,6 +26,7 @@ func InitStatePool(initCap, totCap int) {
 		initCap:    initCap,
 		running:    0,
 		freeSignal: make(chan sig, initCap),
+		lock:       new(sync.Mutex),
 	}
 	for i := 0; i < p.initCap; i++ {
 		state := luafuncs.NewScriptRunTime()
@@ -40,10 +41,9 @@ func InitStatePool(initCap, totCap int) {
 
 // 从池子中获取一个lua state
 func (p *statePool) getState() *luafuncs.ScriptRunTime {
+	p.lock.Lock()
 	var w *luafuncs.ScriptRunTime
 	waiting := false
-
-	p.lock.Lock()
 	workers := p.states
 	n := p.getFreeIndex()
 	if n < 0 {
@@ -57,31 +57,28 @@ func (p *statePool) getState() *luafuncs.ScriptRunTime {
 		w = workers[n]
 		p.poolStatus[n] = true
 		p.running++
-		l.Debugf(">> pool get index=%d to running", n)
 	}
 	p.lock.Unlock()
 
 	if waiting {
-		l.Debug("wait channel ...waiting last state run over")
 		<-p.freeSignal
+		l.Debug("wait channel ok")
 		p.lock.Lock()
-		workers = p.states
 		n = p.getFreeIndex()
 		if n >= 0 {
-			w = workers[n]
+			w = p.states[n]
 			p.poolStatus[n] = true
 			p.running++
 		}
 		p.lock.Unlock()
 	} else if w == nil {
-		l.Debugf(">> pool new state to running")
-		w = p.getNewState()
+		w = getNewState()
 		w.ID = -1
 	}
 	return w
 }
 
-func (p *statePool) getNewState() *luafuncs.ScriptRunTime {
+func getNewState() *luafuncs.ScriptRunTime {
 	return luafuncs.NewScriptRunTime()
 }
 
@@ -97,13 +94,12 @@ func (p *statePool) getFreeIndex() int {
 
 func (p *statePool) putPool(srt *luafuncs.ScriptRunTime) {
 	p.lock.Lock()
-	defer p.lock.Unlock()
-	l.Debugf("put ID=%d to pool amd running =%d", srt.ID, p.running)
 	p.running--
-	if srt.ID == -1 {
+	if srt.ID != -1 {
+		p.poolStatus[srt.ID] = false
+		p.freeSignal <- sig{}
+	} else {
 		srt.Ls.Close()
-		return
 	}
-	p.poolStatus[srt.ID] = false
-	p.freeSignal <- sig{}
+	p.lock.Unlock()
 }

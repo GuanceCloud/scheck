@@ -5,14 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	_ "net/http/pprof" // nolint
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"sync"
 	"syscall"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/dumperror"
 
 	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
@@ -20,6 +18,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/dumperror"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
@@ -77,7 +76,14 @@ func main() {
 }
 
 func goPprof() {
-	_ = http.ListenAndServe(global.DefPprofPort, nil)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	_ = http.ListenAndServe(global.DefPprofPort, mux)
 }
 
 func applyFlags() {

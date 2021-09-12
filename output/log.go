@@ -1,16 +1,21 @@
 package output
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 // localLog 本地存储
 type localLog struct {
 	filePath   string
-	outputFile *os.File
+	outputFile io.WriteCloser
 }
 
 func newLocalLog(filePath string) *localLog {
@@ -22,17 +27,20 @@ func newLocalLog(filePath string) *localLog {
 		l.Info("init stdout success")
 		return local
 	}
+	_ = os.MkdirAll(filepath.Dir(filePath), global.FileModeMkdirAll)
 
-	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.ModeAppend|os.ModePerm)
+	logf, err := rotatelogs.New(
+		filePath+".%Y%m%d%H%M",            // 没有使用go语言规范的format格式
+		rotatelogs.WithLinkName(filePath), // 快捷方式名称
+		rotatelogs.WithMaxAge(global.LocalLogMaxAge),
+		rotatelogs.WithRotationTime(global.LocalLogRotate),
+	)
 	if err != nil {
-		_ = os.MkdirAll(filepath.Dir(filePath), os.ModeDir|os.ModePerm)
-		f, err = os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.ModeAppend|os.ModePerm)
-		if err != nil {
-			l.Errorf("%s", err)
-		}
+		l.Errorf("init rotatelogs err=%v", err)
+		return nil
 	}
 
-	local.outputFile = f
+	local.outputFile = logf
 	l.Infof("init log ok! path=%s", filePath)
 	return local
 }
@@ -54,7 +62,10 @@ func (log *localLog) ReadMsg(measurement string, tags map[string]string, fields 
 }
 
 func (log *localLog) ToUpstream(sam ...*sample) {
-	if _, err := log.outputFile.Write(append(sam[0].data, byte('\n'))); err != nil {
+	timenow := time.Now().Format(" 20060102-150405")
+	date := sam[0].data
+	date = append(date, []byte(timenow)...)
+	if _, err := log.outputFile.Write(append(date, byte('\n'))); err != nil {
 		l.Errorf("%s", err)
 	}
 }

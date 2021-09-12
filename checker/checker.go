@@ -100,17 +100,19 @@ func (c *Checker) start(ctx context.Context) {
 		l.Info("checker exit")
 	}()
 
-	l.Infof("scheduler start")
+	if pool != nil {
+		l.Infof("scheduler start")
+		go c.taskScheduler.run()
+		go c.taskScheduler.runOnce()
+	}
 
-	go c.taskScheduler.run()
-	go c.taskScheduler.runOnce()
 	select {
 	case <-ctx.Done():
 		return
 	default:
 	}
 
-	go cgroup.Run()
+	go cgroup.Run(config.Cfg.Cgroup)
 
 	firstTrigger()
 	<-ctx.Done()

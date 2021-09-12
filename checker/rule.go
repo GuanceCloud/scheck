@@ -105,17 +105,13 @@ func (r *Rule) load() error {
 		r.interval = checkRunTime(r.cron)
 	}
 	r.disabled = manifest.disabled
-	r.RunTime = time.Now().Unix() + r.interval
+	r.RunTime = time.Now().UnixNano()/1e6 + r.interval
 	return nil
 }
 
-func (r *Rule) RunJob() {
-	if pool == nil {
-		l.Warn("the statePool is nil!!!")
-		return
-	}
+func (r *Rule) RunJob(state *luafuncs.ScriptRunTime) {
 	now := time.Now()
-	state := pool.getState()
+
 	// to set filePath
 	var lt lua.LTable
 	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
@@ -157,7 +153,7 @@ func (r *Rule) RunOnce(cxt context.Context, c chan string) {
 		l.Warn("the statePool is nil!!!")
 		return
 	}
-	state := pool.getNewState()
+	state := getNewState()
 	state.Ls.SetContext(cxt)
 
 	var lt lua.LTable
@@ -478,5 +474,5 @@ func checkRunTime(cronStr string) int64 {
 		}
 		nextRunTime = swap
 	}
-	return nextRunTime
+	return nextRunTime * global.TimeMilli
 }

@@ -37,17 +37,17 @@ const (
 - scheck 当前的版本为%s 发布时间%s
 - scheck 已经运行了%s
 - 当前共有%d个lua脚本 其中自带的有%d个 属于用户自定义的有%d个
-- 当前排序的方式为%s,排序方式可分为：运行次数(-count),用时(-time),名称(-name)。默认按照运行次数排序。
+- 当前排序的方式为%s,排序方式可分为三种：运行次数(-count),用时(-time),名称(-name)。默认按照运行次数排序。
 
 ### 以下为各个lua脚本运行情况：
 `
 
 	temp = `
-| lua名称 | 状态 | 平均用时   | 最大用时 | 最小用时 | 上次运行时间 | 总运行次数  | 错误次数 | 上报次数 |
-| ----   | :----:   | :----: | :----:       | :----:       | :----: | :---: | :----:   | :---:    |
+| lua名称 | 类型 | 状态 | 平均用时   | 最大用时 | 最小用时 | 上次运行时间 | 总运行次数  | 错误次数 | 上报次数 |
+| ----   | :----:   | :----:   | :----: | :----:       | :----:       | :----: | :---: | :----:   | :---:    |
 `
 
-	format = "|`%s`|%s|%s|%s|%s|%s|%d|%d|%d|"
+	format = "|`%s`|%s|%s|%s|%s|%s|%s|%d|%d|%d|"
 
 	end = "\n > lua scripts运行情况放在文件: `%s` 文件的格式是markdown, `%s`文件格式为html 可用过编译器或者浏览器等打开"
 )
@@ -59,6 +59,7 @@ var (
 
 type Script struct {
 	Name        string `json:"name"`
+	Category    string `json:"category"`
 	Status      string `json:"status"`
 	RuntimeAvg  int64  `json:"runtime_avg"`
 	RuntimeMax  int64  `json:"runtime_max"`
@@ -104,9 +105,10 @@ func Start() {
 	go monitor.timeToSave(global.LuaStatusWriteFileInterval)
 }
 
-func newScriptStatus(name string, interval int64) *Script {
+func newScriptStatus(name, category string, interval int64) *Script {
 	return &Script{
 		Name:     name,
+		Category: category,
 		Status:   "ok",
 		isOnce:   interval < 0,
 		Interval: interval,
@@ -190,7 +192,7 @@ func (m *Monitor) MonitorMarshal() ([]byte, error) {
 	defer m.lock.Unlock()
 	bts, err := json.MarshalIndent(m, "", "	")
 	for name, script := range m.Scripts {
-		m.Scripts[name] = newScriptStatus(script.Name, script.Interval)
+		m.Scripts[name] = newScriptStatus(script.Name, script.Category, script.Interval)
 	}
 	if err != nil {
 		return nil, err
@@ -234,8 +236,8 @@ func (m *Monitor) mergeOld(oldScripts map[string]*Script) {
 }
 
 // Add:all rule add to monitor.
-func Add(name string, interval int64, isCustom bool) {
-	ss := newScriptStatus(name, interval)
+func Add(name, category string, interval int64, isCustom bool) {
+	ss := newScriptStatus(name, category, interval)
 	if monitor == nil {
 		return
 	}
@@ -282,6 +284,7 @@ func UpdateTriggerCount(name string) {
 
 type OutType struct {
 	Name        string
+	Category    string
 	Status      string
 	RuntimeAvg  string
 	RuntimeMax  string
@@ -360,6 +363,7 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 
 		out := &OutType{Name: script.Name,
 			Status:      script.Status,
+			Category:    script.Category,
 			RuntimeAvg:  timeAvg,
 			RuntimeMax:  timeMax,
 			RuntimeMin:  timeMin,
@@ -380,7 +384,7 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 		sc := rsm.Scripts[i]
 		rows = append(rows,
 			fmt.Sprintf(format,
-				sc.Name, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
+				sc.Name, sc.Category, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
 				sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
 	if rsm.ScriptsSortBy == "name" {
@@ -394,7 +398,9 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 func ExportAsMD(sortBy string) string {
 	mdFile := fmt.Sprintf(global.LuaStatusOutFileMD, time.Now().Format("20060102-150405"))
 	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
-
+	if sortBy == "" {
+		sortBy = global.LuaSortByCount
+	}
 	hostName, _ := os.Hostname()
 	rsm := RunStatusMonitor{
 		HostName:      hostName,
