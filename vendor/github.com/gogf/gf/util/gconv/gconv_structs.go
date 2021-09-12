@@ -7,18 +7,16 @@
 package gconv
 
 import (
+	"github.com/gogf/gf/errors/gcode"
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/internal/json"
 	"reflect"
 )
 
 // Structs converts any slice to given struct slice.
+// Also see Scan, Struct.
 func Structs(params interface{}, pointer interface{}, mapping ...map[string]string) (err error) {
-	var keyToAttributeNameMapping map[string]string
-	if len(mapping) > 0 {
-		keyToAttributeNameMapping = mapping[0]
-	}
-	return doStructs(params, pointer, keyToAttributeNameMapping, "")
+	return Scan(params, pointer, mapping...)
 }
 
 // StructsTag acts as Structs but also with support for priority tag feature, which retrieves the
@@ -51,7 +49,7 @@ func doStructs(params interface{}, pointer interface{}, mapping map[string]strin
 		return nil
 	}
 	if pointer == nil {
-		return gerror.NewCode(gerror.CodeInvalidParameter, "object pointer cannot be nil")
+		return gerror.NewCode(gcode.CodeInvalidParameter, "object pointer cannot be nil")
 	}
 
 	if doStructsByDirectReflectSet(params, pointer) {
@@ -64,7 +62,7 @@ func doStructs(params interface{}, pointer interface{}, mapping map[string]strin
 			if e, ok := exception.(errorStack); ok {
 				err = e
 			} else {
-				err = gerror.NewCodeSkipf(gerror.CodeInternalError, 1, "%v", exception)
+				err = gerror.NewCodeSkipf(gcode.CodeInternalError, 1, "%v", exception)
 			}
 		}
 	}()
@@ -96,7 +94,7 @@ func doStructs(params interface{}, pointer interface{}, mapping map[string]strin
 	if !ok {
 		pointerRv = reflect.ValueOf(pointer)
 		if kind := pointerRv.Kind(); kind != reflect.Ptr {
-			return gerror.NewCodef(gerror.CodeInvalidParameter, "pointer should be type of pointer, but got: %v", kind)
+			return gerror.NewCodef(gcode.CodeInvalidParameter, "pointer should be type of pointer, but got: %v", kind)
 		}
 	}
 	// Converting `params` to map slice.

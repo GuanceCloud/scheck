@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="rc.local 文件被修改"
 desc="敏感文件 {{.File}} 被修改"
-cron="1 */5 * * *"
+cron="disable"
 # 开关
 disabled=false
 

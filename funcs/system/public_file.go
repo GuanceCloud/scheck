@@ -4,17 +4,17 @@ import (
 	"bytes"
 	"crypto/md5" // nolint:gosec
 	"encoding/hex"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gogf/gf/os/gfsnotify"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 var (
@@ -261,16 +261,22 @@ func fileWatch(path string, scchan lua.LChannel) {
 }
 
 func dirWatch(path string, scchan lua.LChannel) {
-	done := make(chan bool, 1)
 	go func() {
+		done := make(chan bool, 1)
+
 		_, err := gfsnotify.Add(path, func(event *gfsnotify.Event) {
+			fmt.Println(event.Op)
+			fmt.Println(event.Path)
 			var watch lua.LTable
 			watch.RawSetString("path", lua.LString(event.Path))
 			watch.RawSetString("status", lua.LNumber(event.Op))
 			scchan <- &watch
-			if event.IsRemove() || event.IsRename() {
-				done <- true
-			}
+			//if event.IsRemove() || event.IsRename() {
+			//	fi, err := os.Stat(path)
+			//	if err == nil && !fi.IsDir() {
+			//		done <- true
+			//	}
+			//}
 		})
 		if err != nil {
 			l.Fatalf("func dirWatch error:%s ", err)
@@ -285,14 +291,12 @@ func (p *provider) pathWatch(l *lua.LState) int {
 	var chanN = 2
 	path := l.ToString(strN)
 	scchan := l.ToChannel(chanN)
-	fi, err := os.Stat(path)
+	_, err := os.Stat(path)
 	if err != nil {
 		return lua.MultRet
-	}
-	if fi.IsDir() {
-		dirWatch(path, scchan)
 	} else {
-		fileWatch(path, scchan)
+		dirWatch(path, scchan)
 	}
+
 	return 0
 }

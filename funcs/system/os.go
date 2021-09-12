@@ -3,6 +3,7 @@ package system
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -623,5 +624,41 @@ func (p *provider) sleep(l *lua.LState) int {
 		num = int(lv.(lua.LNumber))
 	}
 	time.Sleep(time.Duration(num) * time.Second)
+	return 0
+}
+
+func (p *provider) ticker(l *lua.LState) int {
+	//lv := l.Get(1)
+	//if lv.Type() != lua.LTNil {
+	//	if lv.Type() != lua.LTChannel {
+	//		l.TypeError(1, lua.LTChannel)
+	//		return lua.MultRet
+	//	}
+	//}
+	var chanN = 1
+	var intN = 2
+	var interval time.Duration
+
+	scChan := l.ToChannel(chanN)
+	lv := l.Get(intN)
+	if lv.Type() != lua.LTNil {
+		interval = 1 * time.Second
+	} else {
+		if lv.Type() == lua.LTNumber {
+			interval = time.Duration(int(lv.(lua.LNumber))) * time.Second
+		} else {
+			interval = 1 * time.Second
+		}
+	}
+	go func(interval time.Duration) {
+		timer1 := time.NewTicker(interval)
+		for {
+			select {
+			case v := <-timer1.C:
+				fmt.Println(11111)
+				scChan <- lua.LString(v.String())
+			}
+		}
+	}(interval)
 	return 0
 }

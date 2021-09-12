@@ -11,6 +11,7 @@ package gtime
 
 import (
 	"fmt"
+	"github.com/gogf/gf/errors/gcode"
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/internal/utils"
 	"os"
@@ -24,6 +25,7 @@ import (
 
 const (
 	// Short writes for common usage durations.
+
 	D  = 24 * time.Hour
 	H  = time.Hour
 	M  = time.Minute
@@ -195,7 +197,7 @@ func ISO8601() string {
 	return time.Now().Format("2006-01-02T15:04:05-07:00")
 }
 
-// ISO8601 returns current datetime in RFC822 format like "Mon, 02 Jan 06 15:04 MST".
+// RFC822 returns current datetime in RFC822 format like "Mon, 02 Jan 06 15:04 MST".
 func RFC822() string {
 	return time.Now().Format("Mon, 02 Jan 06 15:04 MST")
 }
@@ -236,6 +238,9 @@ func parseDateStr(s string) (year, month, day int) {
 // If <format> is not given, it converts string as a "standard" datetime string.
 // Note that, it fails and returns error if there's no date string in <str>.
 func StrToTime(str string, format ...string) (*Time, error) {
+	if str == "" {
+		return &Time{wrapper{time.Time{}}}, nil
+	}
 	if len(format) > 0 {
 		return StrToTimeFormat(str, format[0])
 	}
@@ -276,7 +281,7 @@ func StrToTime(str string, format ...string) (*Time, error) {
 		}
 		return NewFromTime(time.Date(0, time.Month(1), 1, hour, min, sec, nsec, local)), nil
 	} else {
-		return nil, gerror.NewCode(gerror.CodeInvalidParameter, "unsupported time format")
+		return nil, gerror.NewCode(gcode.CodeInvalidParameter, "unsupported time format")
 	}
 
 	// Time
@@ -311,7 +316,7 @@ func StrToTime(str string, format ...string) (*Time, error) {
 			m, _ := strconv.Atoi(zone[2:4])
 			s, _ := strconv.Atoi(zone[4:6])
 			if h > 24 || m > 59 || s > 59 {
-				return nil, gerror.NewCodef(gerror.CodeInvalidParameter, "invalid zone string: %s", match[6])
+				return nil, gerror.NewCodef(gcode.CodeInvalidParameter, "invalid zone string: %s", match[6])
 			}
 			// Comparing the given time zone whether equals to current time zone,
 			// it converts it to UTC if they does not equal.
@@ -350,7 +355,7 @@ func StrToTime(str string, format ...string) (*Time, error) {
 		}
 	}
 	if month <= 0 || day <= 0 {
-		return nil, gerror.NewCodef(gerror.CodeInvalidParameter, "invalid time string:%s", str)
+		return nil, gerror.NewCodef(gcode.CodeInvalidParameter, "invalid time string:%s", str)
 	}
 	return NewFromTime(time.Date(year, time.Month(month), day, hour, min, sec, nsec, local)), nil
 }

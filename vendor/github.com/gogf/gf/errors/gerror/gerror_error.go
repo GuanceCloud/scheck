@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/gogf/gf/errors/gcode"
 	"github.com/gogf/gf/internal/utils"
 	"io"
 	"runtime"
@@ -18,10 +19,10 @@ import (
 
 // Error is custom error for additional features.
 type Error struct {
-	error error  // Wrapped error.
-	stack stack  // Stack array, which records the stack information when this error is created or wrapped.
-	text  string // Error text, which is created by New* functions.
-	code  int    // Error code if necessary.
+	error error      // Wrapped error.
+	stack stack      // Stack array, which records the stack information when this error is created or wrapped.
+	text  string     // Error text, which is created by New* functions.
+	code  gcode.Code // Error code if necessary.
 }
 
 const (
@@ -47,8 +48,11 @@ func (err *Error) Error() string {
 		return ""
 	}
 	errStr := err.text
+	if errStr == "" && err.code != nil {
+		errStr = err.code.Message()
+	}
 	if err.error != nil {
-		if err.text != "" {
+		if errStr != "" {
 			errStr += ": "
 		}
 		errStr += err.error.Error()
@@ -57,10 +61,10 @@ func (err *Error) Error() string {
 }
 
 // Code returns the error code.
-// It returns -1 if it has no error code.
-func (err *Error) Code() int {
+// It returns CodeNil if it has no error code.
+func (err *Error) Code() gcode.Code {
 	if err == nil {
-		return -1
+		return gcode.CodeNil
 	}
 	return err.code
 }
@@ -159,6 +163,7 @@ func (err *Error) Current() error {
 		error: nil,
 		stack: err.stack,
 		text:  err.text,
+		code:  err.code,
 	}
 }
 
