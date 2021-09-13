@@ -7,6 +7,7 @@
 package gconv
 
 import (
+	"github.com/gogf/gf/errors/gcode"
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/internal/empty"
 	"github.com/gogf/gf/internal/json"
@@ -31,11 +32,7 @@ import (
 //    in mapping procedure to do the matching.
 //    It ignores the map key, if it does not match.
 func Struct(params interface{}, pointer interface{}, mapping ...map[string]string) (err error) {
-	var keyToAttributeNameMapping map[string]string
-	if len(mapping) > 0 {
-		keyToAttributeNameMapping = mapping[0]
-	}
-	return doStruct(params, pointer, keyToAttributeNameMapping, "")
+	return Scan(params, pointer, mapping...)
 }
 
 // StructTag acts as Struct but also with support for priority tag feature, which retrieves the
@@ -62,7 +59,7 @@ func doStruct(params interface{}, pointer interface{}, mapping map[string]string
 		return nil
 	}
 	if pointer == nil {
-		return gerror.NewCode(gerror.CodeInvalidParameter, "object pointer cannot be nil")
+		return gerror.NewCode(gcode.CodeInvalidParameter, "object pointer cannot be nil")
 	}
 
 	defer func() {
@@ -71,7 +68,7 @@ func doStruct(params interface{}, pointer interface{}, mapping map[string]string
 			if e, ok := exception.(errorStack); ok {
 				err = e
 			} else {
-				err = gerror.NewCodeSkipf(gerror.CodeInternalError, 1, "%v", exception)
+				err = gerror.NewCodeSkipf(gcode.CodeInternalError, 1, "%v", exception)
 			}
 		}
 	}()
@@ -124,11 +121,11 @@ func doStruct(params interface{}, pointer interface{}, mapping map[string]string
 		pointerReflectValue = reflect.ValueOf(pointer)
 		pointerReflectKind = pointerReflectValue.Kind()
 		if pointerReflectKind != reflect.Ptr {
-			return gerror.NewCodef(gerror.CodeInvalidParameter, "object pointer should be type of '*struct', but got '%v'", pointerReflectKind)
+			return gerror.NewCodef(gcode.CodeInvalidParameter, "object pointer should be type of '*struct', but got '%v'", pointerReflectKind)
 		}
 		// Using IsNil on reflect.Ptr variable is OK.
 		if !pointerReflectValue.IsValid() || pointerReflectValue.IsNil() {
-			return gerror.NewCode(gerror.CodeInvalidParameter, "object pointer cannot be nil")
+			return gerror.NewCode(gcode.CodeInvalidParameter, "object pointer cannot be nil")
 		}
 		pointerElemReflectValue = pointerReflectValue.Elem()
 	}
@@ -166,7 +163,7 @@ func doStruct(params interface{}, pointer interface{}, mapping map[string]string
 	// DO NOT use MapDeep here.
 	paramsMap := Map(paramsInterface)
 	if paramsMap == nil {
-		return gerror.NewCodef(gerror.CodeInvalidParameter, "convert params to map failed: %v", params)
+		return gerror.NewCodef(gcode.CodeInvalidParameter, "convert params to map failed: %v", params)
 	}
 
 	// It only performs one converting to the same attribute.
@@ -307,7 +304,7 @@ func bindVarToStructAttr(elem reflect.Value, name string, value interface{}, map
 	defer func() {
 		if exception := recover(); exception != nil {
 			if err = bindVarToReflectValue(structFieldValue, value, mapping, priorityTag); err != nil {
-				err = gerror.WrapCodef(gerror.CodeInternalError, err, `error binding value to attribute "%s"`, name)
+				err = gerror.WrapCodef(gcode.CodeInternalError, err, `error binding value to attribute "%s"`, name)
 			}
 		}
 	}()
@@ -348,11 +345,35 @@ func bindVarToReflectValueWithInterfaceCheck(reflectValue reflect.Value, value i
 	}
 	// UnmarshalText.
 	if v, ok := pointer.(apiUnmarshalText); ok {
-		if s, ok := value.(string); ok {
-			return v.UnmarshalText([]byte(s)), ok
-		}
+		var valueBytes []byte
 		if b, ok := value.([]byte); ok {
-			return v.UnmarshalText(b), ok
+			valueBytes = b
+		} else if s, ok := value.(string); ok {
+			valueBytes = []byte(s)
+		}
+		if len(valueBytes) > 0 {
+			return v.UnmarshalText(valueBytes), ok
+		}
+	}
+	// UnmarshalJSON.
+	if v, ok := pointer.(apiUnmarshalJSON); ok {
+		var valueBytes []byte
+		if b, ok := value.([]byte); ok {
+			valueBytes = b
+		} else if s, ok := value.(string); ok {
+			valueBytes = []byte(s)
+		}
+
+		if len(valueBytes) > 0 {
+			// If it is not a valid JSON string, it then adds char `"` on its both sides to make it is.
+			if !json.Valid(valueBytes) {
+				newValueBytes := make([]byte, len(valueBytes)+2)
+				newValueBytes[0] = '"'
+				newValueBytes[len(newValueBytes)-1] = '"'
+				copy(newValueBytes[1:], valueBytes)
+				valueBytes = newValueBytes
+			}
+			return v.UnmarshalJSON(valueBytes), ok
 		}
 	}
 	if v, ok := pointer.(apiSet); ok {
@@ -381,6 +402,9 @@ func bindVarToReflectValue(structFieldValue reflect.Value, value interface{}, ma
 
 	// Converting by kind.
 	switch kind {
+	case reflect.Map:
+		return doMapToMap(value, structFieldValue, mapping)
+
 	case reflect.Struct:
 		// Recursively converting for struct attribute.
 		if err := doStruct(value, structFieldValue, nil, ""); err != nil {
@@ -461,7 +485,7 @@ func bindVarToReflectValue(structFieldValue reflect.Value, value interface{}, ma
 		defer func() {
 			if exception := recover(); exception != nil {
 				err = gerror.NewCodef(
-					gerror.CodeInternalError,
+					gcode.CodeInternalError,
 					`cannot convert value "%+v" to type "%s":%+v`,
 					value,
 					structFieldValue.Type().String(),

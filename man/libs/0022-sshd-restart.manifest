@@ -3,7 +3,7 @@ category="system"
 level="critical"
 title="sshd 服务被重启"
 desc="sshd服务被重启，Pid 为{{ .Pid }}"
-cron="1 */5 * * *"
+cron="disable"
 # 开关
 disabled=false
 

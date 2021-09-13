@@ -625,3 +625,28 @@ func (p *provider) sleep(l *lua.LState) int {
 	time.Sleep(time.Duration(num) * time.Second)
 	return 0
 }
+
+func (p *provider) ticker(l *lua.LState) int {
+	var chanN = 1
+	var intN = 2
+	var interval time.Duration
+
+	scChan := l.ToChannel(chanN)
+	lv := l.Get(intN)
+	if lv.Type() != lua.LTNil {
+		interval = 1 * time.Second
+	} else {
+		if lv.Type() == lua.LTNumber {
+			interval = time.Duration(int(lv.(lua.LNumber))) * time.Second
+		} else {
+			interval = 1 * time.Second
+		}
+	}
+	go func(interval time.Duration) {
+		timer1 := time.NewTicker(interval)
+		for range timer1.C {
+			scChan <- lua.LString("")
+		}
+	}(interval)
+	return 0
+}

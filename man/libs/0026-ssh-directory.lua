@@ -1,2 +1,2 @@
-local filemonitor = require("directorymonitor")
+local directorymonitor = require("directorymonitor")
 directorymonitor.change('/etc/ssh')

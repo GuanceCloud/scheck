@@ -40,6 +40,7 @@ func (p *provider) Funcs() []funcs.Func {
 		{Name: `grep`, Fn: p.grep},
 		{Name: `sc_path_watch`, Fn: p.pathWatch},
 		{Name: `sc_sleep`, Fn: p.sleep},
+		{Name: `sc_ticker`, Fn: p.ticker},
 	}
 }
 

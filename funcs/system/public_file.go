@@ -219,6 +219,7 @@ func (p *provider) grep(l *lua.LState) int {
 	return global.LuaRet2
 }
 
+// nolint
 func fileWatch(path string, scchan lua.LChannel) {
 	go func() {
 		watcher, err := fsnotify.NewWatcher()
@@ -261,16 +262,14 @@ func fileWatch(path string, scchan lua.LChannel) {
 }
 
 func dirWatch(path string, scchan lua.LChannel) {
-	done := make(chan bool, 1)
 	go func() {
+		done := make(chan bool, 1)
+
 		_, err := gfsnotify.Add(path, func(event *gfsnotify.Event) {
 			var watch lua.LTable
 			watch.RawSetString("path", lua.LString(event.Path))
 			watch.RawSetString("status", lua.LNumber(event.Op))
 			scchan <- &watch
-			if event.IsRemove() || event.IsRename() {
-				done <- true
-			}
 		})
 		if err != nil {
 			l.Fatalf("func dirWatch error:%s ", err)
@@ -285,14 +284,11 @@ func (p *provider) pathWatch(l *lua.LState) int {
 	var chanN = 2
 	path := l.ToString(strN)
 	scchan := l.ToChannel(chanN)
-	fi, err := os.Stat(path)
+	_, err := os.Stat(path)
 	if err != nil {
 		return lua.MultRet
 	}
-	if fi.IsDir() {
-		dirWatch(path, scchan)
-	} else {
-		fileWatch(path, scchan)
-	}
+	dirWatch(path, scchan)
+
 	return 0
 }

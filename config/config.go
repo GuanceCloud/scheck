@@ -27,9 +27,11 @@ const (
   #热更新 默认false
   lua_HotUpdate = {{.System.LuaHotUpdate}}
   cron = "{{.System.Cron}}"
+
   # ##lua运行过程中 控制线程数量 run_cap为初始化线程数量，tot_cap是最大允许的数量
   lua_run_cap = {{.System.LuaInitCap}}
   lua_tot_cap = {{.System.LuaCap}}
+
   #是否禁用日志
   disable_log = {{.System.DisableLog}}
   pprof = {{.System.Pprof}}
