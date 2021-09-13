@@ -10,13 +10,11 @@ import (
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
-
-	cron "github.com/robfig/cron/v3"
 )
 
 var (
-	specParser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
-	pool       *statePool
+	// specParser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
+	pool *statePool
 )
 
 // only exec cron timer cron
@@ -38,6 +36,7 @@ func NewTaskScheduler(rulesDir, customRuleDir string, hotUpdate bool) *TaskSched
 		customRuleDir:   customRuleDir,
 		customRulesTime: make(map[string]int64),
 		tasks:           make(map[string]*Rule),
+		onceTasks:       make(map[string]*Rule),
 		manifests:       make(map[string]*RuleManifest),
 		stop:            make(chan struct{}),
 	}
@@ -156,18 +155,19 @@ func (scheduler *TaskScheduler) runOnce() {
 	errChan := make(chan string, len(scheduler.onceTasks)) // 被动停止通知信号
 	count := 0                                             // 运行的数量
 	for _, rule := range scheduler.onceTasks {
-		cxt := context.Background()
+		cxt, cancel := context.WithCancel(context.Background())
 		go rule.RunOnce(cxt, errChan)
-		cxtMap.Store(rule.Name, cxt)
+		cxtMap.Store(rule.Name, cancel)
 		count++
 	}
 	for {
 		select {
 		case <-scheduler.stop:
+			l.Error("receive exit signal ,stop all lua script")
 			// all context stop
 			cxtMap.Range(func(key, value interface{}) bool {
-				if cxt, ok := value.(context.Context); ok {
-					cxt.Done()
+				if cancel, ok := value.(context.CancelFunc); ok {
+					cancel()
 				}
 				return false
 			})
@@ -181,7 +181,7 @@ func (scheduler *TaskScheduler) runOnce() {
 				close(errChan)
 			}
 		case name := <-errChan:
-			// to call monitor 。。。
+			// to call monitor or trigger
 			count--
 			l.Errorf("rule name = %s is stop!!!", name)
 		}

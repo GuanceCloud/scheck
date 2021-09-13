@@ -1,4 +1,5 @@
 directorymonitor = {}
+local common = require("common")
 -- This method is to detect whether in the directory file md5 has changed,and the parameter is the directory path
 function directorymonitor.change(dir)
     local exit = false

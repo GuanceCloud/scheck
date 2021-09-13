@@ -85,5 +85,8 @@ function common.watcher(path, enum)
     end
 end
 
+function common.add(dir)
+    common.watcher(dir,1)
+end
 
 return common

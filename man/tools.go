@@ -206,6 +206,7 @@ func CreateFile(content, file string) error {
 	}
 	return nil
 }
+
 func doFilepath(file string) string {
 	return strings.ReplaceAll(file, "\\", "/")
 }

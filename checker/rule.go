@@ -242,7 +242,6 @@ func (rm *RuleManifest) parse() (err error) {
 		"references":   false,
 		"CIS":          false,
 	}
-
 	rm1.setRequireKey(tbl, requireKeys)
 
 	for k, bset := range requireKeys {
@@ -253,10 +252,6 @@ func (rm *RuleManifest) parse() (err error) {
 	// 模版rm.Desc
 	if rm1.tmpl, err = template.New("test").Parse(rm1.Desc); err != nil {
 		return fmt.Errorf("invalid desc: %s", err)
-	}
-
-	if _, err = specParser.Parse(rm1.Cron); err != nil {
-		return fmt.Errorf("invalid cron: %s, %s", rm1.Cron, err)
 	}
 
 	if err := rm1.setTag(tbl, requireKeys, invalidField); err != nil {
@@ -453,6 +448,7 @@ var cronMaps = map[int]int64{
 var cronInterval = []int64{60, 60, 24, 30, 1, 1}
 
 func checkRunTime(cronStr string) int64 {
+	var millis = 1000
 	nextRunTime := int64(0)
 	fields := strings.Fields(cronStr)
 	for idx, f := range fields {
@@ -474,5 +470,5 @@ func checkRunTime(cronStr string) int64 {
 		}
 		nextRunTime = swap
 	}
-	return nextRunTime * global.TimeMilli
+	return nextRunTime * int64(millis)
 }
