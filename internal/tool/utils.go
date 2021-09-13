@@ -1,4 +1,4 @@
-package scheck
+package tool
 
 import (
 	"bytes"

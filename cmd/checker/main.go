@@ -12,8 +12,6 @@ import (
 	"sync"
 	"syscall"
 
-	scheck "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
-
 	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
@@ -24,6 +22,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/tool"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
 )
 
@@ -108,7 +107,7 @@ ReleasedInputs: %s
 	}
 
 	if *flagCfgSample {
-		res, err := scheck.TomlMarshal(config.DefaultConfig())
+		res, err := tool.TomlMarshal(config.DefaultConfig())
 		if err != nil {
 			l.Fatalf("%s", err)
 		}
@@ -169,7 +168,7 @@ func parseConfig() {
 		*flagConfig = filepath.Join(binDir, "scheck.conf")
 		_, err := os.Stat(*flagConfig)
 		if err != nil {
-			res, err := scheck.TomlMarshal(config.DefaultConfig())
+			res, err := tool.TomlMarshal(config.DefaultConfig())
 			if err != nil {
 				l.Fatalf("%s", err)
 			}

@@ -87,7 +87,7 @@ pub_release:
 
 man:
 	@packr2 clean
-	@packr2
+	@packr2 --ignore-imports
 
 vet: prepare
 	@go vet ./...
