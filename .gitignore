@@ -12,7 +12,7 @@ packrd/
 !/cmd/make/build
 old/
 examples/
-man/man-packr.go
+*-packr.go
 *.tar
 *.tar.gz
 git/git.go
