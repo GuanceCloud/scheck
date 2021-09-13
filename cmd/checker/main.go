@@ -151,10 +151,6 @@ ReleasedInputs: %s
 	}
 	if *flagCheckBox {
 		fmt.Println(man.ScriptBox.List())
-		str, err := man.ScriptBox.Find("0000-global-cache.lua")
-		fmt.Println(string(str))
-		fmt.Println(err)
-		//fmt.Println(man.ScriptBox.FindString("0000-global-cache.lua"))
 		os.Exit(0)
 	}
 }

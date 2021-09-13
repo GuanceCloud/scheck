@@ -51,7 +51,7 @@ function common.watcher(path, enum)
                         end
                     end
                 end},
-                {"|<-", ticker, function(ok, v1)
+                {"|<-", ticker, function(ok, v)
                     if ok then
                         if data ~= '' then
                             for key, value in pairs(data) do
@@ -83,5 +83,8 @@ function common.watcher(path, enum)
     end
 end
 
+function common.add(dir)
+    common.watcher(dir,1)
+end
 
 return common

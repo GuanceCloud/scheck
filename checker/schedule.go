@@ -10,13 +10,11 @@ import (
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
-
-	cron "github.com/robfig/cron/v3"
 )
 
 var (
-	specParser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
-	pool       *statePool
+	// specParser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
+	pool *statePool
 )
 
 // only exec cron timer cron
@@ -38,6 +36,7 @@ func NewTaskScheduler(rulesDir, customRuleDir string, hotUpdate bool) *TaskSched
 		customRuleDir:   customRuleDir,
 		customRulesTime: make(map[string]int64),
 		tasks:           make(map[string]*Rule),
+		onceTasks:       make(map[string]*Rule),
 		manifests:       make(map[string]*RuleManifest),
 		stop:            make(chan struct{}),
 	}
