@@ -12,6 +12,8 @@ import (
 	"sync"
 	"syscall"
 
+	scheck "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+
 	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
@@ -22,7 +24,6 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/tools"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/man"
 )
 
@@ -39,6 +40,7 @@ var (
 	flagRunStatus       = flag.Bool("luastatus", false, `Exported all Lua status of markdown`)
 	flagRunStatusSort   = flag.String("sort", "", `Exported all Lua status of markdown`)
 	flagCheck           = flag.Bool("check", false, `Check :Parse and Compiles all Script `)
+	flagCheckBox        = flag.Bool("box", false, `show all name lua`)
 )
 
 var (
@@ -106,7 +108,7 @@ ReleasedInputs: %s
 	}
 
 	if *flagCfgSample {
-		res, err := tools.TomlMarshal(config.DefaultConfig())
+		res, err := scheck.TomlMarshal(config.DefaultConfig())
 		if err != nil {
 			l.Fatalf("%s", err)
 		}
@@ -147,6 +149,14 @@ ReleasedInputs: %s
 		fmt.Println(luafuncs.ExportAsMD(*flagRunStatusSort))
 		os.Exit(0)
 	}
+	if *flagCheckBox {
+		fmt.Println(man.ScriptBox.List())
+		str, err := man.ScriptBox.Find("0000-global-cache.lua")
+		fmt.Println(string(str))
+		fmt.Println(err)
+		//fmt.Println(man.ScriptBox.FindString("0000-global-cache.lua"))
+		os.Exit(0)
+	}
 }
 
 func parseCheck() {
@@ -163,7 +173,7 @@ func parseConfig() {
 		*flagConfig = filepath.Join(binDir, "scheck.conf")
 		_, err := os.Stat(*flagConfig)
 		if err != nil {
-			res, err := tools.TomlMarshal(config.DefaultConfig())
+			res, err := scheck.TomlMarshal(config.DefaultConfig())
 			if err != nil {
 				l.Fatalf("%s", err)
 			}

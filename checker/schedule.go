@@ -156,18 +156,19 @@ func (scheduler *TaskScheduler) runOnce() {
 	errChan := make(chan string, len(scheduler.onceTasks)) // 被动停止通知信号
 	count := 0                                             // 运行的数量
 	for _, rule := range scheduler.onceTasks {
-		cxt := context.Background()
+		cxt, cancel := context.WithCancel(context.Background())
 		go rule.RunOnce(cxt, errChan)
-		cxtMap.Store(rule.Name, cxt)
+		cxtMap.Store(rule.Name, cancel)
 		count++
 	}
 	for {
 		select {
 		case <-scheduler.stop:
+			l.Error("receive exit signal ,stop all lua script")
 			// all context stop
 			cxtMap.Range(func(key, value interface{}) bool {
-				if cxt, ok := value.(context.Context); ok {
-					cxt.Done()
+				if cancel, ok := value.(context.CancelFunc); ok {
+					cancel()
 				}
 				return false
 			})
@@ -181,7 +182,7 @@ func (scheduler *TaskScheduler) runOnce() {
 				close(errChan)
 			}
 		case name := <-errChan:
-			// to call monitor 。。。
+			// to call monitor or trigger
 			count--
 			l.Errorf("rule name = %s is stop!!!", name)
 		}
