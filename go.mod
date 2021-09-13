@@ -23,13 +23,15 @@ require (
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kardianos/service v1.2.0
 	github.com/karrick/godirwalk v1.16.1 // indirect
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+	github.com/lestrrat-go/strftime v1.0.5 // indirect
 	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/shirou/gopsutil v3.21.7+incompatible
 	github.com/sirupsen/logrus v1.8.1
-	github.com/tklauser/go-sysconf v0.3.7
+	github.com/tklauser/go-sysconf v0.3.7 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	gitlab.jiagouyun.com/cloudcare-tools/cliutils v0.0.0-20210803063633-3735b7d2b9f8
 	go.uber.org/zap v1.18.1 // indirect

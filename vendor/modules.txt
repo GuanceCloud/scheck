@@ -141,6 +141,13 @@ github.com/kardianos/service
 github.com/karrick/godirwalk
 # github.com/leodido/go-urn v1.2.0
 github.com/leodido/go-urn
+# github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+## explicit
+github.com/lestrrat-go/file-rotatelogs
+github.com/lestrrat-go/file-rotatelogs/internal/option
+# github.com/lestrrat-go/strftime v1.0.5
+## explicit
+github.com/lestrrat-go/strftime
 # github.com/markbates/errx v1.1.0
 github.com/markbates/errx
 # github.com/markbates/oncer v1.0.0

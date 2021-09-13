@@ -5,7 +5,6 @@ import (
 	"crypto/md5" // nolint:gosec
 	"encoding/hex"
 	"fmt"
-	"github.com/fsnotify/fsnotify"
 	"github.com/gogf/gf/os/gfsnotify"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
@@ -217,47 +216,6 @@ func (p *provider) grep(l *lua.LState) int {
 	l.Push(lua.LString(buf.String()))
 	l.Push(lua.LString(""))
 	return global.LuaRet2
-}
-
-func fileWatch(path string, scchan lua.LChannel) {
-	go func() {
-		watcher, err := fsnotify.NewWatcher()
-		if err != nil {
-			l.Fatalf("func fileWatch error :%s", err)
-			return
-		}
-		defer watcher.Close()
-
-		done := make(chan bool, 1)
-		go func() {
-			for {
-				select {
-				case event, ok := <-watcher.Events:
-					if !ok {
-						return
-					}
-					var watch lua.LTable
-					watch.RawSetString("path", lua.LString(path))
-					watch.RawSetString("status", lua.LNumber(event.Op))
-					scchan <- &watch
-					if event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename {
-						done <- true
-					}
-				case werr, ok := <-watcher.Errors:
-					if !ok {
-						return
-					}
-					l.Fatalf("func fileWatch error :%s", werr)
-				}
-			}
-		}()
-		err = watcher.Add(path)
-		if err != nil {
-			l.Fatalf("func fileWatch error :%s", err)
-			return
-		}
-		<-done
-	}()
 }
 
 func dirWatch(path string, scchan lua.LChannel) {

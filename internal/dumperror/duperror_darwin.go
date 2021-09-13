@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-	// "gmshield/common/logs"
 )
 
 type dumperror struct {
@@ -31,7 +30,7 @@ func CreateDumpError(flag bool) *dumperror {
 		}
 	}
 
-	name := string(logFolder + "/" + timeNow + "_dump.log")
+	name := logFolder + "/" + timeNow + "_dump.log"
 	dump := &dumperror{
 		filename: name,
 		needdump: flag}

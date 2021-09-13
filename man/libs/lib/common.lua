@@ -53,13 +53,15 @@ function common.watcher(path, enum)
                 end},
                 {"|<-", ticker, function(ok, v)
                     if ok then
-                        if data ~= '' then
+                        if next(data) ~= nil then
                             for key, value in pairs(data) do
-                                flag = false
-                                isQuit = false
+                                local flag = false
+                                local isQuit = false
                                 for k, v in pairs(value) do
-                                    if v == enum then
-                                        flag = true
+                                    for kk,vv in pairs(enum) do
+                                        if v == vv then
+                                            flag = true
+                                        end
                                     end
                                     if v == 4 or v == 8  then
                                         if key == path then

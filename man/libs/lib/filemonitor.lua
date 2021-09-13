@@ -2,22 +2,10 @@ filemonitor = {}
 local common = require("common")
 -- This method is to detect whether the file mode has changed,and the parameter is the file path
 function filemonitor.check(file)
-	--local cache_key=file
-	--local old = get_cache(cache_key)
-	--if old == nil then
-	--	local current = file_hash(file)
-	--	set_cache(cache_key, current)
-	--	return
-	--end
-	--local current = file_hash(file)
-	--if old ~= current then
-	--	trigger({Content=file})
-	--	set_cache(cache_key, current)
-	--end
 	local exit = false
 	while not exit do
 		if file_exist(file)  then
-			common.watcher(file, 2)
+			common.watcher(file, {2, 4, 8, 16})
 		end
 		sc_sleep(5)
 	end
