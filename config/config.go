@@ -10,10 +10,9 @@ import (
 	"strings"
 	"text/template"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
 	"github.com/influxdata/toml"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 const (
@@ -26,7 +25,6 @@ const (
   custom_rule_lib_dir = "{{.System.CustomRuleLibDir}}"
   #热更新 默认false
   lua_HotUpdate = {{.System.LuaHotUpdate}}
-  cron = "{{.System.Cron}}"
 
   # ##lua运行过程中 控制线程数量 run_cap为初始化线程数量，tot_cap是最大允许的数量
   lua_run_cap = {{.System.LuaInitCap}}
@@ -87,7 +85,7 @@ type System struct {
 	CustomRuleDir    string `toml:"custom_dir"`
 	CustomRuleLibDir string `toml:"custom_rule_lib_dir"`
 	LuaHotUpdate     bool   `toml:"lua_HotUpdate"`
-	Cron             string `toml:"cron"`
+	Cron             string `toml:"cron,omitempty"`
 	DisableLog       bool   `toml:"disable_log"`
 	LuaInitCap       int    `toml:"lua_run_cap,omitempty"`
 	LuaCap           int    `toml:"lua_tot_cap,omitempty"`
@@ -141,7 +139,6 @@ func DefaultConfig() *Config {
 			RuleDir:          "/usr/local/scheck/rules.d",
 			CustomRuleDir:    "/usr/local/scheck/custom.rules.d",
 			CustomRuleLibDir: "/usr/local/scheck/custom.rules.d/libs",
-			Cron:             "",
 			LuaInitCap:       15,
 			LuaCap:           20,
 			DisableLog:       false,
@@ -203,11 +200,6 @@ func TryLoadConfig(filePath string) bool {
 	newConf := DefaultConfig()
 	if oldConf.CustomRuleDir != "" && oldConf.CustomRuleDir != newConf.System.CustomRuleDir {
 		newConf.System.CustomRuleDir = oldConf.CustomRuleDir
-	}
-	if oldConf.Cron != "" {
-		if oldConf.Cron != newConf.System.Cron {
-			newConf.System.Cron = oldConf.Cron
-		}
 	}
 	if oldConf.Log != "" {
 		if oldConf.Log != newConf.Logging.Log {

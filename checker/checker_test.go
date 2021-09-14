@@ -10,7 +10,6 @@ import (
 	"testing"
 	"text/template"
 
-	cron "github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 )
@@ -142,27 +141,8 @@ func TestChecker(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	p := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
 	cronStr := `* */1 * * *`
 
-	_, err := p.Parse(cronStr)
-	if err != nil {
-		t.Error(err)
-		return
-	}
 	it := checkRunTime(cronStr)
 	log.Println(it)
-}
-
-func TestCron(t *testing.T) {
-	p := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
-	c := cron.New(cron.WithParser(p))
-	c.Start()
-	_, err := c.AddFunc(`10 */1 * * *`, func() {
-		log.Printf("hello")
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	select {}
 }
