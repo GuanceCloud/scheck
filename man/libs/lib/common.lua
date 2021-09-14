@@ -71,7 +71,7 @@ function common.watcher(path, enum)
                                 end
                                 if flag then
                                     trigger({Content=string.format("%s change, %s:%s ", path, key, Field_filtering(value))})
-                                    data = ''
+                                    data = {}
                                 end
                                 if isQuit then
                                     exit = true
@@ -83,10 +83,6 @@ function common.watcher(path, enum)
                 }
         )
     end
-end
-
-function common.add(dir)
-    common.watcher(dir,1)
 end
 
 return common
