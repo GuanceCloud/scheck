@@ -145,7 +145,7 @@ ReleasedInputs: %s
 	}
 
 	if *flagRunStatus {
-		fmt.Println(luafuncs.ExportAsMD(*flagRunStatusSort))
+		luafuncs.ExportAsMD(*flagRunStatusSort)
 		os.Exit(0)
 	}
 	if *flagCheckBox {

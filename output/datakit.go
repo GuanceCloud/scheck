@@ -31,6 +31,7 @@ func newDatakitWriter(filePath string, maxPending int) *DatakitWriter {
 		samSig:       make(chan *sample, 1),
 	}
 	go dk.start()
+	l.Infof("init output for datakit ok,path=%s", filePath)
 	return dk
 }
 

@@ -35,7 +35,7 @@ func InitStatePool(initCap, totCap int) {
 		p.poolStatus[i] = false
 		p.freeSignal <- sig{}
 	}
-	l.Debugf("init pool ok")
+	l.Infof("init lua state pool ok")
 	pool = p
 }
 

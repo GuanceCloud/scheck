@@ -643,11 +643,8 @@ func (p *provider) ticker(l *lua.LState) int {
 	}
 	go func(interval time.Duration) {
 		timer1 := time.NewTicker(interval)
-		for {
-			select {
-			case v := <-timer1.C:
-				scChan <- lua.LString(v.String())
-			}
+		for v := range timer1.C {
+			scChan <- lua.LString(v.String())
 		}
 	}(interval)
 	return 0

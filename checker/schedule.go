@@ -147,19 +147,21 @@ func (scheduler *TaskScheduler) run() {
 
 // runOther: if rule.cron=disable then rule run once.
 func (scheduler *TaskScheduler) runOnce() {
-	if len(scheduler.onceTasks) == 0 {
+	var onces = len(scheduler.onceTasks)
+	if onces == 0 {
 		l.Warnf("schedules  is empty....")
 		return
 	}
-	cxtMap := sync.Map{}                                   // 主动停止通知信号
-	errChan := make(chan string, len(scheduler.onceTasks)) // 被动停止通知信号
-	count := 0                                             // 运行的数量
+	cxtMap := sync.Map{}                // 主动停止通知信号
+	errChan := make(chan string, onces) // 被动停止通知信号
+	count := 0                          // 运行的数量
 	for _, rule := range scheduler.onceTasks {
 		cxt, cancel := context.WithCancel(context.Background())
 		go rule.RunOnce(cxt, errChan)
 		cxtMap.Store(rule.Name, cancel)
 		count++
 	}
+	l.Infof("Long term type lua was running,len is %d", onces)
 	for {
 		select {
 		case <-scheduler.stop:
@@ -173,9 +175,9 @@ func (scheduler *TaskScheduler) runOnce() {
 			})
 		case <-time.After(time.Minute):
 			// 检查运行数量
-			if len(scheduler.onceTasks) != count {
+			if onces != count {
 				// do something...
-				l.Warnf("Unexpected reduction in number of runs !!! tot=%d run=%d", len(scheduler.onceTasks), count)
+				l.Warnf("Unexpected reduction in number of runs !!! tot=%d run=%d", onces, count)
 			}
 			if count == 0 {
 				close(errChan)

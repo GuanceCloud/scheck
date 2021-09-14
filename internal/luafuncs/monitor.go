@@ -11,14 +11,15 @@ import (
 	"sync"
 	"time"
 
+	term_markdown "github.com/MichaelMure/go-term-markdown"
+	"github.com/dustin/go-humanize"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
-
-	"github.com/dustin/go-humanize"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"golang.org/x/term"
 )
 
 /*
@@ -120,7 +121,6 @@ func newScriptStatus(name, category string, interval int64) *Script {
 func (m *Monitor) timeToSave(tickTime time.Duration) {
 	ticker := time.NewTicker(tickTime)
 	for range ticker.C {
-		l.Debugf("进入 定时器")
 		bts, err := ioutil.ReadFile(m.jsonFile)
 		if err != nil {
 			l.Errorf("err", err)
@@ -208,7 +208,7 @@ func (m *Monitor) mergeOld(oldScripts map[string]*Script) {
 		min := nsc.RuntimeMin
 		osc, ok := oldScripts[name]
 		if !ok {
-			// 从文件中读取后 没有该脚本的运行数据，就以新的数据为准
+			// 从文件中读取后 没有该脚本的运行数据，就以新的数据为准，在这里直接返回等待下一次
 			continue
 		}
 		if oldScripts[name].RuntimeMax > max {
@@ -305,6 +305,7 @@ type RunStatusMonitor struct {
 	RunTime       time.Time
 	Scripts       []*OutType
 	ScriptsSortBy string
+	LuaStatF      string
 }
 
 func (rsm *RunStatusMonitor) Len() int {
@@ -328,7 +329,7 @@ func (rsm *RunStatusMonitor) Less(i, j int) bool {
 
 func (rsm *RunStatusMonitor) getStatus() (out string) {
 	l.Debug("to export of all lua run status...")
-	bts, err := ioutil.ReadFile(global.LuaStatusFile)
+	bts, err := ioutil.ReadFile(rsm.LuaStatF)
 	if err != nil {
 		l.Errorf("readFile err=%v", err)
 		return ""
@@ -395,7 +396,7 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 }
 
 // ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
-func ExportAsMD(sortBy string) string {
+func ExportAsMD(sortBy string) {
 	mdFile := fmt.Sprintf(global.LuaStatusOutFileMD, time.Now().Format("20060102-150405"))
 	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
 	if sortBy == "" {
@@ -408,23 +409,32 @@ func ExportAsMD(sortBy string) string {
 		SCVersion:     global.Version,
 		Scripts:       make([]*OutType, 0),
 		ScriptsSortBy: strings.ToLower(sortBy),
+		LuaStatF:      global.LuaStatusFile,
 	}
 
 	tot := rsm.getStatus()
 	if tot == "" {
 		l.Errorf("lua status is null ,wait 5 minter")
-		return ""
+		return
 	}
 	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, mdFile), filepath.Join(global.InstallDir, htmlFile))
 
 	// write to (md/html) file
-	err := ioutil.WriteFile(mdFile, []byte(tot), global.FileModeRW)
+	err := ioutil.WriteFile(htmlFile, getHTML(tot), global.FileModeRW)
 	if err != nil {
 		l.Errorf("write to file err=%v", err)
 	}
-	_ = ioutil.WriteFile(htmlFile, getHTML(tot), global.FileModeRW)
+	_ = ioutil.WriteFile(mdFile, getHTML(tot), global.FileModeRW)
 
-	return tot
+	width := 100
+	if term.IsTerminal(0) {
+		if width, _, err = term.GetSize(0); err != nil {
+			width = 100
+		}
+	}
+
+	leftPad := 2
+	fmt.Println(string(term_markdown.Render(tot, width, leftPad)))
 }
 
 func getHTML(tot string) []byte {

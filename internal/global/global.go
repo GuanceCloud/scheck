@@ -39,9 +39,6 @@ const (
 	LuaArgIdx3                 = 3
 	LuaConfiguration           = "__this_configuration"
 	LuaConfigurationKey        = "ruleFile"
-	LuaStatusFile              = ".status.json"
-	LuaStatusOutFileMD         = "./%s.lua_status.md"
-	LuaStatusOutFileHTML       = "./%s.lua_status.html"
 	LuaStatusWriteFileInterval = time.Minute * 5
 	LuaCronDisable             = "disable"
 	LuaScriptTimeout           = time.Second * 10
@@ -77,6 +74,9 @@ var (
 		OSArchLinux386:    `/usr/local/scheck`,
 		OSArchDarwinAmd64: `/usr/local/scheck`,
 	}
+	LuaStatusFile        = filepath.Join(InstallDir, ".status.json")
+	LuaStatusOutFileMD   = filepath.Join(InstallDir, "%s.lua_status.md")
+	LuaStatusOutFileHTML = filepath.Join(InstallDir, "%s.lua_status.html")
 
 	// DefLogPath is default config
 	DefLogPath      = "/var/log/scheck"

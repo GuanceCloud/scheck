@@ -14,13 +14,11 @@ import (
 	"text/template"
 	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
-	lua "github.com/yuin/gopher-lua"
-
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
+	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 )
 
@@ -65,7 +63,6 @@ func (r *Rule) load() error {
 
 	bcode, err := luafuncs.CompilesScript(r.File)
 	if err != nil {
-		l.Errorf("%s", err)
 		return err
 	}
 	r.byteCode = bcode
@@ -82,8 +79,7 @@ func (r *Rule) load() error {
 		r.manifest = manifest
 	}
 
-	if err = manifest.load(); err != nil {
-		l.Errorf("fail to load %s, %s", manifestPath, err)
+	if err := manifest.load(); err != nil {
 		return err
 	}
 
@@ -160,7 +156,7 @@ func (r *Rule) RunOnce(cxt context.Context, c chan string) {
 	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
 	state.Ls.SetGlobal(global.LuaConfiguration, &lt)
 
-	l.Debugf("rule name: %s is running at once", r.Name)
+	l.Debugf("Long term type rule is running,name=: %s", r.Name)
 	lFunc := state.Ls.NewFunctionFromProto(r.byteCode.Proto)
 	state.Ls.Push(lFunc)
 	if err := state.Ls.PCall(0, lua.MultRet, nil); err != nil {
@@ -178,7 +174,6 @@ func newManifest(path string) *RuleManifest {
 func (rm *RuleManifest) load() error {
 	fi, err := os.Stat(rm.path)
 	if err != nil {
-		l.Errorf("%s", err)
 		return err
 	}
 
@@ -190,7 +185,6 @@ func (rm *RuleManifest) load() error {
 		}
 		err := rm.parse()
 		if err != nil {
-			l.Errorf("%s", err)
 			return err
 		}
 		rm.lastModify = time.Now().Unix()

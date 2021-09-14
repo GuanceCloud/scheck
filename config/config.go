@@ -266,6 +266,7 @@ func (c *Config) setLogging() {
 		}
 	}
 	l = logger.DefaultSLogger("config")
+	l.Infof("log init ok")
 }
 
 // 初始化配置中的rule文件和用户自定义rules文件
