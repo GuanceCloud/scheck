@@ -89,37 +89,32 @@ func CheckMd5(releaseType string) {
 
 func CreateSymlinks() {
 	var x [][2]string
-	//nolint:gofmt
 	if runtime.GOOS == OSWindows {
 		x = [][2]string{
-			[2]string{
+			{
 				filepath.Join(InstallDir, AppBin+WindowsExt),
 				`C:\WINDOWS\system32\scheck.exe`,
 			},
 		}
 	} else {
 		x = [][2]string{
-			[2]string{
+			{
 				filepath.Join(InstallDir, AppBin),
 				"/usr/local/bin/scheck",
 			},
-
-			[2]string{
+			{
 				filepath.Join(InstallDir, AppBin),
 				"/usr/local/sbin/scheck",
 			},
-
-			[2]string{
+			{
 				filepath.Join(InstallDir, AppBin),
 				"/sbin/scheck",
 			},
-
-			[2]string{
+			{
 				filepath.Join(InstallDir, AppBin),
 				"/usr/sbin/scheck",
 			},
-
-			[2]string{
+			{
 				filepath.Join(InstallDir, AppBin),
 				"/usr/bin/scheck",
 			},
