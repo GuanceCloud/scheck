@@ -11,6 +11,8 @@ import (
 	"time"
 
 	term_markdown "github.com/MichaelMure/go-term-markdown"
+	"golang.org/x/term"
+
 	"github.com/dustin/go-humanize"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
@@ -18,7 +20,6 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-	"golang.org/x/term"
 )
 
 /*

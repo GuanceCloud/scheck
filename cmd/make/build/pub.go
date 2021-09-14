@@ -45,7 +45,6 @@ func tarFiles(goos, goarch string) {
 	args := []string{
 		`czf`,
 		gz,
-		`autostart`,
 		`-C`,
 		filepath.Join(BuildDir, fmt.Sprintf("%s-%s-%s", AppBin, goos, goarch)),
 		bin,

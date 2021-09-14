@@ -41,7 +41,7 @@ func newLocalLog(filePath string) *localLog {
 	}
 
 	local.outputFile = logf
-	l.Infof("init log ok! path=%s", filePath)
+	l.Infof("init output log ok! path=%s", filePath)
 	return local
 }
 
