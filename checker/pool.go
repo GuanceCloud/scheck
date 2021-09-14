@@ -72,14 +72,10 @@ func (p *statePool) getState() *luafuncs.ScriptRunTime {
 		}
 		p.lock.Unlock()
 	} else if w == nil {
-		w = getNewState()
+		w = luafuncs.NewScriptRunTime()
 		w.ID = -1
 	}
 	return w
-}
-
-func getNewState() *luafuncs.ScriptRunTime {
-	return luafuncs.NewScriptRunTime()
 }
 
 func (p *statePool) getFreeIndex() int {

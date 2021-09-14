@@ -150,7 +150,7 @@ func TestParse(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	it := checkInterval(cronStr)
+	it := checkRunTime(cronStr)
 	log.Println(it)
 }
 

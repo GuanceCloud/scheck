@@ -81,8 +81,6 @@ func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 		return
 	}
 
-	l.Debugf("body:  %s", string(body))
-
 	req, err := http.NewRequest("POST", dk.httpURL, bytes.NewBuffer(body))
 	if err != nil {
 		l.Errorf("%s", err)

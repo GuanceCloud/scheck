@@ -30,8 +30,8 @@ type Rule struct {
 	cron     string
 	mux      sync.Mutex
 	disabled bool
-	interval int64 // 间隔时间
-	RunTime  int64 // 下一次执行时间 单位秒
+	interval int64
+	RunTime  int64
 	manifest *RuleManifest
 }
 
@@ -107,7 +107,6 @@ func (r *Rule) load() error {
 
 func (r *Rule) RunJob(state *luafuncs.ScriptRunTime) {
 	now := time.Now()
-
 	// to set filePath
 	var lt lua.LTable
 	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
@@ -138,9 +137,7 @@ func (r *Rule) RunJob(state *luafuncs.ScriptRunTime) {
 		}
 	}
 	luafuncs.UpdateStatus(r.Name, time.Since(now), err != nil)
-
 	state.Ls.RemoveContext()
-
 	pool.putPool(state)
 }
 
@@ -149,7 +146,7 @@ func (r *Rule) RunOnce(cxt context.Context, c chan string) {
 		l.Warn("the statePool is nil!!!")
 		return
 	}
-	state := getNewState()
+	state := luafuncs.NewScriptRunTime()
 	state.Ls.SetContext(cxt)
 
 	var lt lua.LTable
@@ -399,37 +396,6 @@ func ensureFieldBool(k string, v interface{}, b *bool) error {
 		}
 	}
 	return fmt.Errorf("unknown value for field '%s', expecting boolean", k)
-}
-
-// 从cron中 取出设置的间隔时间
-func checkInterval(cronStr string) int64 {
-	fields := strings.Fields(cronStr)
-	intervals := map[int]int64{}
-
-	for idx, f := range fields {
-		parts := strings.Split(f, "/")
-		if len(parts) == 2 && parts[0] == "*" {
-			interval, err := strconv.ParseInt(parts[1], global.ParseBase, global.ParseBitSize)
-			if err == nil && interval > 0 {
-				intervals[idx] = interval
-			}
-		} else if f != "*" {
-			return 0
-		}
-	}
-	timeDurations := []int64{
-		0: int64(time.Second),
-		1: int64(time.Minute),
-		2: int64(time.Hour),
-		3: int64(time.Hour) * 24,
-		4: int64(time.Hour) * 24 * 30,
-	}
-	if len(intervals) == 1 {
-		for k, v := range intervals {
-			return v * timeDurations[k]
-		}
-	}
-	return 0
 }
 
 var cronMaps = map[int]int64{
