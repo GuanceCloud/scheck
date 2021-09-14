@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	gtm "github.com/MichaelMure/go-term-markdown"
+	termmarkdown "github.com/MichaelMure/go-term-markdown"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
@@ -53,5 +53,5 @@ func TestExportAsMD(t *testing.T) {
 	}
 	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, "mdFile"), filepath.Join(global.InstallDir, "htmlFile"))
 
-	fmt.Println(string(gtm.Render(tot, 80, 2)))
+	fmt.Println(string(termmarkdown.Render(tot, 80, 2)))
 }
