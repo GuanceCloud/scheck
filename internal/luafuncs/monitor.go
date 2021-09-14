@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -88,7 +87,7 @@ func newMonitor() *Monitor {
 	m := &Monitor{
 		Scripts:   make(map[string]*Script),
 		outFile:   global.LuaStatusOutFileMD,
-		jsonFile:  filepath.Join(global.InstallDir, global.LuaStatusFile),
+		jsonFile:  global.LuaStatusFile,
 		StartTime: time.Now(),
 	}
 	_ = os.Remove(m.jsonFile)
@@ -123,7 +122,7 @@ func (m *Monitor) timeToSave(tickTime time.Duration) {
 	for range ticker.C {
 		bts, err := ioutil.ReadFile(m.jsonFile)
 		if err != nil {
-			l.Errorf("err", err)
+			l.Errorf("err=%v", err)
 			continue
 		}
 		if len(bts) == 0 {
@@ -417,7 +416,7 @@ func ExportAsMD(sortBy string) {
 		l.Errorf("lua status is null ,wait 5 minter")
 		return
 	}
-	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, mdFile), filepath.Join(global.InstallDir, htmlFile))
+	tot += fmt.Sprintf(end, mdFile, htmlFile)
 
 	// write to (md/html) file
 	err := ioutil.WriteFile(htmlFile, getHTML(tot), global.FileModeRW)

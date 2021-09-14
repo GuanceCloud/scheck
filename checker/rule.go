@@ -137,7 +137,7 @@ func (r *Rule) RunJob(state *luafuncs.ScriptRunTime) {
 			l.Errorf("lua.state run  err=%v ", err)
 		}
 	}
-	go luafuncs.UpdateStatus(r.Name, time.Since(now), err != nil)
+	luafuncs.UpdateStatus(r.Name, time.Since(now), err != nil)
 
 	state.Ls.RemoveContext()
 
