@@ -209,7 +209,7 @@ func CheckLua(customRuleDir string) {
 		return
 	}
 	if len(fileInfos) == 0 {
-		fmt.Printf("there are no lua rules here \n")
+		fmt.Printf("there are no lua rules here %s \n", customRuleDir)
 		return
 	}
 	errCount := 0

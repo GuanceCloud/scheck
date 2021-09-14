@@ -102,6 +102,8 @@ Usage of scheck:
      ./scheck -luastatus -sort=time
   -check
         预编译一次用户目录下所有的lua文件，检查代码的语法性错误。
+  -box
+        展示所有加载到二进制中的文件列表
 ```
 
 
