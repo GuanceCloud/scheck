@@ -262,7 +262,7 @@ func (scheduler *TaskScheduler) hotUpdate() {
 
 func GetRuleNum() int {
 	if Chk != nil && Chk.taskScheduler != nil {
-		return len(Chk.taskScheduler.tasks)
+		return len(Chk.taskScheduler.tasks) + len(Chk.taskScheduler.onceTasks)
 	}
 	return 0
 }

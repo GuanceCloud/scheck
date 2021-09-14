@@ -73,11 +73,12 @@ func GetManifestByName(fileName string) (*RuleManifest, error) {
 			return rule.manifest, nil
 		}
 	}
-
-	return GetManifest(filepath.Join(global.InstallDir, global.DefRulesDir, fileName))
+	// test测试时 传递的是绝对路径
+	return GetManifest(fileName)
 }
 
 func GetManifest(filename string) (*RuleManifest, error) {
+	filename = strings.TrimSuffix(filename, global.LuaExt)
 	if !strings.HasSuffix(filename, global.LuaManifestExt) {
 		filename += global.LuaManifestExt
 	}

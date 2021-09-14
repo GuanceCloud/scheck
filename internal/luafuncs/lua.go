@@ -169,7 +169,10 @@ func LoadLuaLibs(ls *lua.LState) error {
 
 func TestLua(rulepath string) {
 	rulepath, _ = filepath.Abs(rulepath)
-	rulepath += global.LuaExt
+	if !strings.HasSuffix(rulepath, global.LuaExt) {
+		rulepath += global.LuaExt
+	}
+
 	byteCode, err := CompilesScript(rulepath)
 	if err != nil {
 		fmt.Printf("Compile lua scripterr=%v \n", err)
