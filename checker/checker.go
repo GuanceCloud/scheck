@@ -105,6 +105,8 @@ func (c *Checker) start(ctx context.Context) {
 		l.Infof("scheduler start")
 		go c.taskScheduler.run()
 		go c.taskScheduler.runOnce()
+	} else {
+		l.Fatalf("pool is nil ,exit!")
 	}
 
 	select {

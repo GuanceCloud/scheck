@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 )
 
 var (
-	// specParser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month)
 	pool *statePool
 )
 
@@ -62,7 +63,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		path := filepath.Join(ruleDir, file.Name())
 		r := newRule(path)
 
-		if strings.HasSuffix(file.Name(), ".lua") {
+		if strings.HasSuffix(file.Name(), global.LuaExt) {
 			if isCustom {
 				rulename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 				if t, ok := scheduler.customRulesTime[rulename]; ok {
@@ -228,7 +229,7 @@ func (scheduler *TaskScheduler) GetTask() (task *Rule, tempKey string) {
 func (scheduler *TaskScheduler) addRule(r *Rule) {
 	scheduler.lock.Lock()
 	defer scheduler.lock.Unlock()
-	if r.cron == "" || r.cron == "disable" {
+	if r.cron == "" || r.cron == global.LuaCronDisable {
 		scheduler.onceTasks[r.Name] = r
 	} else {
 		scheduler.tasks[r.Name] = r
@@ -273,7 +274,7 @@ func fileModify(filePath string) int64 {
 	ruledir := filepath.Dir(filePath)
 	rulename := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
 
-	manifestPath := filepath.Join(ruledir, rulename+".manifest")
+	manifestPath := filepath.Join(ruledir, rulename+global.LuaManifestExt)
 	MfileInfo, err := os.Stat(manifestPath)
 	if err != nil {
 		l.Error("cannot find manifest file ,lua and manifest  must exist !!!")
