@@ -38,7 +38,14 @@
 32. [sysctl](#sysctl)  
 33. [rpm_list](#rpm_list)  
 34. [rpm_query](#rpm_query)  
-
+35. [grep](#grep)  
+36. [get_global_cache](#get_global_cache)  
+37. [set_global_cache](#set_global_cache)  
+38. [mysql_weak_psw](#mysql_weak_psw)  
+39. [mysql_ports_list](#mysql_ports_list)  
+40. [sc_sleep](#sc_sleep)
+41. [sc_path_watch](#sc_path_watch)
+42. [sc_ticker](#sc_ticker)
 
 ## ls
 
@@ -61,7 +68,7 @@ it issues an error when fail to read.
 | --- | ---- |
 | `table`(array) | each item describe as below |
 
-
+ 
 | Name | Type | Description |
 | --- | ---- | ---- |
 | path | string | file's full path |
@@ -135,7 +142,8 @@ it issues an error when fail to read.
 | --- | ---- | ---- |
 | size | number | Size of file in bytes |
 | block_size | number | Block size of filesystem |
-| mode | string | Permission bits |
+| mode | string | Permission string  |
+| perm | string | Permission bits |
 | uid | number | Owning user ID |
 | gid | number | Owning group ID |
 | device | number | Device ID (optional) |
@@ -824,7 +832,7 @@ it issues an error when failed.
 | --- | ---- |
 | `table`(array) | each item describe as below |
 
-
+ 
 | Name | Type | Description |
 | --- | ---- | ---- |
 | minute | string | The exact minute for the job |
@@ -851,10 +859,10 @@ it issues an error when failed.
 | --- | ---- |
 | `table` | see below |
 
-
+ 
 | Name | Type | Description |
 | --- | ---- | ---- |
-| platform | string | OS Platform or ID, eg., CentOS |
+| platform | string | OS Platform or ID, eg., centos |
 | platform_version | string | OS Platform version, eg., 7.7.1908 |
 | family | string | OS Platform family, eg., rhel |
 | os | string | os name, eg., Linux |
@@ -899,6 +907,8 @@ it issues an error when failed.
 | --- | ---- |
 | `string` | same as run linux command 'rpm -qa' |
 
+---
+
 ## rpm_query
 
 `rpm_query(pkg)`
@@ -917,3 +927,216 @@ check a package is installed
 | --- | ---- |
 | `string` | package's fullname, or empty if not found |
 
+---
+
+## grep
+
+`grep(option, pattern, file)`
+
+run grep command
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| option | `string` | option(s) for grep | false |
+| pattern | `string` | pattern for grep | true |
+| file | `string` | file to search by grep | true |
+
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string` | result of grep, empty if not found |
+| `string` | error info if failed |
+
+---
+
+## mysql_weak_psw
+
+`mysql_weak_psw(host, port [,username])`
+
+check mysql weak password
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| host | `string` | url of mysql | true |
+| port | `string` | mysql port| true |
+| username | `string` | mysql username, default is 'root' | false |
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `boolean` | true means found some weak password |
+| `string` | the weak password if found |
+
+
+---
+
+## get_global_cache
+
+`get_global_cache(key)`
+
+get value for global cache key.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string`/`boolean`/`number` | cache value |
+
+---
+
+## set_global_cache
+
+`set_global_cache(key, value)`
+
+set a key-value to global cache.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+| value | `string`/`boolean`/`number` |  cache value by key | true |
+
+
+*Return value(s):*  
+
+
+| Type | Description |
+| --- | ---- |
+| `string` | error detail if failed |
+
+
+## mysql_ports_list
+
+`mysql_ports_list()`
+
+list the host MySQL ports
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`() | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| cmdline | string | Complete argv |
+| port | number | Transport layer port |
+| protocolversion | string | Mysql protocol version |
+| statusflags | string | Socket file descriptor number |
+| authpluginname | string | Auth plugin name |
+| s️erverversion | string | Mysql S️erver Version |
+| state | string | Process state |
+
+*output example:*
+```
+port	3307
+protocolversion	10
+statusflags	2
+authpluginname	mysql_native_password
+s️erverversion	5.7.34
+state	LISTEN
+cmdline	/usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3307 -container-ip 172.18.0.4 -container-port 3306
+pid	7062
+``` 
+
+## sc_sleep
+
+`sc_sleep(time)`
+
+Thread sleeps for a certain number of seconds
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| time | `int` | second sleep time | true |
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+
+## sc_path_watch
+
+`sc_path_watch(dir,chan)`
+
+watch whether the file or directory has changed.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| dir | `string` | dir or filename | true |
+| chan | `lua.LChannel` | lua channel | true |
+
+
+*Return value(s):*  
+
+No return value and never stop.
+If the dir or file changes, it will be notified through to lua.LChannel.
+
+*the lua.LChannel:* 
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| path | string | file's full path |
+| status | int | file status |
+*file status:*
+
+| status | name | Description |
+| --- | ---- | ---- |
+| 1 | CREATE | create file in dir |
+| 2 | WRITE | write file  |
+| 4 | REMOVE | when file is del |
+| 8 | RENAME | file rename |
+| 16 | CHMOD | chmod is change |
+  
+
+## sc_ticker
+
+ `sc_ticker(channel,time)`
+ 
+ Send signals to the lua.LChannel regularly
+ 
+ *Parameters:*  
+ 
+ | Name | Type | Description | Required |
+ | --- | ---- | ---- | ---- |
+ | chan | `lua.LChannel` | lua channel | true |
+ | time | `int` | second time | true |
+ 
+ *Return value(s):*  
+ 
+ No return value
+ sent Lua.LString to lua.LChannel.
+ 
+
+ 
