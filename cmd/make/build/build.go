@@ -174,7 +174,7 @@ func compileArch(bin, goos, goarch, dir, version string) {
 		"build",
 		"-o", output,
 		"-ldflags",
-		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s -X DownloadURL=%s", ReleaseType, version, DownloadAddr),
+		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s -X main.DownloadURL=%s", ReleaseType, version, DownloadAddr),
 		MainEntry,
 	}
 
