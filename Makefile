@@ -98,13 +98,13 @@ prepare:
 
 test: test_deps
 	@truncate -s 0 test.output
-	@echo "#####################" > test.output
+	@echo "#####################" >> test.output
 	@echo "#" $(DATE) >> test.output
 	@echo "#" $(GIT_VERSION) >> test.output
 	@echo "#####################" >> test.output
 	for pkg in `go list ./...`; do \
 		echo "# testing $$pkg..." >> test.output; \
-		GO111MODULE=off CGO_ENABLED=0 go test -timeout 30s -cover $$pkg |tee -a test.output; \
+		GO111MODULE=off CGO_ENABLED=0 go test -timeout 30s -cover -benchmem -bench . $$pkg |tee -a test.output; \
 		echo "######################" >> test.output; \
 	done
 
