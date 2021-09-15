@@ -56,9 +56,7 @@ func getBinName() string {
 }
 
 func CheckMd5(releaseType string) {
-	urls := map[string]string{"release": ReleaseURL, "test": TestURL}
-
-	httpURL := fmt.Sprintf("https://%s/scheck-%s-%s-%s.md5", urls[releaseType], runtime.GOOS, runtime.GOARCH, Version)
+	httpURL := fmt.Sprintf("https://%s/scheck-%s-%s-%s.md5", releaseType, runtime.GOOS, runtime.GOARCH, Version)
 	resp, err := http.Get(httpURL) // #nosec
 	if err != nil {
 		fmt.Printf("http get err=%v \n", err)

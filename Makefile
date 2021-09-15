@@ -100,21 +100,17 @@ test: test_deps
 	@truncate -s 0 test.output
 	@echo "#####################" >> test.output
 	@echo "#" $(DATE) >> test.output
-	@echo "#" $(GIT_VERSION) >> test.output
+	@echo "#" $(VERSION) >> test.output
 	@echo "#####################" >> test.output
 	for pkg in `go list ./...`; do \
 		echo "# testing $$pkg..." >> test.output; \
-		GO111MODULE=off CGO_ENABLED=0 go test -timeout 30s -cover -benchmem -bench . $$pkg |tee -a test.output; \
+		GO111MODULE=off CGO_ENABLED=0 go test -timeout 60s -cover -benchmem -bench . $$pkg |tee -a test.output; \
 		echo "######################" >> test.output; \
 	done
 
-deps: man gofmt vet lint
+deps: man gofmt vet lint test
 lint_deps: man gofmt vet
 test_deps: man gofmt vet
 
 lint: lint_deps
 	@golangci-lint run | tee check.err # https://golangci-lint.run/usage/install/#local-installation
-
-# local:
-# 	$(call build,linux,amd64)
-# 	@cp build/linux-amd64/$(BIN) /usr/local/security-checker/

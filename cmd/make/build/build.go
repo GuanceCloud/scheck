@@ -141,7 +141,7 @@ func Compile() {
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
 		}
 
-		// build installer 将install/main.go 编译成exe文件 (slq:outdir随意填的 后面改 20210805P)
+		// build installer 将install/main.go 编译成exe文件
 		buidAllInstaller(BuildInstallDir, goos, goarch)
 	}
 	l.Infof("Done!(elapsed %v)", time.Since(start))
@@ -174,7 +174,7 @@ func compileArch(bin, goos, goarch, dir, version string) {
 		"build",
 		"-o", output,
 		"-ldflags",
-		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s", ReleaseType, version),
+		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s -X DownloadURL=%s", ReleaseType, version, DownloadAddr),
 		MainEntry,
 	}
 

@@ -29,3 +29,4 @@ install.ps1
 .docs
 /check.err
 
+/test.output

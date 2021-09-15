@@ -29,9 +29,6 @@ const (
 	LuaExt         = ".lua"
 	PidExt         = ".pid"
 
-	ReleaseURL = "zhuyun-static-files-production.oss-cn-hangzhou.aliyuncs.com/security-checker"
-	TestURL    = "zhuyun-static-files-testing.oss-cn-hangzhou.aliyuncs.com/security-checker"
-
 	LuaRet1                    = 1
 	LuaRet2                    = 2
 	LuaArgIdx1                 = 1

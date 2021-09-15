@@ -3,10 +3,16 @@ package impl
 import (
 	"log"
 	"os"
+	"runtime"
 	"testing"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 func TestUtmp(t *testing.T) {
+	if runtime.GOOS == global.OSWindows {
+		return
+	}
 	f, err := os.Open(`/var/run/utmp`)
 	if err != nil {
 		log.Fatal(err)
@@ -24,6 +30,9 @@ func TestUtmp(t *testing.T) {
 }
 
 func TestSockets(t *testing.T) {
+	if runtime.GOOS == global.OSWindows {
+		return
+	}
 	sockets, err := EnumProOpenSockets(nil)
 	if err != nil {
 		log.Fatal(err)

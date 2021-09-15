@@ -10,7 +10,7 @@ func BenchmarkGetState(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		task := pool.getState()
 		time.Sleep(time.Millisecond)
-		_ = task.Ls.DoString(`print("Hello World")`)
+		_ = task.Ls.DoString(`a = "abc"`)
 		pool.putPool(task)
 	}
 }

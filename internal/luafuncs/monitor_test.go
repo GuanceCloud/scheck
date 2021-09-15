@@ -8,13 +8,12 @@ import (
 	"testing"
 
 	termmarkdown "github.com/MichaelMure/go-term-markdown"
+
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 // nolint
 func TestExportAsMD(t *testing.T) {
-	fmt.Println(global.LuaStatusFile)
-
 	hostName, _ := os.Hostname()
 	rsm := RunStatusMonitor{
 		HostName:      hostName,
@@ -53,5 +52,5 @@ func TestExportAsMD(t *testing.T) {
 	}
 	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, "mdFile"), filepath.Join(global.InstallDir, "htmlFile"))
 
-	fmt.Println(string(termmarkdown.Render(tot, 80, 2)))
+	t.Log(string(termmarkdown.Render(tot, 80, 2)))
 }

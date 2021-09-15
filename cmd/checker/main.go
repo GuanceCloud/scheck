@@ -45,8 +45,8 @@ var (
 var (
 	Version     = ""
 	ReleaseType = ""
-
-	l = logger.DefaultSLogger("main")
+	DownloadURL = ""
+	l           = logger.DefaultSLogger("main")
 )
 
 func main() {
@@ -102,7 +102,7 @@ ReleasedInputs: %s
 		os.Exit(0)
 	}
 	if *flagCheckMD5 {
-		global.CheckMd5(ReleaseType)
+		global.CheckMd5(DownloadURL)
 		os.Exit(0)
 	}
 
