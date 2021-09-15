@@ -1,15 +1,18 @@
 package luafuncs
 
 import (
+	"path/filepath"
 	"strconv"
 	"testing"
 
 	lua "github.com/yuin/gopher-lua"
 )
 
+var testFile = "./testdata"
+
 // nolint
 func BenchmarkScriptRunTime_PCall_1(b *testing.B) {
-	name := "./examples.lua"
+	name := filepath.Join(testFile, "examples.lua")
 	state := &ScriptRunTime{Ls: lua.NewState()}
 	bCode, err := CompilesScript(name)
 	if err != nil {
@@ -30,7 +33,7 @@ func BenchmarkScriptRunTime_PCall_1(b *testing.B) {
 // nolint
 // 每次都是初始化新的state
 func BenchmarkScriptRunTime_PCall_2(b *testing.B) {
-	name := "./examples.lua"
+	name := filepath.Join(testFile, "examples.lua")
 	bCode, err := CompilesScript(name)
 	if err != nil {
 		b.Fatalf("Compiles Script name = %s ,err=%v", name, err)
