@@ -9,29 +9,24 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
-type MySqlServiceInfo struct {
+type MySQLServiceInfo struct {
 	Host     string
 	Port     string
 	UserName string
 	PassWord string
 }
 
-type MySqlChecker struct {
-	running int32
-
+type MySQLChecker struct {
 	dictPath string
 	scanner  *bufio.Scanner
-
-	lastErr error
 }
 
-func (c *MySqlChecker) Check(host string, port string, user string) (hit bool, pwd string, err error) {
-
+func (c *MySQLChecker) Check(host, port, user string) (hit bool, pwd string, err error) {
 	var fd *os.File
 	fd, err = os.Open(c.dictPath)
 	if err != nil {
@@ -40,11 +35,12 @@ func (c *MySqlChecker) Check(host string, port string, user string) (hit bool, p
 	defer fd.Close()
 	c.scanner = bufio.NewScanner(fd)
 
-	var info MySqlServiceInfo
+	var info MySQLServiceInfo
 	info.Host = host
 	info.Port = port
 	info.UserName = user
 
+	var timeSleep = 50
 	for {
 		if !c.scanner.Scan() {
 			err = c.scanner.Err()
@@ -64,12 +60,11 @@ func (c *MySqlChecker) Check(host string, port string, user string) (hit bool, p
 			pwd = line
 			return
 		}
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * time.Duration(timeSleep))
 	}
 }
 
-func (c *MySqlChecker) hit(info *MySqlServiceInfo) (bool, error) {
-
+func (c *MySQLChecker) hit(info *MySQLServiceInfo) (bool, error) {
 	source := info.UserName + ":" + info.PassWord + "@tcp(" + info.Host + ":" + info.Port + ")/mysql?charset=utf8"
 	db, err := sql.Open("mysql", source)
 	if err != nil {
@@ -83,8 +78,7 @@ func (c *MySqlChecker) hit(info *MySqlServiceInfo) (bool, error) {
 }
 
 func (p *provider) checkMysqlWeakPassword(l *lua.LState) int {
-
-	var mysqlChecker MySqlChecker
+	var mysqlChecker MySQLChecker
 	mysqlChecker.dictPath = filepath.Join(config.Cfg.System.RuleDir, `passwd_dict`, `dict.txt`)
 
 	lv := l.Get(1)
@@ -94,18 +88,18 @@ func (p *provider) checkMysqlWeakPassword(l *lua.LState) int {
 	}
 	host := lv.(lua.LString).String()
 
-	lv = l.Get(2)
+	lv = l.Get(global.LuaArgIdx2)
 	if lv.Type() != lua.LTString {
-		l.TypeError(2, lua.LTString)
+		l.TypeError(global.LuaArgIdx2, lua.LTString)
 		return lua.MultRet
 	}
 	port := lv.(lua.LString).String()
 
 	user := "root"
-	lv = l.Get(3)
+	lv = l.Get(global.LuaArgIdx3)
 	if lv != lua.LNil {
 		if lv.Type() != lua.LTString {
-			l.TypeError(3, lua.LTString)
+			l.TypeError(global.LuaArgIdx3, lua.LTString)
 			return lua.MultRet
 		}
 		user = lv.(lua.LString).String()
@@ -121,8 +115,7 @@ func (p *provider) checkMysqlWeakPassword(l *lua.LState) int {
 	l.Push(lua.LBool(hit))
 	if hit {
 		l.Push(lua.LString(pwd))
-		return 2
+		return global.LuaRet2
 	}
-
 	return 1
 }

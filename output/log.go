@@ -1,43 +1,50 @@
 package output
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 // localLog 本地存储
 type localLog struct {
 	filePath   string
-	outputFile *os.File
+	outputFile io.WriteCloser
 }
 
 func newLocalLog(filePath string) *localLog {
-	if strings.HasPrefix(filePath, "file://") {
-		filePath = strings.TrimPrefix(filePath, "file://")
-	}
-	local := &localLog{filePath: filePath}
+	filePath = strings.TrimPrefix(filePath, "file://")
 
+	local := &localLog{filePath: filePath}
 	if filePath == "stdout" {
 		local.outputFile = os.Stdout
 		l.Info("init stdout success")
 		return local
 	}
+	_ = os.MkdirAll(filepath.Dir(filePath), global.FileModeMkdirAll)
 
-	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	logf, err := rotatelogs.New(
+		filePath+".%Y%m%d%H%M",            // 没有使用go语言规范的format格式
+		rotatelogs.WithLinkName(filePath), // 快捷方式名称
+		rotatelogs.WithMaxAge(global.LocalLogMaxAge),
+		rotatelogs.WithRotationTime(global.LocalLogRotate),
+	)
 	if err != nil {
-		os.MkdirAll(filepath.Dir(filePath), 0775)
-		f, err = os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-		if err != nil {
-			l.Errorf("%s", err)
-		}
+		l.Errorf("init rotatelogs err=%v", err)
+		return nil
 	}
 
-	local.outputFile = f
-	l.Infof("init log ok! path=%s", filePath)
+	local.outputFile = logf
+	l.Infof("init output log ok! path=%s", filePath)
 	return local
 }
+
 func (log *localLog) Stop() {
 	_ = log.outputFile.Close()
 }
@@ -55,9 +62,10 @@ func (log *localLog) ReadMsg(measurement string, tags map[string]string, fields 
 }
 
 func (log *localLog) ToUpstream(sam ...*sample) {
-
-	if _, err := log.outputFile.Write(append(sam[0].data, byte('\n'))); err != nil {
+	timenow := time.Now().Format(" 20060102-150405")
+	date := sam[0].data
+	date = append(date, []byte(timenow)...)
+	if _, err := log.outputFile.Write(append(date, byte('\n'))); err != nil {
 		l.Errorf("%s", err)
 	}
-
 }
