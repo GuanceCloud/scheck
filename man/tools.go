@@ -193,7 +193,7 @@ func ScheckList(dirPath string) []string {
 
 func CreateFile(content, file string) error {
 	file = doFilepath(file)
-	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR|os.O_TRUNC, global.FileModeRW)
 	if err != nil {
 		l.Fatalf("fail to open file err=%v", err)
 		return err
@@ -273,11 +273,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 			category[md.Category][fmt.Sprintf("%s-%s", strings.Split(md.RuleID, "-")[0], md.Title)] = md.RuleID
 		}
 		yuquemd := Tmp{Path: "yuquemd.tpl", Obj: md, box: TemplateBox}
-		if _, err := os.Stat(outputPath); err != nil {
-			if err := os.MkdirAll(outputPath, os.ModeDir|os.ModePerm); err != nil {
-				l.Fatalf("%s create dir : %s", outputPath, err)
-			}
-		}
+
 		yuqueMdPath := fmt.Sprintf("%s/%s.md", outputPath, md.RuleID)
 		err := CreateFile(yuquemd.GetTemplate(), yuqueMdPath)
 		if err != nil {
@@ -285,7 +281,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 		}
 		count++
 	}
-
+	fmt.Printf("create %d files to %s \n", count, outputPath)
 	yuque := Tmp{Path: "summary.tpl", Obj: Summary{Category: category}, box: TemplateBox}
 	yuquePath := fmt.Sprintf("%s/%s", outputPath, "summary.md")
 
@@ -335,13 +331,8 @@ func ScheckCoreSyncDisk(ruleDir string) {
 }
 
 func ScheckDocSyncDisk(filePath string) error {
-	// Create a directory and synchronize Lua scripts to disk
-	if _, err := os.Stat(filePath); err != nil {
-		if err := os.Mkdir(filePath, global.FileModeMkdir); err == nil {
-			// Traversal Lua script name
-			l.Debug("The current scriptbox length is %d \n", len(ScriptBox.List()))
-		}
-	}
+	l.Debugf("The current doc length is %d \n", len(DocBox.List()))
+
 	for _, name := range DocBox.List() {
 		content, err := DocBox.Find(name)
 		if err == nil {

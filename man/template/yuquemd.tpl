@@ -1,4 +1,4 @@
-# {{ .Id }}-{{ .Title }}
+# {{ .RuleID }}-{{ .Title }}
 
 ## 规则ID
 
