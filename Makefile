@@ -61,7 +61,7 @@ endef
 gofmt:
 	@GO111MODULE=off go fmt ./...
 
-local: deps
+local: lint_deps
 	$(call build,local,$(LOCAL_ARCHS),$(LOCAL_DOWNLOAD_ADDR))
 
 local_all: deps
