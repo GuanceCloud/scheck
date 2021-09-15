@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="sudoers 被修改"
 desc="{{.Content}} 被修改"
-cron="0 * */1 * *"
+cron="disable"
 # 开关
 disabled=false
 

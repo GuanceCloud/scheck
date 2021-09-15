@@ -12,7 +12,7 @@ import (
 
 	"github.com/influxdata/toml"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 const (
@@ -25,19 +25,21 @@ const (
   custom_rule_lib_dir = "{{.System.CustomRuleLibDir}}"
   #热更新 默认false
   lua_HotUpdate = {{.System.LuaHotUpdate}}
-  cron = "{{.System.Cron}}"
+
   # ##lua运行过程中 控制线程数量 run_cap为初始化线程数量，tot_cap是最大允许的数量
   lua_run_cap = {{.System.LuaInitCap}}
   lua_tot_cap = {{.System.LuaCap}}
+
   #是否禁用日志
   disable_log = {{.System.DisableLog}}
+  pprof = {{.System.Pprof}}
 
 [scoutput]
    # ##安全巡检过程中产生消息 可发送到本地、http、阿里云sls。
    # ##远程server，例：http(s)://your.url
   [scoutput.http]
-    enable = {{.ScOutput.Http.Enable}}
-    output = "{{.ScOutput.Http.Output}}"
+    enable = {{.ScOutput.HTTP.Enable}}
+    output = "{{.ScOutput.HTTP.Output}}"
   [scoutput.log]
     # ##可配置本地存储
     enable = {{.ScOutput.Log.Enable}}
@@ -83,26 +85,29 @@ type System struct {
 	CustomRuleDir    string `toml:"custom_dir"`
 	CustomRuleLibDir string `toml:"custom_rule_lib_dir"`
 	LuaHotUpdate     bool   `toml:"lua_HotUpdate"`
-	Cron             string `toml:"cron"`
+	Cron             string `toml:"cron,omitempty"`
 	DisableLog       bool   `toml:"disable_log"`
 	LuaInitCap       int    `toml:"lua_run_cap,omitempty"`
 	LuaCap           int    `toml:"lua_tot_cap,omitempty"`
+	Pprof            bool   `toml:"pprof,omitempty"`
 }
 
 type ScOutput struct {
-	Http   *Http   `toml:"http,omitempty"`
+	HTTP   *HTTP   `toml:"http,omitempty"`
 	Log    *Log    `toml:"log,omitempty"`
 	AliSls *AliSls `toml:"alisls,omitempty"`
 }
 
-type Http struct {
+type HTTP struct {
 	Enable bool   `toml:"enable"`
 	Output string `toml:"output,omitempty"`
 }
+
 type Log struct {
 	Enable bool   `toml:"enable"`
 	Output string `toml:"output,omitempty"`
 }
+
 type AliSls struct {
 	Enable          bool   `toml:"enable"`
 	EndPoint        string `toml:"endpoint"`
@@ -129,25 +134,23 @@ type Cgroup struct {
 }
 
 func DefaultConfig() *Config {
-
 	c := &Config{
 		System: &System{
 			RuleDir:          "/usr/local/scheck/rules.d",
 			CustomRuleDir:    "/usr/local/scheck/custom.rules.d",
 			CustomRuleLibDir: "/usr/local/scheck/custom.rules.d/libs",
-			Cron:             "",
 			LuaInitCap:       15,
 			LuaCap:           20,
 			DisableLog:       false,
 		},
 		ScOutput: &ScOutput{
-			Http: &Http{
+			HTTP: &HTTP{
 				Enable: true,
 				Output: "http://127.0.0.1:9529/v1/write/security",
 			},
 			Log: &Log{
 				Enable: true,
-				Output: fmt.Sprintf("file://%s", filepath.Join("/var/log/scheck", "event.log")),
+				Output: fmt.Sprintf("file://%s", filepath.Join(global.DefLogPath, "event.log")),
 			},
 			AliSls: &AliSls{
 				ProjectName:  "zhuyun-scheck",
@@ -156,19 +159,19 @@ func DefaultConfig() *Config {
 		},
 		Logging: &Logging{
 			LogLevel: "info",
-			Log:      filepath.Join("/var/log/scheck", "log"),
-			Rotate:   0, //默认32M
+			Log:      filepath.Join(global.DefLogPath, "log"),
+			Rotate:   0, // 默认32M
 		},
-		Cgroup: &Cgroup{Enable: false, CPUMax: 10, CPUMin: 5, MEM: 100},
+		Cgroup: &Cgroup{Enable: false, CPUMax: 10.0, CPUMin: 5.0, MEM: 100},
 	}
 
 	// windows
-	if runtime.GOOS == "windows" {
-		c.Logging.Log = filepath.Join(securityChecker.InstallDir, "log")
-		c.System.RuleDir = filepath.Join(securityChecker.InstallDir, "rules.d")
-		c.System.CustomRuleDir = filepath.Join(securityChecker.InstallDir, "custom.rules.d")
+	if runtime.GOOS == global.OSWindows {
+		c.Logging.Log = filepath.Join(global.InstallDir, "log")
+		c.System.RuleDir = filepath.Join(global.InstallDir, "rules.d")
+		c.System.CustomRuleDir = filepath.Join(global.InstallDir, "custom.rules.d")
 		c.System.CustomRuleLibDir = filepath.Join(c.System.CustomRuleDir, "libs")
-		c.ScOutput.Log.Output = fmt.Sprintf("file://%s", filepath.Join(securityChecker.InstallDir, "event.log"))
+		c.ScOutput.Log.Output = fmt.Sprintf("file://%s", filepath.Join(global.InstallDir, "event.log"))
 	}
 
 	return c
@@ -197,11 +200,6 @@ func TryLoadConfig(filePath string) bool {
 	newConf := DefaultConfig()
 	if oldConf.CustomRuleDir != "" && oldConf.CustomRuleDir != newConf.System.CustomRuleDir {
 		newConf.System.CustomRuleDir = oldConf.CustomRuleDir
-	}
-	if oldConf.Cron != "" {
-		if oldConf.Cron != newConf.System.Cron {
-			newConf.System.Cron = oldConf.Cron
-		}
 	}
 	if oldConf.Log != "" {
 		if oldConf.Log != newConf.Logging.Log {
@@ -236,7 +234,7 @@ func (c *Config) Init() {
 	initDir()
 }
 
-//init log
+// init log
 func (c *Config) setLogging() {
 	// set global log root
 	if c.Logging.Log == "stdout" || c.Logging.Log == "" { // set log to disk file
@@ -260,88 +258,24 @@ func (c *Config) setLogging() {
 		}
 	}
 	l = logger.DefaultSLogger("config")
+	l.Infof("log init ok")
 }
 
 // 初始化配置中的rule文件和用户自定义rules文件
 func initDir() {
 	_, err := os.Stat(Cfg.System.CustomRuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.CustomRuleDir, 0644)
+		_ = os.MkdirAll(Cfg.System.CustomRuleDir, global.FileModeMkdir)
 	}
 
 	_, err = os.Stat(Cfg.System.RuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.RuleDir, 0644)
+		_ = os.MkdirAll(Cfg.System.RuleDir, global.FileModeMkdir)
 	}
-
-}
-
-func hostInfo() {
-	//cpuMun := runtime.NumCPU()
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-}
-
-func CreateSymlinks() {
-
-	x := [][2]string{}
-
-	if runtime.GOOS == "windows" {
-		x = [][2]string{
-			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck.exe"),
-				`C:\WINDOWS\system32\scheck.exe`,
-			},
-		}
-	} else {
-		x = [][2]string{
-			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
-				"/usr/local/bin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
-				"/usr/local/sbin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
-				"/sbin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
-				"/usr/sbin/scheck",
-			},
-
-			[2]string{
-				filepath.Join(securityChecker.InstallDir, "scheck"),
-				"/usr/bin/scheck",
-			},
-		}
-	}
-
-	for _, item := range x {
-		if err := symlink(item[0], item[1]); err != nil {
-			l.Warnf("create scheck symlink: %s -> %s: %s, ignored", item[1], item[0], err.Error())
-		}
-	}
-
-}
-
-func symlink(src, dst string) error {
-
-	l.Debugf("remove link %s...", dst)
-	if err := os.Remove(dst); err != nil {
-		l.Warnf("%s, ignored", err)
-	}
-
-	return os.Symlink(src, dst)
 }
 
 func tmplToFile(c *Config, fpath string) {
-	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, global.FileModeRW)
 	if err != nil {
 		l.Fatalf("open file err =%v", err)
 	}
@@ -350,7 +284,7 @@ func tmplToFile(c *Config, fpath string) {
 	if err != nil {
 		l.Fatalf("make template err=%v", err)
 	}
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == global.OSWindows {
 		c.System.RuleDir = strings.ReplaceAll(c.System.RuleDir, "\\", "\\\\")
 		c.System.CustomRuleLibDir = strings.ReplaceAll(c.System.CustomRuleLibDir, "\\", "\\\\")
 		c.System.CustomRuleDir = strings.ReplaceAll(c.System.CustomRuleDir, "\\", "\\\\")
@@ -362,7 +296,6 @@ func tmplToFile(c *Config, fpath string) {
 	if err != nil {
 		l.Fatalf("execute err=%v", err)
 	}
-	//_, err = f.WriteString(buf.String())
 	_, err = f.Write(buf.Bytes())
 	if err != nil {
 		l.Fatalf("err:=%v", err)

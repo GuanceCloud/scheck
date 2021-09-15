@@ -1,6 +1,7 @@
 /*
 	A substantial portion of this code is based on:
-	https://medium.com/@alexanderravikovich/writing-mysql-proxy-in-go-for-learning-purposes-part-2-decoding-connection-phase-server-response-7091d87e877e
+	https://medium.com/@alexanderravikovich/\
+	writing-mysql-proxy-in-go-for-learning-purposes-part-2-decoding-connection-phase-server-response-7091d87e877e
 	https://dev.mysql.com/doc/internals/en/capability-flags.html
 */
 
@@ -8,18 +9,17 @@ package utils
 
 import (
 	"bytes"
-	log "github.com/sirupsen/logrus"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
-	"time"
-	//"io"
 	"encoding/binary"
 	"errors"
 	"fmt"
-
-	lua "github.com/yuin/gopher-lua"
 	"net"
-	//"path/filepath"
 	"strings"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 /*
@@ -27,7 +27,7 @@ PacketHeader represents packet header
 */
 type PacketHeader struct {
 	Length     uint32
-	SequenceId uint8
+	SequenceID uint8
 }
 
 /*
@@ -36,7 +36,7 @@ InitialHandshakePacket represents initial handshake packet sent by MySQL Server
 type InitialHandshakePacket struct {
 	ProtocolVersion   uint8
 	ServerVersion     []byte
-	ConnectionId      uint32
+	ConnectionID      uint32
 	AuthPluginData    []byte
 	Filler            byte
 	CapabilitiesFlags CapabilityFlag
@@ -51,12 +51,13 @@ type InitialHandshakePacket struct {
 Decode decodes the first packet received from the MySQl Server
 It's assumed to be a handshake packet
 */
+// nolint
 func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 	timeoutDuration := 100 * time.Millisecond
 	// net 读超时设置
-	conn.SetReadDeadline(time.Now().Add(timeoutDuration))
+	_ = conn.SetReadDeadline(time.Now().Add(timeoutDuration))
 
-	data := make([]byte, 1024)
+	data := make([]byte, global.KB)
 	_, err := conn.Read(data)
 	if err != nil {
 		return err
@@ -66,10 +67,10 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 	ln := []byte{data[0], data[1], data[2], 0x00}
 	header.Length = binary.LittleEndian.Uint32(ln)
 	// Single byte integer is the same in BigEndian and LittleEndian
-	header.SequenceId = data[3]
+	header.SequenceID = data[3]
 
 	// Header Sanity check
-	if header.Length >= 1024 {
+	if header.Length >= global.KB {
 		return errors.New("Header sanity check failed!")
 	}
 
@@ -96,13 +97,13 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 		}
 
 		if r.ProtocolVersion == 0x09 {
-			return errors.New("Version 9 is not yet supported!")
+			return errors.New("version 9 is not yet supported")
 		}
 
-		return errors.New("Only version 10 is supported. Unknown procotcol version!")
+		return errors.New("only version 10 is supported. Unknown procotcol version")
 	}
 
-	position += 1
+	position++
 
 	/*
 		Extract server version, by finding the terminal character (0x00) index,
@@ -113,9 +114,9 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 	r.ServerVersion = payload[position:index]
 	position = index + 1
 
-	connectionId := payload[position : position+4]
-	id := binary.LittleEndian.Uint32(connectionId)
-	r.ConnectionId = id
+	connectionID := payload[position : position+4]
+	id := binary.LittleEndian.Uint32(connectionID)
+	r.ConnectionID = id
 	position += 4
 
 	/*
@@ -132,13 +133,13 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 		return errors.New("Unable to decode filler value")
 	}
 
-	position += 1
+	position++
 
 	capabilitiesFlags1 := payload[position : position+2]
 	position += 2
 
 	r.CharacterSet = payload[position]
-	position += 1
+	position++
 
 	r.StatusFlags = binary.LittleEndian.Uint16(payload[position : position+2])
 	position += 2
@@ -152,9 +153,9 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 	*/
 	capLow := binary.LittleEndian.Uint16(capabilitiesFlags1)
 	capHi := binary.LittleEndian.Uint16(capabilityFlags2)
-	cap := uint32(capLow) | uint32(capHi)<<16
+	capL := uint32(capLow) | uint32(capHi)<<16
 
-	r.CapabilitiesFlags = CapabilityFlag(cap)
+	r.CapabilitiesFlags = CapabilityFlag(capL)
 
 	if r.CapabilitiesFlags&clientPluginAuth != 0 {
 		r.AuthPluginDataLen = payload[position]
@@ -196,15 +197,13 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 	return nil
 }
 
-func (r InitialHandshakePacket) String() string {
-
-	var fields []string
-	fields = append(fields, fmt.Sprintf("ProtocolVersion: %d", r.ProtocolVersion))
-	fields = append(fields, fmt.Sprintf("ServerVersion: %s", r.ServerVersion))
-	fields = append(fields, fmt.Sprintf("ConnectionId: %d", r.ConnectionId))
-	fields = append(fields, fmt.Sprintf("AuthPluginName: %s", r.AuthPluginName))
-	fields = append(fields, fmt.Sprintf("StatusFlags: %d\n", r.StatusFlags))
-	//return r.CapabilitiesFlags.String()
+func (r *InitialHandshakePacket) String() string {
+	var fields = make([]string, 0)
+	fields = append(fields, fmt.Sprintf("ProtocolVersion: %d", r.ProtocolVersion),
+		fmt.Sprintf("ServerVersion: %s", r.ServerVersion),
+		fmt.Sprintf("ConnectionId: %d", r.ConnectionID),
+		fmt.Sprintf("AuthPluginName: %s", r.AuthPluginName),
+		fmt.Sprintf("StatusFlags: %d\n", r.StatusFlags))
 	return strings.Join(fields, "\n")
 }
 
@@ -234,7 +233,7 @@ func (r CapabilityFlag) Has(flag CapabilityFlag) bool {
 func (r CapabilityFlag) String() string {
 	var names []string
 
-	for i := uint64(1); i <= uint64(1)<<31; i = i << 1 {
+	for i := uint64(1); i <= uint64(1)<<31; i <<= 1 {
 		name, ok := flags[CapabilityFlag(i)]
 		if ok {
 			names = append(names, fmt.Sprintf("0x%08x - %032b - %s", i, i, name))
@@ -307,8 +306,8 @@ func Max(x, y int) int {
 	return y
 }
 
+// nolint
 func (p *provider) mysqlPortsList(l *lua.LState) int {
-
 	var result lua.LTable
 	listenPorts := impl.GetListeningPorts()
 	for i := range listenPorts {
@@ -334,8 +333,8 @@ func (p *provider) mysqlPortsList(l *lua.LState) int {
 				item.RawSetString("port", lua.LNumber(port.(uint16)))
 				item.RawSetString("protocolversion", lua.LString(fmt.Sprintf("%d", handshakePacket.ProtocolVersion)))
 				item.RawSetString("statusflags", lua.LString(fmt.Sprintf("%d", handshakePacket.StatusFlags)))
-				item.RawSetString("authpluginname", lua.LString(fmt.Sprintf("%s", handshakePacket.AuthPluginName)))
-				item.RawSetString("s️erverversion", lua.LString(fmt.Sprintf("%s", handshakePacket.ServerVersion)))
+				item.RawSetString("authpluginname", lua.LString(handshakePacket.AuthPluginName))
+				item.RawSetString("s️erverversion", lua.LString(handshakePacket.ServerVersion))
 				item.RawSetString("state", lua.LString(fmt.Sprintf("%s", listenPorts[i]["state"])))
 				item.RawSetString("cmdline", lua.LString(fmt.Sprintf("%s", listenPorts[i]["cmdline"])))
 				item.RawSetString("pid", lua.LNumber(listenPorts[i]["pid"].(int)))
@@ -346,5 +345,4 @@ func (p *provider) mysqlPortsList(l *lua.LState) int {
 	}
 	l.Push(&result)
 	return 1
-
 }

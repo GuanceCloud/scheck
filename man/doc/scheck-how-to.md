@@ -25,10 +25,9 @@ Scheck 目前支持 Linux/Windows 两种主流平台：
 - Linux：`uname -r`
 - Windows：执行 `cmd` 命令（按住 Win键 + `r`，输入 `cmd` 回车），输入 `winver` 即可获取系统版本信息
 
-安装完成年后，Scheck 目录列表大概如下：
+安装完成后，Scheck 目录列表大概如下：
 
 ```
-├── [  64]  autostart
 ├── [   6]  custom.rules.d
 ├── [ 12K]  rules.d
 ├── [ 17M]  scheck
@@ -38,7 +37,6 @@ Scheck 目前支持 Linux/Windows 两种主流平台：
 
 其中：
 
-- `autostart`：安装时的配置
 - `scheck`：Scheck 主程序，Windows 下为 `scheck.exe`
 - `custom.rules.d`：用户自定义目录
 - `rules.d`：Scheck 系统目录
