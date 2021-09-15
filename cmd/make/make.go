@@ -19,7 +19,6 @@ var (
 )
 
 func applyFlags() {
-
 	build.AppBin = *flagBinary
 	build.BuildDir = *flagBuildDir
 	build.PubDir = *flagPubDir

@@ -99,20 +99,16 @@ func (p *provider) kernelInfo(l *lua.LState) int {
 }
 
 func (p *provider) kernelModules(l *lua.LState) int {
-
 	var result lua.LTable
-
+	var partsMax = 5
 	if data, err := ioutil.ReadFile(`/proc/modules`); err == nil {
 		mods := strings.Split(string(data), "\n")
 		for _, mod := range mods {
 			mod = strings.TrimSpace(mod)
 			parts := strings.FieldsFunc(mod, func(r rune) bool {
-				if r == ' ' {
-					return true
-				}
-				return false
+				return r == ' '
 			})
-			if len(parts) < 5 {
+			if len(parts) < partsMax {
 				continue
 			}
 			for idx, p := range parts {
@@ -135,7 +131,6 @@ func (p *provider) kernelModules(l *lua.LState) int {
 }
 
 func (p *provider) users(l *lua.LState) int {
-
 	us, err := impl.GetUserDetail("")
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -166,18 +161,8 @@ func (p *provider) users(l *lua.LState) int {
 	return 1
 }
 
-func loggedInUsers(l *lua.LState) int {
-	return 1
-}
-
 func (p *provider) shadow(l *lua.LState) int {
-
-	type shadowInfo struct {
-		status     string
-		lastChange int64
-		expireAt   int64
-	}
-
+	var partsL = 9
 	file, err := os.Open("/etc/shadow")
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -199,7 +184,7 @@ func (p *provider) shadow(l *lua.LState) int {
 		}
 
 		parts := strings.Split(line, ":")
-		if len(parts) < 9 {
+		if len(parts) < partsL {
 			continue
 		}
 
@@ -240,48 +225,7 @@ func (p *provider) shadow(l *lua.LState) int {
 }
 
 func (p *provider) ulimitInfo(l *lua.LState) int {
-
 	var result lua.LTable
-
-	/*	limitsResourceMap := []struct {
-			name string
-			id   int
-		}{
-			{"cpu", syscall.RLIMIT_CPU},
-			{"fsize", syscall.RLIMIT_FSIZE},
-			{"data", syscall.RLIMIT_DATA},
-			{"stack", syscall.RLIMIT_STACK},
-			{"core", syscall.RLIMIT_CORE},
-			{"nofile", syscall.RLIMIT_NOFILE},
-			{"as", syscall.RLIMIT_AS},
-			{"as", syscall.rli},
-		}
-
-		for _, r := range limitsResourceMap {
-			var rLimit syscall.Rlimit
-			err := syscall.Getrlimit(r.id, &rLimit)
-			if err == nil {
-				var item lua.LTable
-				item.RawSetString("type", lua.LString(r.name))
-				v := ""
-				if int(rLimit.Cur) == syscall.RLIM_INFINITY {
-					v = "unlimited"
-				} else {
-					v = fmt.Sprintf("%v", rLimit.Cur)
-				}
-				item.RawSetString("soft_limit", lua.LString(v))
-
-				if int(rLimit.Max) == syscall.RLIM_INFINITY {
-					v = "unlimited"
-				} else {
-					v = fmt.Sprintf("%v", rLimit.Max)
-				}
-				item.RawSetString("hard_limit", lua.LString(v))
-				result.Append(&item)
-			} else {
-				log.Errorf("fail ot getrlimit, %s", err)
-			}
-		}*/
 	l.Push(&result)
 	return 1
 }
@@ -308,7 +252,6 @@ func (p *provider) mounts(l *lua.LState) int {
 }
 
 func (p *provider) processes(l *lua.LState) int {
-
 	pslist, err := impl.GetProcesses()
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -351,7 +294,6 @@ func (p *provider) processes(l *lua.LState) int {
 }
 
 func (p *provider) processOpendFiles(l *lua.LState) int {
-
 	var pids []int
 	lv := l.Get(1)
 	if lv != lua.LNil {
@@ -383,27 +325,23 @@ func (p *provider) processOpendFiles(l *lua.LState) int {
 }
 
 func (p *provider) shellHistory(l *lua.LState) int {
-
 	targetUser := ""
 	lv := l.Get(1)
 	if lv.Type() != lua.LTNil {
 		if lv.Type() != lua.LTString {
 			l.TypeError(1, lua.LTString)
 			return lua.MultRet
-		} else {
-			targetUser = lv.String()
 		}
+		targetUser = lv.String()
 	}
 
 	users, err := impl.GetUserDetail(targetUser)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
-	} else {
-		if len(users) == 0 {
-			l.RaiseError("user '%s' not exists", targetUser)
-			return lua.MultRet
-		}
+	} else if len(users) == 0 {
+		l.RaiseError("user '%s' not exists", targetUser)
+		return lua.MultRet
 	}
 
 	shellHistoryFiles := []string{
@@ -424,7 +362,6 @@ func (p *provider) shellHistory(l *lua.LState) int {
 		}
 
 		for _, f := range shellHistoryFiles {
-
 			cmds, err := impl.GenShellHistoryFromFile(filepath.Join(u.Home, f))
 			if err != nil {
 				l.RaiseError("%s", err)
@@ -475,7 +412,6 @@ func (p *provider) parseUtmpFile(file string) (*lua.LTable, error) {
 }
 
 func (p *provider) last(l *lua.LState) int {
-
 	utmps, err := p.parseUtmpFile("/var/log/wtmp")
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -487,7 +423,6 @@ func (p *provider) last(l *lua.LState) int {
 }
 
 func (p *provider) lastb(l *lua.LState) int {
-
 	utmps, err := p.parseUtmpFile("/var/log/btmp")
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -499,7 +434,6 @@ func (p *provider) lastb(l *lua.LState) int {
 }
 
 func (p *provider) loggedInUsers(l *lua.LState) int {
-
 	utmps, err := p.parseUtmpFile("/var/run/utmp")
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -510,6 +444,7 @@ func (p *provider) loggedInUsers(l *lua.LState) int {
 	return 1
 }
 
+// nolint
 func (p *provider) crontab(l *lua.LState) int {
 	targetUser := ""
 	lv := l.Get(1)
@@ -517,9 +452,9 @@ func (p *provider) crontab(l *lua.LState) int {
 		if lv.Type() != lua.LTString {
 			l.TypeError(1, lua.LTString)
 			return lua.MultRet
-		} else {
-			targetUser = lv.String()
 		}
+		targetUser = lv.String()
+
 	}
 
 	crondir := `/var/spool/cron`
@@ -531,6 +466,7 @@ func (p *provider) crontab(l *lua.LState) int {
 	}
 
 	parseLine := func(path, line string, num int) *lua.LTable {
+		var cronL = 5
 		if line == "" {
 			return nil
 		}
@@ -539,23 +475,17 @@ func (p *provider) crontab(l *lua.LState) int {
 		if len(columns) == 1 {
 			columns = strings.Split(columns[0], " ")
 		}
-		if len(columns) < 5 {
+		if len(columns) < cronL {
 			log.Warnf("unknown line: %s[%d]", path, num)
 			return nil
 		}
 		var command string
+		var keys = []string{"minute", "hour", "day_of_month", "month", "day_of_week"}
+
 		for i := 0; i < len(columns); i++ {
-			if i == 0 {
-				cron.RawSetString("minute", lua.LString(columns[i]))
-			} else if i == 1 {
-				cron.RawSetString("hour", lua.LString(columns[i]))
-			} else if i == 2 {
-				cron.RawSetString("day_of_month", lua.LString(columns[i]))
-			} else if i == 3 {
-				cron.RawSetString("month", lua.LString(columns[i]))
-			} else if i == 4 {
-				cron.RawSetString("day_of_week", lua.LString(columns[i]))
-			} else if i == 5 {
+			if i < cronL {
+				cron.RawSetString(keys[i], lua.LString(columns[i]))
+			} else if i == cronL {
 				command = columns[i]
 			} else {
 				command += " " + columns[i]
@@ -599,16 +529,14 @@ func (p *provider) crontab(l *lua.LState) int {
 }
 
 func (p *provider) sysctl(l *lua.LState) int {
-
 	key := ""
 	lv := l.Get(1)
 	if lv.Type() != lua.LTNil {
 		if lv.Type() != lua.LTString {
 			l.TypeError(1, lua.LTString)
 			return lua.MultRet
-		} else {
-			key = lv.String()
 		}
+		key = lv.String()
 	}
 
 	cmd := exec.Command("sysctl", "-a")
@@ -623,10 +551,11 @@ func (p *provider) sysctl(l *lua.LState) int {
 
 	lines := strings.Split(buf.String(), "\n")
 	var result lua.LTable
+	var lineL = 2
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, "=")
-		if len(fields) < 2 {
+		if len(fields) < lineL {
 			continue
 		}
 		k := strings.TrimSpace(fields[0])
@@ -644,7 +573,6 @@ func (p *provider) sysctl(l *lua.LState) int {
 }
 
 func (p *provider) rpmList(l *lua.LState) int {
-
 	cmd := exec.Command("rpm", "-qa")
 	buf := bytes.NewBuffer([]byte{})
 	errbuf := bytes.NewBuffer([]byte{})
@@ -660,16 +588,14 @@ func (p *provider) rpmList(l *lua.LState) int {
 }
 
 func (p *provider) rpmQuery(l *lua.LState) int {
-
 	pkg := ""
 	lv := l.Get(1)
 	if lv.Type() != lua.LTNil {
 		if lv.Type() != lua.LTString {
 			l.TypeError(1, lua.LTString)
 			return lua.MultRet
-		} else {
-			pkg = lv.String()
 		}
+		pkg = lv.String()
 	}
 
 	cmd := exec.Command("rpm", "-q", pkg)
@@ -684,4 +610,42 @@ func (p *provider) rpmQuery(l *lua.LState) int {
 
 	l.Push(lua.LString(buf.String()))
 	return 1
+}
+
+func (p *provider) sleep(l *lua.LState) int {
+	num := 0
+	lv := l.Get(1)
+	if lv.Type() != lua.LTNil {
+		if lv.Type() != lua.LTNumber {
+			l.TypeError(1, lua.LTNumber)
+			return lua.MultRet
+		}
+		num = int(lv.(lua.LNumber))
+	}
+	time.Sleep(time.Duration(num) * time.Second)
+	return 0
+}
+
+func (p *provider) ticker(l *lua.LState) int {
+	var chanN = 1
+	var intN = 2
+	var interval time.Duration
+	scChan := l.ToChannel(chanN)
+	lv := l.Get(intN)
+	if lv.Type() != lua.LTNil {
+		interval = 1 * time.Second
+	} else {
+		if lv.Type() == lua.LTNumber {
+			interval = time.Duration(int(lv.(lua.LNumber))) * time.Second
+		} else {
+			interval = 1 * time.Second
+		}
+	}
+	go func(interval time.Duration) {
+		timer1 := time.NewTicker(interval)
+		for v := range timer1.C {
+			scChan <- lua.LString(v.String())
+		}
+	}(interval)
+	return 0
 }

@@ -12,7 +12,7 @@ packrd/
 !/cmd/make/build
 old/
 examples/
-man/man-packr.go
+*-packr.go
 *.tar
 *.tar.gz
 git/git.go
@@ -27,4 +27,6 @@ git/git.go
 install.sh
 install.ps1
 .docs
-/man/man-packr.go
+/check.err
+
+/test.output

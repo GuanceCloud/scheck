@@ -4,7 +4,7 @@ level="warn"
 title="yum仓库被修改"
 #desc="文件 {{.File}} 发生了变化"
 desc="yum仓库被修改，文件{{.Content}} 被修改"
-cron="0 */30 * * *"
+cron="disable"
 # 开关
 disabled=false
 

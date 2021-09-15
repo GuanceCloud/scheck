@@ -1,8 +1,7 @@
 package build
 
 import (
-	"crypto/md5"
-	"encoding/hex"
+	"crypto/md5" // #nosec
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +14,7 @@ import (
 
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 var (
@@ -30,17 +30,10 @@ var (
 		`windows/386`,
 		`windows/amd64`,
 	}
+	ArchLen        = 2
 	ReleaseVersion = git.Version
+	CommandName    = "go"
 )
-
-func runEnv(args, env []string) ([]byte, error) {
-	cmd := exec.Command(args[0], args[1:]...)
-	if env != nil {
-		cmd.Env = append(os.Environ(), env...)
-	}
-
-	return cmd.CombinedOutput()
-}
 
 var (
 	l = logger.DefaultSLogger("build")
@@ -50,6 +43,8 @@ var (
 	PubDir          = "pub"
 	AppBin          = "scheck"
 	OSSPath         = "scheck"
+	AllArch         = "all"
+	LocalArch       = "local"
 	Archs           string
 	Release         string
 	MainEntry       string
@@ -58,8 +53,7 @@ var (
 )
 
 func prepare() *versionDesc {
-
-	os.RemoveAll(BuildDir)
+	_ = os.RemoveAll(BuildDir)
 	if err := os.MkdirAll(BuildDir, os.ModePerm); err != nil {
 		l.Fatalf("MkdirAll %s error, err: %s", BuildDir, err)
 	}
@@ -83,7 +77,7 @@ func prepare() *versionDesc {
 		l.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(PubDir, Release, "version"), versionInfo, 0666); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(PubDir, Release, "version"), versionInfo, os.ModeAppend|os.ModePerm); err != nil {
 		l.Fatal(err)
 	}
 
@@ -98,14 +92,14 @@ func Compile() {
 	var archs []string
 
 	switch Archs {
-	case "all":
+	case AllArch:
 		archs = OSArches
 
 		// read cmd-line env
 		if x := os.Getenv("ALL_ARCHS"); x != "" {
 			archs = strings.Split(x, "|")
 		}
-	case "local":
+	case LocalArch:
 		archs = []string{runtime.GOOS + "/" + runtime.GOARCH}
 		if x := os.Getenv("LOCAL"); x != "" {
 			archs = strings.Split(x, "|")
@@ -115,14 +109,13 @@ func Compile() {
 	}
 
 	for idx := range archs {
-
 		parts := strings.Split(archs[idx], "/")
-		if len(parts) != 2 {
+		if len(parts) != ArchLen {
 			l.Fatalf("invalid arch %q", parts)
 		}
 
 		goos, goarch := parts[0], parts[1]
-		if goos == "darwin" && runtime.GOOS != "darwin" {
+		if goos == global.OSDarwin && runtime.GOOS != global.OSDarwin {
 			l.Warnf("skip build datakit under %s", archs[idx])
 			continue
 		}
@@ -140,7 +133,7 @@ func Compile() {
 
 		compileArch(AppBin, goos, goarch, dir, vd.Version)
 
-		if goos == "windows" {
+		if goos == global.OSWindows {
 			installerExe = fmt.Sprintf("installer-%s-%s-%s.exe", goos, goarch, ReleaseVersion)
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s.exe", goos, goarch)
 		} else {
@@ -148,7 +141,7 @@ func Compile() {
 			noVerInstallerExe = fmt.Sprintf("installer-%s-%s", goos, goarch)
 		}
 
-		// build installer 将install/main.go 编译成exe文件 (slq:outdir随意填的 后面改 20210805P)
+		// build installer 将install/main.go 编译成exe文件
 		buidAllInstaller(BuildInstallDir, goos, goarch)
 	}
 	l.Infof("Done!(elapsed %v)", time.Since(start))
@@ -159,31 +152,29 @@ func calcMD5(path string) string {
 	if err != nil {
 		return ""
 	}
-	m := md5.New()
-	m.Write(data)
-	return hex.EncodeToString(m.Sum(nil))
+	// #nosec
+	return fmt.Sprintf("%x", md5.Sum(data))
 }
 
 func compileArch(bin, goos, goarch, dir, version string) {
-
 	output := filepath.Join(dir, bin)
 
-	if goos == "windows" {
-		output += ".exe"
+	if goos == global.OSWindows {
+		output += global.WindowsExt
 	}
 
 	md5File := fmt.Sprintf("%s-%s-%s-%s.md5", bin, goos, goarch, version)
 
-	cgo_enabled := "0"
-	if goos == "darwin" {
-		cgo_enabled = "1"
+	cgoEnabled := "0"
+	if goos == global.OSDarwin {
+		cgoEnabled = "1"
 	}
 
 	args := []string{
-		"go", "build",
+		"build",
 		"-o", output,
 		"-ldflags",
-		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s", ReleaseType, version),
+		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s -X DownloadURL=%s", ReleaseType, version, DownloadAddr),
 		MainEntry,
 	}
 
@@ -191,7 +182,7 @@ func compileArch(bin, goos, goarch, dir, version string) {
 		"GOOS=" + goos,
 		"GOARCH=" + goarch,
 		`GO111MODULE=off`,
-		"CGO_ENABLED=" + cgo_enabled,
+		"CGO_ENABLED=" + cgoEnabled,
 	}
 
 	l.Debugf("building %s", fmt.Sprintf("%s-%s/%s", goos, goarch, bin))
@@ -200,11 +191,11 @@ func compileArch(bin, goos, goarch, dir, version string) {
 		l.Fatalf("failed to run %v, envs: %v: %v, msg: %s", args, env, err, string(msg))
 	}
 
-	md5 := calcMD5(output)
-	if md5 == "" {
+	fileMd5 := calcMD5(output)
+	if fileMd5 == "" {
 		l.Fatalf("fail to compute md5: %s", output)
 	}
-	if err := ioutil.WriteFile(filepath.Join(PubDir, Release, md5File), []byte(md5), 0664); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(PubDir, Release, md5File), []byte(fileMd5), os.ModeAppend|os.ModePerm); err != nil {
 		l.Fatalf("fail to write md5 checksum, %s", err)
 	}
 }
@@ -216,7 +207,7 @@ func buidAllInstaller(outdir, goos, goarch string) {
 
 func buildInstaller(outdir, goos, goarch, installerName string) {
 	args := []string{
-		"go", "build",
+		"build",
 		"-o", filepath.Join(outdir, installerName),
 		"-ldflags",
 		fmt.Sprintf("-w -s -X main.DataKitBaseURL=%s -X main.DataKitVersion=%s", DownloadAddr, ReleaseVersion),
@@ -233,4 +224,12 @@ func buildInstaller(outdir, goos, goarch, installerName string) {
 		l.Fatalf("failed to run %v, envs: %v: %v, msg: %s", args, env, err, string(msg))
 	}
 	l.Infof("build installer to %s", filepath.Join(outdir, installerName))
+}
+
+func runEnv(args, env []string) ([]byte, error) {
+	cmd := exec.Command(CommandName, args...)
+	if env != nil {
+		cmd.Env = append(os.Environ(), env...)
+	}
+	return cmd.CombinedOutput()
 }

@@ -3,16 +3,10 @@ package install
 import (
 	"archive/tar"
 	"compress/gzip"
-	"crypto/tls"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-)
-
-var (
-	CurDownloading string
-	DownloadOnly   = false
 )
 
 type writeCounter struct {
@@ -35,16 +29,12 @@ func (wc *writeCounter) PrintProgress() {
 	}
 }
 
-func Download(from, to string, gzip, progress, downloadOnly bool) error {
-
-	// disable SSL verify for some bad client
-	cli := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-
+func Download(cli *http.Client, from, to string, isGzip, progress, downloadOnly bool) error {
 	req, err := http.NewRequest("GET", from, nil)
 	if err != nil {
 		return err
 	}
-	if gzip {
+	if isGzip {
 		req.Header.Add("Accept-Encoding", "gzip")
 	}
 
@@ -61,19 +51,15 @@ func Download(from, to string, gzip, progress, downloadOnly bool) error {
 
 	if downloadOnly {
 		return doDownload(io.TeeReader(resp.Body, progbar), to)
-	} else {
-		if !progress {
-			return doExtract(resp.Body, to)
-		} else {
-			return doExtract(io.TeeReader(resp.Body, progbar), to)
-		}
 	}
-
+	if !progress {
+		return doExtract(resp.Body, to)
+	}
+	return doExtract(io.TeeReader(resp.Body, progbar), to)
 }
 
 func doDownload(r io.Reader, to string) error {
-
-	f, err := os.OpenFile(to, os.O_CREATE|os.O_RDWR, 0644)
+	f, err := os.OpenFile(to, os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
 	if err != nil {
 		l.Errorf("open file err=%v to=%s", err, to)
 		return err
@@ -118,20 +104,18 @@ func doExtract(r io.Reader, to string) error {
 			continue
 		}
 
-		target := filepath.Join(to, hdr.Name)
+		target := filepath.Join(to, filepath.Clean(hdr.Name))
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+				if err := os.MkdirAll(target, os.ModeDir|os.ModePerm); err != nil {
 					l.Error(err)
 					return err
 				}
 			}
-
 		case tar.TypeReg:
-
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(target), os.ModeDir|os.ModePerm); err != nil {
 				l.Error(err)
 				return err
 			}
@@ -143,7 +127,8 @@ func doExtract(r io.Reader, to string) error {
 				return err
 			}
 
-			if _, err := io.Copy(f, tr); err != nil { //nolint:gosec
+			// #nosec
+			if _, err := io.Copy(f, tr); err != nil {
 				l.Error(err)
 				return err
 			}
@@ -151,7 +136,6 @@ func doExtract(r io.Reader, to string) error {
 			if err := f.Close(); err != nil {
 				l.Warnf("f.Close(): %v, ignored", err)
 			}
-
 		default:
 			l.Warnf("unexpected file %s", target)
 		}

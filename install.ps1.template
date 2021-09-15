@@ -40,6 +40,19 @@ if ($x -ne $null) {
 	Write-COutput green ("* set upgrade" )
 }
 
+$proxy=""
+$x = [Environment]::GetEnvironmentVariable("HTTP_PROXY")
+if ($x -ne $null) {
+    $proxy = $x
+    Write-COutput green "* set Proxy to $x"
+}
+
+$x = [Environment]::GetEnvironmentVariable("HTTPS_PROXY")
+if ($x -ne $null) {
+    $proxy = $x
+    Write-COutput green "* set Proxy to $x"
+}
+
 ##########################
 # Detect arch 32 or 64
 ##########################
@@ -77,6 +90,10 @@ if ($upgrade -ne $null) { # upgrade
 	}
 }
 
+if ($proxy -ne $null) {
+	$action = -join($action, " ", "--proxy='$proxy'")
+}
+
 Write-COutput green "action: $action"
 Invoke-Expression $action
 
@@ -85,7 +102,7 @@ Remove-Item -Force -ErrorAction SilentlyContinue $installer
 Remove-Item -Force -ErrorAction SilentlyContinue .\install.ps1
 
 # clean envs
-$optional_envs="SC_UPGRADE","SC_INSTALL_ONLY"
+$optional_envs="SC_UPGRADE","SC_INSTALL_ONLY","HTTP_PROXY","HTTP_PROXY"
 foreach ($env in $optional_envs) {
 	Remove-Item -ErrorAction SilentlyContinue Env:$env
 }

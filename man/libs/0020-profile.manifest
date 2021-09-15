@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="主机profile被修改"
 desc="主机{{.Content}} 被修改"
-cron="1 */5 * * *"
+cron="disable"
 # 开关
 disabled=false
 
