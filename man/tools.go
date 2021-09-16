@@ -10,13 +10,11 @@ import (
 	"strings"
 	"text/template"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
-
 	"github.com/BurntSushi/toml"
 	"github.com/gobuffalo/packr/v2"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 var (
