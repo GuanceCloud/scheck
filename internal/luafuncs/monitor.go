@@ -110,7 +110,7 @@ func newScriptStatus(name, category string, interval int64) *Script {
 	return &Script{
 		Name:     name,
 		Category: category,
-		Status:   "ok",
+		Status:   global.LuaStatusOK,
 		isOnce:   interval < 0,
 		Interval: interval,
 		runTimes: make([]int64, 0),
@@ -321,7 +321,11 @@ func (rsm *RunStatusMonitor) Less(i, j int) bool {
 	case "", "count":
 		return rsm.Scripts[j].RunCount < rsm.Scripts[i].RunCount
 	case "time":
-		return rsm.Scripts[j].RuntimeMax < rsm.Scripts[i].RuntimeMax
+		jtime, _ := time.ParseDuration(rsm.Scripts[j].RuntimeMax)
+		itime, _ := time.ParseDuration(rsm.Scripts[i].RuntimeMax)
+		return jtime < itime
+	case "name":
+		return rsm.Scripts[j].Name > rsm.Scripts[i].Name
 	default:
 	}
 	return rsm.Scripts[j].RunCount < rsm.Scripts[i].RunCount
@@ -383,14 +387,15 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 	sort.Sort(rsm)
 	for i := 0; i < len(rsm.Scripts); i++ {
 		sc := rsm.Scripts[i]
+		if sc.ErrCount != 0 {
+			sc.Status = global.LuaStatusERR
+		}
 		rows = append(rows,
 			fmt.Sprintf(format,
 				sc.Name, sc.Category, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
 				sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
-	if rsm.ScriptsSortBy == "name" {
-		sort.Strings(rows)
-	}
+
 	out = fmtTatal + temp + strings.Join(rows, "\n")
 	return out
 }
@@ -424,7 +429,6 @@ func ExportAsMD(sortBy string) {
 	if err != nil {
 		l.Errorf("write to file err=%v", err)
 	}
-	_ = ioutil.WriteFile(mdFile, getHTML(tot), global.FileModeRW)
 
 	width := 100
 	if term.IsTerminal(0) {

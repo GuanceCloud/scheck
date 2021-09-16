@@ -127,7 +127,7 @@ ReleasedInputs: %s
 
 	if *flagRulesToDoc {
 		if *flagOutDir == "" {
-			man.ToMakeMdFile(man.GetAllName(), "sc_doc") // todo  filepath改成doc ，docBox 长度会变。
+			man.ToMakeMdFile(man.GetAllName(), "sc_doc") // 导出文件夹名字不能和packr.box重名!!!
 		} else {
 			man.ToMakeMdFile(man.GetAllName(), *flagOutDir)
 		}
@@ -136,7 +136,7 @@ ReleasedInputs: %s
 
 	if *flagRulesToTemplate {
 		if *flagOutDir == "" {
-			man.DfTemplate(man.GetAllName(), "C://Users/gitee")
+			man.DfTemplate(man.GetAllName(), "sc_template")
 		} else {
 			man.DfTemplate(man.GetAllName(), *flagOutDir)
 		}

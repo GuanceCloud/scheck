@@ -77,13 +77,19 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 				continue
 			}
 			if !r.disabled {
+				if isCustom {
+					if !scheduler.checkName(r.Name) {
+						l.Warnf("scheck: is forbidden to have the same name,and the file in %s", filepath.Join(global.InstallDir, global.DefRulesDir))
+						continue
+					}
+				}
 				scheduler.addRule(r)
 				luafuncs.Add(r.Name, r.manifest.Category, r.interval, isCustom)
 			}
 		}
 	}
 	if len(scheduler.tasks) == 0 {
-		l.Warnf("There are no rules in the folder to load! . system exit at three second !!!")
+		l.Warnf("There are no rules in the folder to load! . system exit !!!")
 		os.Exit(-1)
 	}
 }
@@ -189,6 +195,17 @@ func (scheduler *TaskScheduler) runOnce() {
 			l.Errorf("rule name = %s is stop!!!", name)
 		}
 	}
+}
+
+func (scheduler *TaskScheduler) checkName(name string) bool {
+	if scheduler.manifests != nil {
+		for tName := range scheduler.manifests {
+			if tName == name {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (scheduler *TaskScheduler) GetRuleByName(filename string) *Rule {
