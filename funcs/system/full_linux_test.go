@@ -1,3 +1,4 @@
+// nolint
 package system
 
 import (
@@ -217,13 +218,27 @@ func Test_provider_shellHistory(t *testing.T) {
 		args args
 		want int
 	}{
-		// TODO: Add test cases.
+		{name: linuxOS, args: args{l: lua.NewState()}, want: 1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.shellHistory(tt.args.l); got != tt.want {
 				t.Errorf("shellHistory() = %v, want %v", got, tt.want)
+			} else {
+				lv := tt.args.l.Get(1)
+				if lv.Type() == lua.LTTable {
+					lt := lv.(*lua.LTable)
+					lt.ForEach(func(_ lua.LValue, value lua.LValue) {
+						valT := value.(*lua.LTable)
+						valT.ForEach(func(name lua.LValue, cron lua.LValue) {
+							nameStr := lua.LVAsString(name)
+							cronStr := lua.LVAsString(cron)
+							t.Logf("show crontab:  %s : %s", nameStr, cronStr)
+						})
+
+					})
+				}
 			}
 		})
 	}

@@ -1,3 +1,4 @@
+// nolint
 package system
 
 import (
@@ -59,43 +60,41 @@ func Test_provider_fileInfo(t *testing.T) {
 		{name: winOS, args: args{l: lua.NewState()}, want: 1},
 		{name: linuxOS, args: args{l: lua.NewState()}, want: 1},
 	}
-	for _, tt := range tests {
-		if runtime.GOOS == winOS && tt.name == winOS {
-			tt.args.l.Push(lua.LString("C:\\Windows\\System32\\drivers\\etc\\hosts"))
-			t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		if runtime.GOOS == winOS && test.name == winOS {
+			test.args.l.Push(lua.LString("C:\\Windows\\System32\\drivers\\etc\\hosts"))
+			t.Run(test.name, func(t *testing.T) {
 				p := &provider{}
-				if got := p.fileInfo(tt.args.l); got != tt.want {
-					t.Errorf("fileInfo() = %v, want %v", got, tt.want)
+				if got := p.fileInfo(test.args.l); got != test.want {
+					t.Errorf("fileInfo() = %v, want %v", got, test.want)
 				} else {
-					lv := tt.args.l.Get(1)
+					lv := test.args.l.Get(1)
 					if lv.Type() == lua.LTTable {
 						lt := lv.(*lua.LTable)
 						lt.ForEach(func(key lua.LValue, value lua.LValue) {
 							keyStr := lua.LVAsString(key)
 							valStr := lua.LVAsString(value)
 							t.Logf("key=%s val=%s", keyStr, valStr)
-
 						})
 					}
 				}
 			})
 		}
 
-		if runtime.GOOS == linuxOS && tt.name == linuxOS {
-			tt.args.l.Push(lua.LString("/etc/hosts"))
-			t.Run(tt.name, func(t *testing.T) {
+		if runtime.GOOS == linuxOS && test.name == linuxOS {
+			test.args.l.Push(lua.LString("/etc/hosts"))
+			t.Run(test.name, func(t *testing.T) {
 				p := &provider{}
-				if got := p.fileInfo(tt.args.l); got != tt.want {
-					t.Errorf("fileInfo() = %v, want %v", got, tt.want)
+				if got := p.fileInfo(test.args.l); got != test.want {
+					t.Errorf("fileInfo() = %v, want %v", got, test.want)
 				} else {
-					lv := tt.args.l.Get(1)
+					lv := test.args.l.Get(1)
 					if lv.Type() == lua.LTTable {
 						lt := lv.(*lua.LTable)
 						lt.ForEach(func(key lua.LValue, value lua.LValue) {
 							keyStr := lua.LVAsString(key)
 							valStr := lua.LVAsString(value)
 							t.Logf("key=%s val=%s", keyStr, valStr)
-
 						})
 					}
 				}
@@ -117,15 +116,14 @@ func Test_provider_hostname(t *testing.T) {
 		{name: winOS, args: args{l: lua.NewState()}, want: 1},
 		{name: linuxOS, args: args{l: lua.NewState()}, want: 1},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			p := &provider{}
-			if got := p.hostname(tt.args.l); got != tt.want {
-				t.Errorf("fileExist() = %v, want %v", got, tt.want)
+			if got := p.hostname(test.args.l); got != test.want {
+				t.Errorf("fileExist() = %v, want %v", got, test.want)
 			} else {
-				lv := tt.args.l.Get(1)
+				lv := test.args.l.Get(1)
 				t.Log(lua.LVAsString(lv)) // 获取hostname
-
 			}
 		})
 	}
@@ -142,13 +140,13 @@ func Test_provider_zone(t *testing.T) {
 	}{
 		{name: "all os", args: args{l: lua.NewState()}, want: 1},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			p := &provider{}
-			if got := p.zone(tt.args.l); got != tt.want {
-				t.Errorf("zone() = %v, want %v", got, tt.want)
+			if got := p.zone(test.args.l); got != test.want {
+				t.Errorf("zone() = %v, want %v", got, test.want)
 			} else {
-				lv := tt.args.l.Get(1)
+				lv := test.args.l.Get(1)
 				t.Log(lua.LVAsString(lv))
 			}
 		})
@@ -166,14 +164,14 @@ func Test_provider_log(t *testing.T) {
 	}{
 		{name: "log test", args: args{l: lua.NewState()}, want: 0},
 	}
-	for _, tt := range tests {
-		tt.args.l.Push(lua.LString("this is test log msg..."))
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		test.args.l.Push(lua.LString("this is test log msg..."))
+		t.Run(test.name, func(t *testing.T) {
 			p := &provider{}
-			if got := p.log(tt.args.l); got != tt.want {
-				t.Errorf("log() = %v, want %v", got, tt.want)
+			if got := p.log(test.args.l); got != test.want {
+				t.Errorf("log() = %v, want %v", got, test.want)
 			} else {
-				lv := tt.args.l.Get(1)
+				lv := test.args.l.Get(1)
 				msg := lua.LVAsString(lv)
 				t.Log(msg)
 			}
@@ -192,15 +190,15 @@ func Test_provider_mounts(t *testing.T) {
 	}{
 		{name: "all os", args: args{l: lua.NewState()}, want: 1},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			p := &provider{}
-			if got := p.mounts(tt.args.l); got != tt.want {
-				t.Errorf("mounts() = %v, want %v", got, tt.want)
+			if got := p.mounts(test.args.l); got != test.want {
+				t.Errorf("mounts() = %v, want %v", got, test.want)
 			} else {
 				// 返回的是二维table 把value 转成table再进行遍历
 				//
-				lv := tt.args.l.Get(1)
+				lv := test.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
 					lt := lv.(*lua.LTable)
 					lt.ForEach(func(_ lua.LValue, value lua.LValue) {
@@ -210,7 +208,6 @@ func Test_provider_mounts(t *testing.T) {
 							cronStr := lua.LVAsString(cron)
 							t.Logf("show crontab:  %s : %s", nameStr, cronStr)
 						})
-
 					})
 				}
 			}
@@ -230,13 +227,13 @@ func Test_provider_uname(t *testing.T) {
 	}{
 		{name: "hostInfo", args: args{l: lua.NewState()}, want: 1},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			p := &provider{}
-			if got := p.uname(tt.args.l); got != tt.want {
-				t.Errorf("uname() = %v, want %v", got, tt.want)
+			if got := p.uname(test.args.l); got != test.want {
+				t.Errorf("uname() = %v, want %v", got, test.want)
 			} else {
-				lv := tt.args.l.Get(1)
+				lv := test.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
 					lt := lv.(*lua.LTable)
 					lt.ForEach(func(key lua.LValue, value lua.LValue) {
@@ -262,13 +259,13 @@ func Test_provider_uptime(t *testing.T) {
 	}{
 		{name: "all", args: args{l: lua.NewState()}, want: 1},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			p := &provider{}
-			if got := p.uptime(tt.args.l); got != tt.want {
-				t.Errorf("uptime() = %v, want %v", got, tt.want)
+			if got := p.uptime(test.args.l); got != test.want {
+				t.Errorf("uptime() = %v, want %v", got, test.want)
 			} else {
-				lv := tt.args.l.Get(1)
+				lv := test.args.l.Get(1)
 				t.Log(lua.LVAsNumber(lv))
 			}
 		})
