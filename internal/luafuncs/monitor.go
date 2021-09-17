@@ -50,7 +50,7 @@ const (
 
 	format = "|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|"
 
-	end = "\n > lua scripts运行情况放在文件: %s 文件的格式是markdown, %s文件格式为html 可用过编译器或者浏览器等打开"
+	end = "\n > lua scripts运行情况放在文件: %s文件格式为html 可用过编译器或者浏览器等打开"
 )
 
 var (
@@ -402,7 +402,6 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 
 // ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
 func ExportAsMD(sortBy string) {
-	mdFile := fmt.Sprintf(global.LuaStatusOutFileMD, time.Now().Format("20060102-150405"))
 	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
 	if sortBy == "" {
 		sortBy = global.LuaSortByCount
@@ -422,7 +421,7 @@ func ExportAsMD(sortBy string) {
 		l.Errorf("lua status is null ,wait 5 minter")
 		return
 	}
-	tot += fmt.Sprintf(end, mdFile, htmlFile)
+	tot += fmt.Sprintf(end, htmlFile)
 
 	// write to (md/html) file
 	err := ioutil.WriteFile(htmlFile, getHTML(tot), global.FileModeRW)
