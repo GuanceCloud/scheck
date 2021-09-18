@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
@@ -647,5 +649,20 @@ func (p *provider) ticker(l *lua.LState) int {
 			scChan <- lua.LString(v.String())
 		}
 	}(interval)
+	return 0
+}
+
+func (p *provider) log(l *lua.LState) int {
+	str := ""
+	lv := l.Get(1)
+	if lv.Type() != lua.LTNil {
+		if lv.Type() != lua.LTString {
+			l.TypeError(1, lua.LTString)
+			return lua.MultRet
+		}
+		str = string(lv.(lua.LString))
+	}
+	loger := logger.DefaultSLogger("lua")
+	loger.Info(str)
 	return 0
 }

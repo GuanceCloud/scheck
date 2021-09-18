@@ -15,7 +15,7 @@ local function check()
     local old = get_cache(cache_key)
     if old == nil then
         local current = get_sshpid()
-        print(current)
+        -- print(current)
         if current == nil then
             return
         end

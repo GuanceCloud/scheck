@@ -38,6 +38,10 @@
 37. [set_global_cache](#set_global_cache)  
 38. [mysql_weak_psw](#mysql_weak_psw)  
 39. [mysql_ports_list](#mysql_ports_list)  
+40. [sc_sleep](#sc_sleep)
+41. [sc_path_watch](#sc_path_watch)
+42. [sc_ticker](#sc_ticker)
+
 ## ls
 
 `ls(dir[, rescue])`
@@ -1051,3 +1055,81 @@ state	LISTEN
 cmdline	/usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3307 -container-ip 172.18.0.4 -container-port 3306
 pid	7062
 ``` 
+
+## sc_sleep
+
+`sc_sleep(time)`
+
+Thread sleeps for a certain number of seconds
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| time | `int` | second sleep time | true |
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+
+## sc_path_watch
+
+`sc_path_watch(dir,chan)`
+
+watch whether the file or directory has changed.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| dir | `string` | dir or filename | true |
+| chan | `lua.LChannel` | lua channel | true |
+
+
+*Return value(s):*  
+
+No return value and never stop.
+If the dir or file changes, it will be notified through to lua.LChannel.
+
+*the lua.LChannel:* 
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| path | string | file's full path |
+| status | int | file status |
+*file status:*
+
+| status | name | Description |
+| --- | ---- | ---- |
+| 1 | CREATE | create file in dir |
+| 2 | WRITE | write file  |
+| 4 | REMOVE | when file is del |
+| 8 | RENAME | file rename |
+| 16 | CHMOD | chmod is change |
+  
+
+## sc_ticker
+
+ `sc_ticker(channel,time)`
+ 
+ Send signals to the lua.LChannel regularly
+ 
+ *Parameters:*  
+ 
+ | Name | Type | Description | Required |
+ | --- | ---- | ---- | ---- |
+ | chan | `lua.LChannel` | lua channel | true |
+ | time | `int` | second time | true |
+ 
+ *Return value(s):*  
+ 
+ No return value
+ sent Lua.LString to lua.LChannel.
+ 

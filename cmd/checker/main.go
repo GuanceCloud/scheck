@@ -16,7 +16,6 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/dumperror"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
@@ -116,7 +115,7 @@ ReleasedInputs: %s
 	}
 
 	if *flagFuncs {
-		funcs.DumpSupportLuaFuncs(os.Stdout)
+		checker.ShowFuncs()
 		os.Exit(0)
 	}
 
@@ -128,7 +127,7 @@ ReleasedInputs: %s
 
 	if *flagRulesToDoc {
 		if *flagOutDir == "" {
-			man.ToMakeMdFile(man.GetAllName(), "doc")
+			man.ToMakeMdFile(man.GetAllName(), "sc_doc") // 导出文件夹名字不能和packr.box重名!!!
 		} else {
 			man.ToMakeMdFile(man.GetAllName(), *flagOutDir)
 		}
@@ -137,7 +136,7 @@ ReleasedInputs: %s
 
 	if *flagRulesToTemplate {
 		if *flagOutDir == "" {
-			man.DfTemplate(man.GetAllName(), "C://Users/gitee")
+			man.DfTemplate(man.GetAllName(), "sc_template")
 		} else {
 			man.DfTemplate(man.GetAllName(), *flagOutDir)
 		}
@@ -149,7 +148,9 @@ ReleasedInputs: %s
 		os.Exit(0)
 	}
 	if *flagCheckBox {
-		fmt.Println(man.ScriptBox.List())
+		fmt.Printf("script tot =%d \n", len(man.ScriptBox.List()))
+		fmt.Printf("doc tot =%d \n", len(man.DocBox.List()))
+		fmt.Printf("tpl tot =%d \n", len(man.TemplateBox.List()))
 		os.Exit(0)
 	}
 }

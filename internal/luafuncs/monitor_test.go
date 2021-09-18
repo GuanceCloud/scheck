@@ -50,7 +50,7 @@ func TestExportAsMD(t *testing.T) {
 		l.Errorf("lua status is null ,wait 5 minter")
 		return
 	}
-	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, "mdFile"), filepath.Join(global.InstallDir, "htmlFile"))
+	tot += fmt.Sprintf(end, filepath.Join(global.InstallDir, "htmlFile"))
 
 	t.Log(string(termmarkdown.Render(tot, 80, 2)))
 }
