@@ -2,6 +2,7 @@
 package system
 
 import (
+	"os/user"
 	"runtime"
 	"testing"
 
@@ -281,6 +282,25 @@ func Test_provider_uptime(t *testing.T) {
 				lv := test.args.l.Get(1)
 				t.Log(lua.LVAsNumber(lv))
 			}
+		})
+	}
+}
+
+func Test_provider_users_1(t *testing.T) {
+	type args struct {
+		l *lua.LState
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{name: "log test", args: args{l: lua.NewState()}, want: 0},
+	}
+	for _, test := range tests {
+		u, _ := user.Current()
+		t.Run(test.name, func(t *testing.T) {
+			t.Logf("%+v", u)
 		})
 	}
 }

@@ -379,13 +379,15 @@ func Test_provider_rpmList(t *testing.T) {
 		want int
 	}{
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
-		// todo 补全参数和返回值
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.rpmList(tt.args.l); got != tt.want {
 				t.Errorf("rpmList() = %v, want %v", got, tt.want)
+			} else {
+				lv := tt.args.l.Get(1)
+				t.Log(lua.LVAsString(lv))
 			}
 		})
 	}
@@ -407,28 +409,9 @@ func Test_provider_rpmQuery(t *testing.T) {
 			p := &provider{}
 			if got := p.rpmQuery(tt.args.l); got != tt.want {
 				t.Errorf("rpmQuery() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-// 获取ulimit信息
-func Test_provider_ulimitInfo(t *testing.T) {
-	type args struct {
-		l *lua.LState
-	}
-	tests := []struct {
-		name string
-		args args
-		want int
-	}{
-		{name: "linux", args: args{l: lua.NewState()}, want: 1},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &provider{}
-			if got := p.ulimitInfo(tt.args.l); got != tt.want {
-				t.Errorf("ulimitInfo() = %v, want %v", got, tt.want)
+			} else {
+				lv := tt.args.l.Get(1)
+				t.Log(lua.LVAsString(lv))
 			}
 		})
 	}
