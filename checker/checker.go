@@ -2,21 +2,21 @@ package checker
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
-
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/cgroup"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
 
@@ -126,4 +126,17 @@ func InitLuaGlobalFunc() {
 	Init()
 	system.Init()
 	utils.Init()
+}
+
+func ShowFuncs() {
+	InitLuaGlobalFunc()
+	names := []string{}
+	for _, p := range funcs.FuncProviders {
+		for _, f := range p.Funcs() {
+			names = append(names, f.Name)
+		}
+	}
+	s := strings.Join(names, "\n")
+	s += "\n"
+	fmt.Println(s)
 }

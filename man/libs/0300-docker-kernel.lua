@@ -1,6 +1,6 @@
 local function chsize(char)
     if not char then
-        print("not char")
+        --print("not char")
         return 0
     elseif char > 240 then
         return 4
