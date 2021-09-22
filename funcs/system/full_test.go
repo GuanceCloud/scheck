@@ -2,6 +2,7 @@
 package system
 
 import (
+	"os/user"
 	"runtime"
 	"testing"
 
@@ -19,6 +20,21 @@ const (
 	winOS   = "windows"
 	linuxOS = "linux"
 )
+
+func rangeDepth2Tabel(lv lua.LValue, t *testing.T) {
+	if lv.Type() == lua.LTTable {
+		lt := lv.(*lua.LTable)
+		lt.ForEach(func(_ lua.LValue, value lua.LValue) {
+			valT := value.(*lua.LTable)
+			valT.ForEach(func(name lua.LValue, cron lua.LValue) {
+				nameStr := lua.LVAsString(name)
+				cronStr := lua.LVAsString(cron)
+				t.Logf("show:  %s : %s", nameStr, cronStr)
+			})
+
+		})
+	}
+}
 
 func Test_provider_fileExist(t *testing.T) {
 	type args struct {
@@ -43,6 +59,11 @@ func Test_provider_fileExist(t *testing.T) {
 			p := &provider{}
 			if got := p.fileExist(tt.args.l); got != tt.want {
 				t.Errorf("fileExist() = %v, want %v", got, tt.want)
+			} else {
+				lv := tt.args.l.Get(tt.args.l.GetTop())
+				if lv.Type() == lua.LTBool {
+					t.Log(lua.LVAsBool(lv))
+				}
 			}
 		})
 	}
@@ -68,7 +89,7 @@ func Test_provider_fileInfo(t *testing.T) {
 				if got := p.fileInfo(test.args.l); got != test.want {
 					t.Errorf("fileInfo() = %v, want %v", got, test.want)
 				} else {
-					lv := test.args.l.Get(1)
+					lv := test.args.l.Get(test.args.l.GetTop())
 					if lv.Type() == lua.LTTable {
 						lt := lv.(*lua.LTable)
 						lt.ForEach(func(key lua.LValue, value lua.LValue) {
@@ -76,6 +97,8 @@ func Test_provider_fileInfo(t *testing.T) {
 							valStr := lua.LVAsString(value)
 							t.Logf("key=%s val=%s", keyStr, valStr)
 						})
+					} else {
+						t.Log(lua.LVAsString(lv))
 					}
 				}
 			})
@@ -88,7 +111,7 @@ func Test_provider_fileInfo(t *testing.T) {
 				if got := p.fileInfo(test.args.l); got != test.want {
 					t.Errorf("fileInfo() = %v, want %v", got, test.want)
 				} else {
-					lv := test.args.l.Get(1)
+					lv := test.args.l.Get(test.args.l.GetTop())
 					if lv.Type() == lua.LTTable {
 						lt := lv.(*lua.LTable)
 						lt.ForEach(func(key lua.LValue, value lua.LValue) {
@@ -113,8 +136,7 @@ func Test_provider_hostname(t *testing.T) {
 		args args
 		want int
 	}{
-		{name: winOS, args: args{l: lua.NewState()}, want: 1},
-		{name: linuxOS, args: args{l: lua.NewState()}, want: 1},
+		{name: "case1", args: args{l: lua.NewState()}, want: 1},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -170,10 +192,6 @@ func Test_provider_log(t *testing.T) {
 			p := &provider{}
 			if got := p.log(test.args.l); got != test.want {
 				t.Errorf("log() = %v, want %v", got, test.want)
-			} else {
-				lv := test.args.l.Get(1)
-				msg := lua.LVAsString(lv)
-				t.Log(msg)
 			}
 		})
 	}
@@ -196,8 +214,6 @@ func Test_provider_mounts(t *testing.T) {
 			if got := p.mounts(test.args.l); got != test.want {
 				t.Errorf("mounts() = %v, want %v", got, test.want)
 			} else {
-				// 返回的是二维table 把value 转成table再进行遍历
-				//
 				lv := test.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
 					lt := lv.(*lua.LTable)
@@ -268,6 +284,25 @@ func Test_provider_uptime(t *testing.T) {
 				lv := test.args.l.Get(1)
 				t.Log(lua.LVAsNumber(lv))
 			}
+		})
+	}
+}
+
+func Test_provider_users_1(t *testing.T) {
+	type args struct {
+		l *lua.LState
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{name: "log test", args: args{l: lua.NewState()}, want: 0},
+	}
+	for _, test := range tests {
+		u, _ := user.Current()
+		t.Run(test.name, func(t *testing.T) {
+			t.Logf("%+v", u)
 		})
 	}
 }

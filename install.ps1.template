@@ -40,7 +40,6 @@ if ($x -ne $null) {
 	Write-COutput green ("* set upgrade" )
 }
 
-$proxy=""
 $x = [Environment]::GetEnvironmentVariable("HTTP_PROXY")
 if ($x -ne $null) {
     $proxy = $x
