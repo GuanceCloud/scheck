@@ -42,6 +42,8 @@ const (
 	LuaSortByCount             = "count"
 	LuaSortByName              = "name"
 	LuaSortBytime              = "time"
+	LuaStatusOK                = "ok"
+	LuaStatusERR               = "warning"
 
 	FileModeRW       = os.FileMode(0644)
 	FileModeMkdir    = os.FileMode(0666)

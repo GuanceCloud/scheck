@@ -9,6 +9,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+// nolint
 func fileInfo2Table(fi os.FileInfo) *lua.LTable {
 	st := fi.Sys().(*syscall.Stat_t)
 

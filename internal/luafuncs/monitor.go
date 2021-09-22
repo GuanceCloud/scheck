@@ -48,9 +48,9 @@ const (
 | ----   | :----:   | :----:   | :----: | :----:       | :----:       | :----: | :---: | :----:   | :---:    |
 `
 
-	format = "|`%s`|%s|%s|%s|%s|%s|%s|%d|%d|%d|"
+	format = "|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|"
 
-	end = "\n > lua scripts运行情况放在文件: `%s` 文件的格式是markdown, `%s`文件格式为html 可用过编译器或者浏览器等打开"
+	end = "\n > lua scripts运行情况放在文件: %s文件格式为html 可用过编译器或者浏览器等打开"
 )
 
 var (
@@ -110,7 +110,7 @@ func newScriptStatus(name, category string, interval int64) *Script {
 	return &Script{
 		Name:     name,
 		Category: category,
-		Status:   "ok",
+		Status:   global.LuaStatusOK,
 		isOnce:   interval < 0,
 		Interval: interval,
 		runTimes: make([]int64, 0),
@@ -321,7 +321,11 @@ func (rsm *RunStatusMonitor) Less(i, j int) bool {
 	case "", "count":
 		return rsm.Scripts[j].RunCount < rsm.Scripts[i].RunCount
 	case "time":
-		return rsm.Scripts[j].RuntimeMax < rsm.Scripts[i].RuntimeMax
+		jtime, _ := time.ParseDuration(rsm.Scripts[j].RuntimeMax)
+		itime, _ := time.ParseDuration(rsm.Scripts[i].RuntimeMax)
+		return jtime < itime
+	case "name":
+		return rsm.Scripts[j].Name > rsm.Scripts[i].Name
 	default:
 	}
 	return rsm.Scripts[j].RunCount < rsm.Scripts[i].RunCount
@@ -383,21 +387,21 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 	sort.Sort(rsm)
 	for i := 0; i < len(rsm.Scripts); i++ {
 		sc := rsm.Scripts[i]
+		if sc.ErrCount != 0 {
+			sc.Status = global.LuaStatusERR
+		}
 		rows = append(rows,
 			fmt.Sprintf(format,
 				sc.Name, sc.Category, sc.Status, sc.RuntimeAvg, sc.RuntimeMax, sc.RuntimeMin,
 				sc.LastRuntime, sc.RunCount, sc.ErrCount, sc.TriggerNum))
 	}
-	if rsm.ScriptsSortBy == "name" {
-		sort.Strings(rows)
-	}
+
 	out = fmtTatal + temp + strings.Join(rows, "\n")
 	return out
 }
 
 // ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
 func ExportAsMD(sortBy string) {
-	mdFile := fmt.Sprintf(global.LuaStatusOutFileMD, time.Now().Format("20060102-150405"))
 	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
 	if sortBy == "" {
 		sortBy = global.LuaSortByCount
@@ -417,14 +421,13 @@ func ExportAsMD(sortBy string) {
 		l.Errorf("lua status is null ,wait 5 minter")
 		return
 	}
-	tot += fmt.Sprintf(end, mdFile, htmlFile)
+	tot += fmt.Sprintf(end, htmlFile)
 
 	// write to (md/html) file
 	err := ioutil.WriteFile(htmlFile, getHTML(tot), global.FileModeRW)
 	if err != nil {
 		l.Errorf("write to file err=%v", err)
 	}
-	_ = ioutil.WriteFile(mdFile, getHTML(tot), global.FileModeRW)
 
 	width := 100
 	if term.IsTerminal(0) {
