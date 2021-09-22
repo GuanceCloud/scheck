@@ -28,6 +28,7 @@ func Test_provider_grep(t *testing.T) {
 			p := &provider{}
 			if got := p.grep(tt.args.l); got != tt.want {
 				t.Errorf("grep() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				// 返回两个返回值 string，error
 				lv := tt.args.l.Get(1)
@@ -39,6 +40,8 @@ func Test_provider_grep(t *testing.T) {
 				lv2 := tt.args.l.Get(2)
 				msg := lua.LVAsString(lv2)
 				t.Log(msg)
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -61,9 +64,15 @@ func Test_provider_crontab(t *testing.T) {
 			if got := p.crontab(tt.args.l); got != tt.want {
 				t.Errorf("crontab() = %v, want %v", got, tt.want)
 			} else {
+<<<<<<< HEAD
 				lv := tt.args.l.Get(1)
 				rangeDepth2Tabel(lv, t)
 				/*if lv.Type() == lua.LTTable {
+=======
+				// 返回的是二维table 把value 转成table再进行遍历
+				lv := tt.args.l.Get(1)
+				if lv.Type() == lua.LTTable {
+>>>>>>> testing
 					lt := lv.(*lua.LTable)
 					lt.ForEach(func(_ lua.LValue, value lua.LValue) {
 						valT := value.(*lua.LTable)
@@ -74,7 +83,11 @@ func Test_provider_crontab(t *testing.T) {
 						})
 
 					})
+<<<<<<< HEAD
 				}*/
+=======
+				}
+>>>>>>> testing
 			}
 		})
 	}
@@ -89,7 +102,11 @@ func Test_provider_processOpendFiles(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		{name: "all", args: args{l: lua.NewState()}, want: 1},
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -98,7 +115,22 @@ func Test_provider_processOpendFiles(t *testing.T) {
 				t.Errorf("processOpendFiles() = %v, want %v", got, tt.want)
 			} else {
 				lv := tt.args.l.Get(1)
+<<<<<<< HEAD
 				rangeDepth2Tabel(lv, t)
+=======
+				if lv.Type() == lua.LTTable {
+					lt := lv.(*lua.LTable)
+					lt.ForEach(func(_ lua.LValue, value lua.LValue) {
+						valT := value.(*lua.LTable)
+						valT.ForEach(func(name lua.LValue, cron lua.LValue) {
+							nameStr := lua.LVAsString(name)
+							cronStr := lua.LVAsString(cron)
+							t.Logf("show crontab:  %s : %s", nameStr, cronStr)
+						})
+
+					})
+				}
+>>>>>>> testing
 			}
 		})
 	}
@@ -113,13 +145,18 @@ func Test_provider_kernelInfo(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.kernelInfo(tt.args.l); got != tt.want {
 				t.Errorf("kernelInfo() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
@@ -131,6 +168,8 @@ func Test_provider_kernelInfo(t *testing.T) {
 					})
 					t.Log("uname  run ok ")
 				}
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -145,17 +184,26 @@ func Test_provider_kernelModules(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
+<<<<<<< HEAD
 			// open:/proc/modules
 			if got := p.kernelModules(tt.args.l); got != tt.want {
 				t.Errorf("kernelModules() = %v, want %v", got, tt.want)
 			} else {
 				lv := tt.args.l.Get(1)
 				rangeDepth2Tabel(lv, t)
+=======
+			if got := p.kernelModules(tt.args.l); got != tt.want {
+				t.Errorf("kernelModules() = %v, want %v", got, tt.want)
+>>>>>>> testing
 			}
 		})
 	}
@@ -170,16 +218,23 @@ func Test_provider_last(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.last(tt.args.l); got != tt.want {
 				t.Errorf("last() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				rangeDepth2Tabel(lv, t)
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -194,16 +249,23 @@ func Test_provider_lastb(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.lastb(tt.args.l); got != tt.want {
 				t.Errorf("lastb() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				rangeDepth2Tabel(lv, t)
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -218,16 +280,23 @@ func Test_provider_loggedInUsers(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.loggedInUsers(tt.args.l); got != tt.want {
 				t.Errorf("loggedInUsers() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				rangeDepth2Tabel(lv, t)
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -277,16 +346,23 @@ func Test_provider_users(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.users(tt.args.l); got != tt.want {
 				t.Errorf("users() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				rangeDepth2Tabel(lv, t)
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -302,16 +378,23 @@ func Test_provider_shadow(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.shadow(tt.args.l); got != tt.want {
 				t.Errorf("shadow() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				rangeDepth2Tabel(lv, t)
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -327,14 +410,21 @@ func Test_provider_sysctl(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
 	}
 	for _, tt := range tests {
 		tt.args.l.Push(lua.LString("fs.suid_dumpable"))
+=======
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+>>>>>>> testing
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.sysctl(tt.args.l); got != tt.want {
 				t.Errorf("sysctl() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
@@ -343,6 +433,8 @@ func Test_provider_sysctl(t *testing.T) {
 						t.Logf("key = %s val=%s", lua.LVAsString(key), lua.LVAsString(value))
 					})
 				}
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -357,7 +449,11 @@ func Test_provider_processes(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -378,16 +474,23 @@ func Test_provider_rpmList(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.rpmList(tt.args.l); got != tt.want {
 				t.Errorf("rpmList() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				t.Log(lua.LVAsString(lv))
+=======
+>>>>>>> testing
 			}
 		})
 	}
@@ -402,16 +505,45 @@ func Test_provider_rpmQuery(t *testing.T) {
 		args args
 		want int
 	}{
+<<<<<<< HEAD
 		{name: "linux", args: args{l: lua.NewState()}, want: 1},
+=======
+		// TODO: Add test cases.
+>>>>>>> testing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &provider{}
 			if got := p.rpmQuery(tt.args.l); got != tt.want {
 				t.Errorf("rpmQuery() = %v, want %v", got, tt.want)
+<<<<<<< HEAD
 			} else {
 				lv := tt.args.l.Get(1)
 				t.Log(lua.LVAsString(lv))
+=======
+			}
+		})
+	}
+}
+
+// 获取ulimit信息
+func Test_provider_ulimitInfo(t *testing.T) {
+	type args struct {
+		l *lua.LState
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &provider{}
+			if got := p.ulimitInfo(tt.args.l); got != tt.want {
+				t.Errorf("ulimitInfo() = %v, want %v", got, tt.want)
+>>>>>>> testing
 			}
 		})
 	}
