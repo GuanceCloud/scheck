@@ -200,15 +200,20 @@ func run() {
 	}()
 
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
-
-	go func() {
-		sig := <-signals
-		if sig == syscall.SIGHUP {
-			l.Debugf("reload config")
+	for {
+		signal.Notify(signals, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
+		select {
+		case sig := <-signals:
+			l.Infof("get signal %v, wait & exit", sig)
+			l.Info("scheck exit.")
+			goto exit
+		case <-service.StopCh:
+			l.Infof("service stopping")
+			goto exit
 		}
-		cancel()
-	}()
+	}
+exit:
+	cancel()
 	wg.Wait()
 	service.Stop()
 }
