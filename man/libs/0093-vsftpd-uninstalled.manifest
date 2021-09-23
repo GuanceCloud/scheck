@@ -1,0 +1,30 @@
+id="0093-vsftpd-uninstalled"
+category="system"
+level="warn"
+title="vsftpd被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["FTP（文件传输协议)是一种传统的和广泛使用的标准工具，用于通过网络在服务器和客户端之间传输文件，特别是在不需要身份验证的情况下(允许匿名用户连接到服务器）。"]
+rationale=["FTP不保护数据或身份验证凭据的机密性。如果需要文件传输，建议使用SFTP。除非需要作为FTP服务器运行系统（例如，允许匿名下载），否则建议删除该包以减少潜在的攻击面。\n> 注意：还存在其他FTP服务器，如果不需要，则应删除。"]
+riskitems=["增加被攻击风险"]
+audit='''运行以下命令以验证是否未安装对应组件：
+```bash
+# rpm -q vsftpd
+package vsftpd is not installed
+```
+'''
+remediation='''运行以下命令以删除对应的包：
+```bash
+# yum remove vsftpd
+```
+'''
+impact=["您的如果正在使用该服务器做FTP，有使用到ftp该服务的应用可能会失去数据存储。"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7\n  9.2确保仅经批准的端口、协议和服务正在运行  \n  确保每个系统上仅监听具有已验证的业务需求的系统的网络端口、协议和服务在运行。"]

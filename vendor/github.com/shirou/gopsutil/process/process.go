@@ -27,7 +27,7 @@ type Process struct {
 	name           string
 	status         string
 	parent         int32
-	parentMutex    *sync.RWMutex // for windows ppid cache
+	parentMutex    sync.RWMutex // for windows ppid cache
 	numCtxSwitches *NumCtxSwitchesStat
 	uids           []int32
 	gids           []int32
@@ -170,8 +170,7 @@ func NewProcess(pid int32) (*Process, error) {
 
 func NewProcessWithContext(ctx context.Context, pid int32) (*Process, error) {
 	p := &Process{
-		Pid:         pid,
-		parentMutex: new(sync.RWMutex),
+		Pid: pid,
 	}
 
 	exists, err := PidExistsWithContext(ctx, pid)
@@ -542,4 +541,9 @@ func (p *Process) Kill() error {
 // Username returns a username of the process.
 func (p *Process) Username() (string, error) {
 	return p.UsernameWithContext(context.Background())
+}
+
+// Environ returns the environment variables of the process.
+func (p *Process) Environ() ([]string, error) {
+	return p.EnvironWithContext(context.Background())
 }

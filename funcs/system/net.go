@@ -13,7 +13,6 @@ import (
 )
 
 func (p *provider) ipTables(l *lua.LState) int {
-
 	data, err := ioutil.ReadFile(`/proc/net/ip_tables_names`)
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -34,7 +33,6 @@ func (p *provider) ipTables(l *lua.LState) int {
 }
 
 func (p *provider) processOpenSockets(l *lua.LState) int {
-
 	var socketList []*impl.SocketInfo
 	var err error
 
@@ -48,7 +46,7 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 		pids = append(pids, int(lv.(lua.LNumber)))
 	}
 
-	socketList, err = impl.EnumProcessesOpenSockets(pids)
+	socketList, err = impl.EnumProOpenSockets(pids)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
@@ -92,7 +90,6 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 }
 
 func (p *provider) listeningPorts(l *lua.LState) int {
-
 	var pids []int
 	lv := l.Get(1)
 	if lv != lua.LNil {
@@ -106,7 +103,7 @@ func (p *provider) listeningPorts(l *lua.LState) int {
 	var socketList []*impl.SocketInfo
 	var err error
 
-	socketList, err = impl.EnumProcessesOpenSockets(pids)
+	socketList, err = impl.EnumProOpenSockets(pids)
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
@@ -114,7 +111,6 @@ func (p *provider) listeningPorts(l *lua.LState) int {
 
 	var result lua.LTable
 	for _, info := range socketList {
-
 		if info.Family == syscall.AF_UNIX && info.UnixSocketPath == "" {
 			continue
 		}
@@ -158,7 +154,6 @@ func (p *provider) listeningPorts(l *lua.LState) int {
 }
 
 func (p *provider) interfaceAddresses(l *lua.LState) int {
-
 	ifs, err := netutil.Interfaces()
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -166,7 +161,6 @@ func (p *provider) interfaceAddresses(l *lua.LState) int {
 	}
 	var result lua.LTable
 	for _, it := range ifs {
-
 		ip4 := ""
 		ip6 := ""
 		loopback := false
@@ -201,7 +195,6 @@ func (p *provider) interfaceAddresses(l *lua.LState) int {
 }
 
 func (p *provider) httpGet(l *lua.LState) int {
-
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)

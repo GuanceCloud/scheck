@@ -5,11 +5,15 @@ iploc.bin
 .orig
 pub
 a.out
+#doc
 dist/
 build/
+packrd/
 !/cmd/make/build
 old/
 examples/
+*-packr.go
+*.tar
 *.tar.gz
 git/git.go
 *.log
@@ -21,3 +25,8 @@ git/git.go
 *.pyc
 *.zip
 install.sh
+install.ps1
+.docs
+/check.err
+
+/test.output

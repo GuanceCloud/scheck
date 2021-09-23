@@ -1,0 +1,27 @@
+id="0023-sshd"
+category="system"
+level="warn"
+title="sshd 文件是否被修改"
+desc="敏感文件 {{.File}}发生了改变"
+cron="disable"
+# 开关
+disabled=false
+
+
+
+
+os_arch=["Linux"]
+description=["监控sshd 配置文件被修改"]
+rationale=["在linux系统操作中，经常需要连接其他的主机，连接其他主机的服务是openssh-server，它的功能是让远程主机可以通过网络访问sshd服务。shd 配置文件被修改，可能被恶意修改了sshd配置。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机sshd 配置文件被修改。可以执行以下命令验证：
+```bash
+ll /etc/ssh/sshd_config
+```
+'''
+remediation='''如果sshd 配置文件被修改，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

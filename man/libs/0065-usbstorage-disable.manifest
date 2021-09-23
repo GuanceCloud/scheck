@@ -1,0 +1,40 @@
+id="0065-usbstorage-disable"
+category="system"
+level="warn"
+title="禁用USB存储"
+desc="{{.Content}}"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["USB存储设备提供了一种传输和存储文件的方法。但是有黑客通过USB向服务器安装恶意软件，已成为网络渗透的一种简单而通用的手段，并且是在网络环境中建立持久威胁的通用方式。"]
+rationale=["限制系统上的USB访问将减少设备的物理层面的攻击，并减少引入恶意软件的可能性"]
+riskitems=["生产服务器尽量减少对外的接口，usb是一种简单又高效的植入恶意软件的方式。"]
+audit='''运行以下命令并验证输出是否如所示：
+
+``` bash
+# modprobe -n -v usb-storage
+install /bin/true
+# lsmod | grep usb-storage
+<No output>
+```
+'''
+remediation='''在/etc/modprobe.d/目录中以.conf结尾的文件中编辑或创建文件。
+  示例：vim /etc/modprobe.d/usb_storage.conf添加以下行：
+
+``` bash
+install usb-storage /bin/true
+```
+运行以下命令以卸载usb-storage模块：
+
+``` bash
+# rmmod usb-storage
+```
+'''
+impact=["卸载以后，不发份子将无法通过usb接口植入恶意软件。系统安全性也得到了提升"]
+defaultvalue=["默认没有安装usb模块"]
+references=["无"]
+CIS=["Version 7\n    >   8.4 Configure Anti-Malware Scanning of Removable Devices", "Configure devices so that they automatically conduct an anti-malware scan of removable media when inserted or connected.\n    >   8.5 Configure Devices Not To Auto-run Content", "Configure devices to not auto-run content from removable media."]

@@ -1,15 +1,12 @@
 package system
 
-import (
-	securityChecker "gitlab.jiagouyun.com/cloudcare-tools/sec-checker"
-)
+import "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
 
 type provider struct {
-	funcs []securityChecker.Func
 }
 
-func (p *provider) Funcs() []securityChecker.Func {
-	funcs := []securityChecker.Func{
+func (p *provider) Funcs() []funcs.Func {
+	return []funcs.Func{
 		{Name: `ls`, Fn: p.ls},
 		{Name: `file_exist`, Fn: p.fileExist},
 		{Name: `file_info`, Fn: p.fileInfo},
@@ -33,6 +30,7 @@ func (p *provider) Funcs() []securityChecker.Func {
 		{Name: `shell_history`, Fn: p.shellHistory},
 		{Name: `iptables`, Fn: p.ipTables},
 		{Name: `interface_addresses`, Fn: p.interfaceAddresses},
+		{Name: `http_get`, Fn: p.httpGet},
 		{Name: `listening_ports`, Fn: p.listeningPorts},
 		{Name: `crontab`, Fn: p.crontab},
 		{Name: `uname`, Fn: p.uname},
@@ -40,15 +38,17 @@ func (p *provider) Funcs() []securityChecker.Func {
 		{Name: `rpm_list`, Fn: p.rpmList},
 		{Name: `rpm_query`, Fn: p.rpmQuery},
 		{Name: `grep`, Fn: p.grep},
+		{Name: `sc_path_watch`, Fn: p.pathWatch},
+		{Name: `sc_sleep`, Fn: p.sleep},
+		{Name: `sc_ticker`, Fn: p.ticker},
+		{Name: `sc_log`, Fn: p.log},
 	}
-
-	return funcs
 }
 
 func (p *provider) Catalog() string {
 	return "system"
 }
 
-func init() {
-	securityChecker.AddFuncProvider(&provider{})
+func Init() {
+	funcs.AddFuncProvider(&provider{})
 }

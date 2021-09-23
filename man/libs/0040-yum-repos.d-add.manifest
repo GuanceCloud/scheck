@@ -1,0 +1,27 @@
+id="0040-yum-repos.d-add"
+category="system"
+level="warn"
+title="新增yum仓库文件"
+#desc="文件 {{.File}} 发生了变化"
+desc="新增{{.Content}} yum仓库文件"
+cron="disable"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["监控主机/etc/yum-repos.d 目录下添加配置"]
+rationale=["repo文件是Fedora中yum源（软件仓库）的配置文件，通常一个repo文件定义了一个或者多个软件仓库的细节内容，例如我们将从哪里下载需要安装或者升级的软件包，repo文件中的设置内容将被yum读取和应用。如果配置错误，会造成服务不可用。"]
+riskitems=["服务不也用"]
+audit='''验证主机/etc/yum-repos.d目录下 是否添加。可以执行以下命令验证：
+
+```bash
+ls -l /etc/yum-repos.d
+```
+'''
+remediation='''如果主机/etc/yum-repos.d 被添加，请勿必仔细查看主机环境，是否被入侵，并且修改主机用户密码。
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

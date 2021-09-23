@@ -11,29 +11,14 @@ variables:
 stages:
   - deploy
 
-#build-dev:
-#  stage: deploy
-#  only:
-#    - dev
-#  script:
-#    # only check building, not publish
-#    - make ci_notify
-#    - make testing
-#    - make test_notify
-#  tags:
-#    - cloudcare-ft
-
 build-testing:
   stage: deploy
   only:
-    - dev
+    - testing
   script:
     # building && publish testing
-    #- make ci_notify
     - make testing
     - make pub_testing
-    #- make pub_testing_img
-    #- make test_notify
   tags:
     - cloudcare-ft
 
@@ -42,10 +27,7 @@ build-release:
   only:
     - master
   script:
-    #- make ci_notify
     - make release
     - make pub_release
-    #- make pub_release_img
-    #- make release_notify
   tags:
     - cloudcare-ft

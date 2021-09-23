@@ -1,0 +1,24 @@
+id="0057-cramfs-disabled"
+category="storage"
+level="warn"
+title="cramfs 被启用"
+desc="{{.Content}} 被启用"
+cron="1 */5 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["监控主机确保cramfs不被启用"]
+rationale=["cramfs文件系统类型是一种嵌入在小型系统中的压缩只读Linux文件系统。可以使用cramfs图像而不必首先解压缩图像。", "删除对不需要的文件系统类型的支持可以减少服务器的本地攻击面。如果不需要此文件系统类型，请禁用它"]
+riskitems=["黑客渗透", "数据泄露"]
+audit='''验证主机确保cramfs是否被启用。可以执行一下命令验证：
+
+```bash
+lsmod | grep cramfs
+```
+'''
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

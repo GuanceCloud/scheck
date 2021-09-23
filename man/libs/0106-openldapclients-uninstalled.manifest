@@ -1,0 +1,31 @@
+id="0106-openldapclients-uninstalled"
+category="system"
+level="warn"
+title="LDAP客户端被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+cron="00 */30 * * *"
+# 开关
+disabled=false
+
+
+
+
+os_arch=["Linux"]
+description=["轻量级目录访问协议（LDAP）是作为NIS/YP的替代品引入的。它是一种提供从中央数据库中查找信息的方法的服务。"]
+rationale=["如果系统不需要充当LDAP客户端，建议删除该软件以减少潜在的攻击面。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''运行以下命令以验证是否未安装openldap clients包：
+
+```bash
+ # rpm -q openldap-clients
+package openldap-clients is not installed
+```
+'''
+remediation='''运行以下命令以删除openldap clients包：
+```bash
+# yum remove openldap-clients
+```
+'''
+impact=["许多不安全的服务客户机被用作故障排除工具和测试环境。卸载它们会抑制测试和故障排除的能力。如果需要，建议在使用后移除客户端，以防止意外或故意误用。"]
+references=["[OpenLDAP documentation](http://www.openldap.org.)"]
+CIS=["Version 7\n   9.2确保只运行经批准的端口、协议和服务\n确保每个系统上只运行在具有已验证业务需求的系统上侦听的网络端口、协议和服务。"]

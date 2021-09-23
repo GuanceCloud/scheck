@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/make/build"
+
 	"os"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/cmd/make/build"
 )
 
 var (
@@ -18,7 +20,6 @@ var (
 )
 
 func applyFlags() {
-
 	build.AppBin = *flagBinary
 	build.BuildDir = *flagBuildDir
 	build.PubDir = *flagPubDir
@@ -28,15 +29,6 @@ func applyFlags() {
 	build.ReleaseType = build.Release
 	build.MainEntry = *flagMain
 	build.DownloadAddr = *flagDownloadAddr
-
-	// switch *flagEnv {
-	// case "release":
-	// 	log.Printf("under release, only checked inputs released")
-	// 	build.ReleaseType = "checked"
-	// default:
-	// 	log.Printf("under non-release, all inputs released")
-	// 	build.ReleaseType = "all"
-	// }
 
 	if *flagPub {
 		build.PubDatakit()

@@ -1,0 +1,27 @@
+id="0201-listening-ports-del"
+category="system"
+level="warn"
+title="主机端口被关闭"
+desc="端口被关闭，{{.Content}} "
+cron="1 */5 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["端口是英文port的意译，可以认为是设备与外界通讯交流的出口。端口可分为虚拟端口和物理端口，其中虚拟端口指计算机内部或交换机路由器内的端口，不可见。例如计算机中的80端口、21端口、23端口等。物理端口又称为接口，是可见端口，计算机背板的RJ45网口，交换机路由器集线器等RJ45端口。电话使用RJ11插口也属于物理端口的范畴。"]
+rationale=["主机端口被关闭，会造成服务不可用"]
+riskitems=["服务不可用"]
+audit='''执行下面的命令，找出Linux的端口号：
+```bash
+netstat -nltp
+```
+确保该端口是你已知端口。
+'''
+remediation='''无
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

@@ -1,0 +1,30 @@
+id="0100-ypserv-uninstalled"
+category="system"
+level="warn"
+title="NIS服务被安装"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["NIS服务本质上是一个不安全的系统，容易受到DOS攻击，\n    缓冲区溢出，并且在查询NIS映射时身份验证很差。NIS通常\n    已被轻量级目录访问协议(LDAP)等协议所取代。它是\n    建议删除ypserv包，如果需要更安全的服务\n    被使用。"]
+rationale=["ypserv包提供NIS (Network Information Service)服务。这种服务,正式\n    黄页是一种用于分发系统的客户机-服务器目录服务协议\n    配置文件。NIS服务器是允许分发的程序的集合\n    的配置文件。"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''执行以下命令，验证是否安装了ypserv。
+
+```bash
+# rpm -q ypserv
+package ypserv is not installed
+```
+'''
+remediation='''运行命令移除ypserv。
+```bash
+# # yum remove ypserv
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7<br>\n    9.2确保只运行审批通过的端口、协议和业务<br>\n    确保只有网络端口、协议和服务在系统上监听经过验证的业务需求，正在每个系统上运行。"]

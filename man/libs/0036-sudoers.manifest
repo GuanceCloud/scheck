@@ -1,0 +1,25 @@
+id="0036-sudoers"
+category="system"
+level="warn"
+title="sudoers 被修改"
+desc="{{.Content}} 被修改"
+cron="disable"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["监控主机/etc/sudoers是否被修改"]
+rationale=["在Linux中，/etc/sudoers文件允许用户按照安全策略的指定，以超级用户或其他用户的身份执行命令。安全策略确定用户必须具有哪些特权才能运行sudo。该策略可能要求用户使用密码或其他身份验证机制对自己进行身份验证。"]
+riskitems=["黑客渗透", "数据泄露"]
+audit='''验证主机/etc/sudoers是否存在。可以执行一下命令验证：
+
+```bash
+cat /etc/sudoers
+```
+'''
+impact=["系统可能无法正常登录"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

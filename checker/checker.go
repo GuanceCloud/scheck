@@ -3,178 +3,111 @@ package checker
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 
-	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/cgroup"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
+)
 
-	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
-	_ "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
+const (
+	PanicBuf = 2048
 )
 
 var (
 	Chk *Checker
+	l   = logger.DefaultSLogger("check")
 )
 
-type (
-	Checker struct {
-		rulesDir  string
-		rules     map[string]*Rule
-		manifests map[string]*RuleManifest
-
-		ruleGroups map[int64][]*Rule
-
-		scheduler *Scheduler
-
-		ruleMux     sync.Mutex
-		manifestMux sync.Mutex
-
-		loading int32
-	}
-)
+type Checker struct {
+	rulesDir      string
+	customRuleDir string
+	taskScheduler *TaskScheduler
+}
 
 // Start
-func Start(ctx context.Context, rulesDir, outputpath string) {
-
-	log.Debugf("output: %s", outputpath)
-	log.Debugf("rule dir: %s", rulesDir)
-
-	Chk = newChecker(rulesDir)
-
-	output.Start(ctx, outputpath)
+func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
+	l = logger.SLogger("checker")
+	luafuncs.Start()
+	Chk = newChecker(confSys)
+	output.Start(outputpath)
 	Chk.start(ctx)
 }
 
-func newChecker(rulesDir string) *Checker {
-	c := &Checker{
-		rulesDir:  rulesDir,
-		rules:     map[string]*Rule{},
-		manifests: map[string]*RuleManifest{},
-		scheduler: NewScheduler(),
+func newChecker(confsys *config.System) *Checker {
+	lua.LuaPathDefault = filepath.Join(confsys.RuleDir, global.LuaLocalLibPath, global.PublicLuaLib)
+	_, err := os.Stat(confsys.CustomRuleLibDir)
+	if err == nil {
+		dir := filepath.Join(confsys.CustomRuleLibDir, global.PublicLuaLib)
+		lua.LuaPathDefault += ";" + dir
 	}
 
-	lua.LuaPathDefault = filepath.Join(rulesDir, "/lib/?.lua")
-
+	c := &Checker{
+		rulesDir:      confsys.RuleDir,
+		customRuleDir: confsys.CustomRuleDir,
+		taskScheduler: NewTaskScheduler(confsys.RuleDir, confsys.CustomRuleDir, confsys.LuaHotUpdate),
+	}
+	if confsys.LuaCap <= 0 || confsys.LuaInitCap <= 0 || confsys.LuaInitCap > confsys.LuaCap {
+		confsys.LuaInitCap = global.DefLuaPoolCap
+		confsys.LuaCap = global.DefLuaPoolMaxCap
+	}
+	InitStatePool(confsys.LuaInitCap, confsys.LuaCap)
 	return c
 }
 
-func (c *Checker) findRule(rulefile string) *Rule {
-
-	if rulefile == "" {
-		return nil
-	}
-	c.ruleMux.Lock()
-	defer c.ruleMux.Unlock()
-	if r, ok := c.rules[rulefile]; ok {
-		return r
-	}
-	return nil
-}
-func (c *Checker) addRule(r *Rule) {
-	c.ruleMux.Lock()
-	defer c.ruleMux.Unlock()
-
-	scheduleID, err := c.scheduler.AddRule(r)
-	if err != nil {
-		log.Errorf("%s", err)
-		return
-	}
-	r.scheduleID = scheduleID
-	c.rules[r.File] = r
-}
-
-func (c *Checker) reSchedule(r *Rule) {
-	scheduleID, err := c.scheduler.AddRule(r)
-	if err != nil {
-		log.Errorf("%s", err)
-		return
-	}
-	r.scheduleID = scheduleID
-}
-
-func (c *Checker) delRules() {
-	c.ruleMux.Lock()
-	defer c.ruleMux.Unlock()
-
-	for _, r := range c.rules {
-		if atomic.LoadInt32(&r.markAsDelete) == 0 {
-			continue
-		}
-		log.Debugf("removing %s", r.File)
-		if atomic.LoadInt32(&r.running) > 0 {
-			select {
-			case <-r.stopch:
-				c.doDelRule(r)
-			case <-time.After(time.Second * 10):
-				log.Warnf("remove rule failed, timeout")
-			}
-		} else {
-			c.doDelRule(r)
+func GetManifestByName(fileName string) (*RuleManifest, error) {
+	if Chk != nil && Chk.taskScheduler != nil {
+		rule := Chk.taskScheduler.GetRuleByName(fileName)
+		if rule != nil && rule.manifest != nil {
+			l.Debugf("find by name from scheduler...")
+			return rule.manifest, nil
 		}
 	}
+	// test测试时 传递的是绝对路径
+	return GetManifest(fileName)
 }
 
-func (c *Checker) doDelRule(r *Rule) {
-	c.scheduler.DelRule(r)
-	if r.rt != nil {
-		r.rt.Close()
+func GetManifest(filename string) (*RuleManifest, error) {
+	filename = strings.TrimSuffix(filename, global.LuaExt)
+	if !strings.HasSuffix(filename, global.LuaManifestExt) {
+		filename += global.LuaManifestExt
 	}
-	delete(c.rules, r.File)
-}
-
-func (c *Checker) addManifest(m *RuleManifest) {
-	c.manifests[m.path] = m
-}
-
-func (c *Checker) getManifest(name string) (*RuleManifest, error) {
-	c.manifestMux.Lock()
-	defer c.manifestMux.Unlock()
-
-	if !strings.HasSuffix(name, ".manifest") {
-		name += ".manifest"
+	m := &RuleManifest{path: filename}
+	if err := m.parse(); err != nil {
+		return nil, err
 	}
-
-	path := filepath.Join(c.rulesDir, name)
-	m := c.manifests[path]
-	if m == nil {
-		m = newManifest(path)
-		c.manifests[path] = m
-	}
-
-	err := m.load()
-	if err != nil {
-		return nil, fmt.Errorf("fail to load %s, %s", path, err)
-	}
-
 	return m, nil
 }
 
 func (c *Checker) start(ctx context.Context) {
 	defer func() {
 		if e := recover(); e != nil {
-			buf := make([]byte, 2048)
+			buf := make([]byte, PanicBuf)
 			n := runtime.Stack(buf, false)
-			log.Errorf("panic %s", e)
-			log.Errorf("%s", string(buf[:n]))
-
+			l.Errorf("panic %s", e)
+			l.Errorf("%s", string(buf[:n]))
 		}
-		output.Outputer.Close()
-		log.Info("checker exit")
+		output.Close()
+		l.Info("checker exit")
 	}()
 
-	if err := c.loadRules(ctx, c.rulesDir); err != nil {
-		return
+	if pool != nil {
+		l.Infof("scheduler start")
+		go c.taskScheduler.run()
+		go c.taskScheduler.runOnce()
+	} else {
+		l.Fatalf("pool is nil ,exit!")
 	}
-
-	c.scheduler.Start()
 
 	select {
 	case <-ctx.Done():
@@ -182,124 +115,28 @@ func (c *Checker) start(ctx context.Context) {
 	default:
 	}
 
-	if len(c.rules) == 0 {
-		log.Warnf("no rule loaded")
-	}
+	go cgroup.Run(config.Cfg.Cgroup)
 
-	go func() {
-		for {
-			sleepContext(ctx, time.Second*10)
-
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-
-			c.loadRules(ctx, c.rulesDir)
-		}
-	}()
-
+	firstTrigger()
 	<-ctx.Done()
-	c.scheduler.Stop()
+	c.taskScheduler.Stop()
 }
 
-func (c *Checker) loadRules(ctx context.Context, ruleDir string) error {
-
-	if atomic.LoadInt32(&c.loading) > 0 {
-		return nil
-	}
-	atomic.StoreInt32(&c.loading, 1)
-	defer atomic.StoreInt32(&c.loading, 0)
-	files, err := ioutil.ReadDir(ruleDir)
-	if err != nil {
-		log.Errorf("%s", err)
-		return err
-	}
-
-	for _, r := range c.rules {
-		atomic.StoreInt32(&r.markAsDelete, 1)
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-		}
-
-		path := filepath.Join(ruleDir, file.Name())
-
-		if !strings.HasSuffix(file.Name(), ".lua") {
-			continue
-		}
-
-		time.Sleep(time.Millisecond * 20)
-
-		if exist, ok := c.rules[path]; ok {
-			atomic.StoreInt32(&exist.markAsDelete, 0)
-			exist.load()
-			continue
-		}
-
-		r := newRule(path)
-		if err := r.load(); err == nil {
-			c.addRule(r)
-		}
-	}
-
-	c.delRules()
-
-	cronNum, intervalNum := c.scheduler.countInfo()
-	log.Debugf("cronNum=%d, intervalNum=%d", cronNum, intervalNum)
-
-	return nil
+func InitLuaGlobalFunc() {
+	Init()
+	system.Init()
+	utils.Init()
 }
 
-func sleepContext(ctx context.Context, duration time.Duration) error {
-	if duration == 0 {
-		return nil
+func ShowFuncs() {
+	InitLuaGlobalFunc()
+	names := []string{}
+	for _, p := range funcs.FuncProviders {
+		for _, f := range p.Funcs() {
+			names = append(names, f.Name)
+		}
 	}
-
-	t := time.NewTimer(duration)
-	select {
-	case <-t.C:
-		return nil
-	case <-ctx.Done():
-		t.Stop()
-		return ctx.Err()
-	}
-}
-
-func TestRule(rulepath string) {
-
-	log.SetReportCaller(true)
-
-	config.Cfg = &config.Config{
-		RuleDir: `/usr/local/scheck/rules.d`,
-	}
-
-	rulepath, _ = filepath.Abs(rulepath)
-	rulepath = rulepath + ".lua"
-	ruledir := filepath.Dir(rulepath)
-
-	Chk = newChecker(ruledir)
-	ctx, cancelfun := context.WithCancel(context.Background())
-	output.Start(ctx, "")
-	defer cancelfun()
-
-	r := newRule(rulepath)
-
-	err := r.load()
-	if err != nil {
-		return
-	}
-	Chk.rules[r.File] = r
-	r.run()
-
-	return
+	s := strings.Join(names, "\n")
+	s += "\n"
+	fmt.Println(s)
 }

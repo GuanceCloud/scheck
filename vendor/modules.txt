@@ -1,28 +1,176 @@
-# blitter.com/go/goutmp v1.0.5
+# github.com/BurntSushi/toml v0.3.1
 ## explicit
-# github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46
+github.com/BurntSushi/toml
+# github.com/MichaelMure/go-term-markdown v0.1.4
+## explicit
+github.com/MichaelMure/go-term-markdown
+github.com/MichaelMure/go-term-markdown/html
+# github.com/MichaelMure/go-term-text v0.3.1
+github.com/MichaelMure/go-term-text
+# github.com/StackExchange/wmi v1.2.1
 ## explicit
 github.com/StackExchange/wmi
+# github.com/alecthomas/chroma v0.7.1
+github.com/alecthomas/chroma
+github.com/alecthomas/chroma/formatters
+github.com/alecthomas/chroma/formatters/html
+github.com/alecthomas/chroma/formatters/svg
+github.com/alecthomas/chroma/lexers
+github.com/alecthomas/chroma/lexers/a
+github.com/alecthomas/chroma/lexers/b
+github.com/alecthomas/chroma/lexers/c
+github.com/alecthomas/chroma/lexers/circular
+github.com/alecthomas/chroma/lexers/d
+github.com/alecthomas/chroma/lexers/e
+github.com/alecthomas/chroma/lexers/f
+github.com/alecthomas/chroma/lexers/g
+github.com/alecthomas/chroma/lexers/h
+github.com/alecthomas/chroma/lexers/i
+github.com/alecthomas/chroma/lexers/internal
+github.com/alecthomas/chroma/lexers/j
+github.com/alecthomas/chroma/lexers/k
+github.com/alecthomas/chroma/lexers/l
+github.com/alecthomas/chroma/lexers/m
+github.com/alecthomas/chroma/lexers/n
+github.com/alecthomas/chroma/lexers/o
+github.com/alecthomas/chroma/lexers/p
+github.com/alecthomas/chroma/lexers/q
+github.com/alecthomas/chroma/lexers/r
+github.com/alecthomas/chroma/lexers/s
+github.com/alecthomas/chroma/lexers/t
+github.com/alecthomas/chroma/lexers/v
+github.com/alecthomas/chroma/lexers/w
+github.com/alecthomas/chroma/lexers/x
+github.com/alecthomas/chroma/lexers/y
+github.com/alecthomas/chroma/styles
+# github.com/aliyun/aliyun-log-go-sdk v0.1.21
+## explicit
+github.com/aliyun/aliyun-log-go-sdk
 # github.com/aliyun/aliyun-oss-go-sdk v2.1.2+incompatible
 github.com/aliyun/aliyun-oss-go-sdk/oss
-# github.com/cavaliercoder/go-rpm v0.0.0-20200122174316-8cb9fd9c31a8
+# github.com/cenkalti/backoff v2.2.1+incompatible
+github.com/cenkalti/backoff
+# github.com/containerd/cgroups v1.0.1
 ## explicit
+github.com/containerd/cgroups
+github.com/containerd/cgroups/stats/v1
+# github.com/coreos/go-systemd/v22 v22.3.2
+## explicit
+github.com/coreos/go-systemd/v22/dbus
+# github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
+github.com/danwakefield/fnmatch
+# github.com/disintegration/imaging v1.6.2
+github.com/disintegration/imaging
+# github.com/dlclark/regexp2 v1.1.6
+github.com/dlclark/regexp2
+github.com/dlclark/regexp2/syntax
+# github.com/docker/go-units v0.4.0
+github.com/docker/go-units
 # github.com/dustin/go-humanize v1.0.0
 ## explicit
 github.com/dustin/go-humanize
-# github.com/go-ole/go-ole v1.2.5
+# github.com/elazarl/goproxy v0.0.0-20210801061803-8e322dfb79c4
 ## explicit
+github.com/elazarl/goproxy
+# github.com/eliukblau/pixterm/pkg/ansimage v0.0.0-20191210081756-9fb6cf8c2f75
+github.com/eliukblau/pixterm/pkg/ansimage
+# github.com/fatih/color v1.12.0
+github.com/fatih/color
+# github.com/fsnotify/fsnotify v1.4.9
+## explicit
+github.com/fsnotify/fsnotify
+# github.com/gin-contrib/sse v0.1.0
+github.com/gin-contrib/sse
+# github.com/gin-gonic/gin v1.6.3
+github.com/gin-gonic/gin
+github.com/gin-gonic/gin/binding
+github.com/gin-gonic/gin/internal/bytesconv
+github.com/gin-gonic/gin/internal/json
+github.com/gin-gonic/gin/render
+# github.com/go-kit/kit v0.10.0
+github.com/go-kit/kit/log
+github.com/go-kit/kit/log/level
+# github.com/go-logfmt/logfmt v0.5.0
+github.com/go-logfmt/logfmt
+# github.com/go-ole/go-ole v1.2.5
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
-# github.com/go-sql-driver/mysql v1.5.0
+# github.com/go-playground/locales v0.13.0
+github.com/go-playground/locales
+github.com/go-playground/locales/currency
+# github.com/go-playground/universal-translator v0.17.0
+github.com/go-playground/universal-translator
+# github.com/go-playground/validator/v10 v10.3.0
+github.com/go-playground/validator/v10
+# github.com/go-sql-driver/mysql v1.6.0
 ## explicit
 github.com/go-sql-driver/mysql
-# github.com/golang/protobuf v1.4.2
+# github.com/gobuffalo/logger v1.0.4
+## explicit
+github.com/gobuffalo/logger
+# github.com/gobuffalo/packd v1.0.0
+github.com/gobuffalo/packd
+github.com/gobuffalo/packd/internal/takeon/github.com/markbates/errx
+# github.com/gobuffalo/packr/v2 v2.8.1
+## explicit
+github.com/gobuffalo/packr/v2
+github.com/gobuffalo/packr/v2/file
+github.com/gobuffalo/packr/v2/file/resolver
+github.com/gobuffalo/packr/v2/file/resolver/encoding/hex
+github.com/gobuffalo/packr/v2/jam/parser
+github.com/gobuffalo/packr/v2/plog
+# github.com/godbus/dbus/v5 v5.0.4
+github.com/godbus/dbus/v5
+# github.com/gogf/gf v1.16.6
+## explicit
+github.com/gogf/gf/container/glist
+github.com/gogf/gf/container/gmap
+github.com/gogf/gf/container/gqueue
+github.com/gogf/gf/container/gset
+github.com/gogf/gf/container/gtree
+github.com/gogf/gf/container/gtype
+github.com/gogf/gf/container/gvar
+github.com/gogf/gf/crypto/gmd5
+github.com/gogf/gf/debug/gdebug
+github.com/gogf/gf/encoding/gbinary
+github.com/gogf/gf/encoding/ghash
+github.com/gogf/gf/errors/gcode
+github.com/gogf/gf/errors/gerror
+github.com/gogf/gf/internal/command
+github.com/gogf/gf/internal/empty
+github.com/gogf/gf/internal/intlog
+github.com/gogf/gf/internal/json
+github.com/gogf/gf/internal/rwmutex
+github.com/gogf/gf/internal/structs
+github.com/gogf/gf/internal/utils
+github.com/gogf/gf/os/gcache
+github.com/gogf/gf/os/gcmd
+github.com/gogf/gf/os/gfsnotify
+github.com/gogf/gf/os/gtime
+github.com/gogf/gf/os/gtimer
+github.com/gogf/gf/text/gregex
+github.com/gogf/gf/text/gstr
+github.com/gogf/gf/util/gconv
+github.com/gogf/gf/util/grand
+github.com/gogf/gf/util/gutil
+# github.com/gogo/protobuf v1.3.2
+## explicit
+github.com/gogo/protobuf/gogoproto
+github.com/gogo/protobuf/proto
+github.com/gogo/protobuf/protoc-gen-gogo/descriptor
+# github.com/golang/protobuf v1.5.2
+## explicit
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
+# github.com/gomarkdown/markdown v0.0.0-20210820032736-385812cbea76
+## explicit
+github.com/gomarkdown/markdown
+github.com/gomarkdown/markdown/ast
+github.com/gomarkdown/markdown/html
+github.com/gomarkdown/markdown/parser
 # github.com/influxdata/influxdb1-client v0.0.0-20200827194710-b269163b24ab
 ## explicit
 github.com/influxdata/influxdb1-client/models
@@ -32,25 +180,74 @@ github.com/influxdata/influxdb1-client/v2
 ## explicit
 github.com/influxdata/toml
 github.com/influxdata/toml/ast
-# github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf
+# github.com/json-iterator/go v1.1.11
 ## explicit
+github.com/json-iterator/go
+# github.com/kardianos/service v1.2.0
+## explicit
+github.com/kardianos/service
+# github.com/karrick/godirwalk v1.16.1
+## explicit
+github.com/karrick/godirwalk
+# github.com/kyokomi/emoji/v2 v2.2.8
+github.com/kyokomi/emoji/v2
+# github.com/leodido/go-urn v1.2.0
+github.com/leodido/go-urn
+# github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+## explicit
+github.com/lestrrat-go/file-rotatelogs
+github.com/lestrrat-go/file-rotatelogs/internal/option
+# github.com/lestrrat-go/strftime v1.0.5
+## explicit
+github.com/lestrrat-go/strftime
+# github.com/lucasb-eyer/go-colorful v1.0.3
+github.com/lucasb-eyer/go-colorful
+# github.com/markbates/errx v1.1.0
+github.com/markbates/errx
+# github.com/markbates/oncer v1.0.0
+github.com/markbates/oncer
+# github.com/markbates/safe v1.0.1
+github.com/markbates/safe
+# github.com/mattn/go-colorable v0.1.8
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.12
+github.com/mattn/go-isatty
+# github.com/mattn/go-runewidth v0.0.12
+github.com/mattn/go-runewidth
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 github.com/matttproud/golang_protobuf_extensions/pbutil
+# github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+github.com/modern-go/concurrent
+# github.com/modern-go/reflect2 v1.0.1
+github.com/modern-go/reflect2
 # github.com/naoina/go-stringutil v0.1.0
 ## explicit
 github.com/naoina/go-stringutil
+# github.com/opencontainers/runtime-spec v1.0.2
+## explicit
+github.com/opencontainers/runtime-spec/specs-go
+# github.com/pierrec/lz4 v2.6.0+incompatible
+github.com/pierrec/lz4
+github.com/pierrec/lz4/internal/xxh32
+# github.com/pkg/errors v0.9.1
+github.com/pkg/errors
 # github.com/prometheus/client_model v0.2.0
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.10.0
+# github.com/prometheus/common v0.30.0
+## explicit
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 github.com/prometheus/common/model
+# github.com/rivo/uniseg v0.1.0
+github.com/rivo/uniseg
 # github.com/robfig/cron/v3 v3.0.1
 ## explicit
-github.com/robfig/cron/v3
-# github.com/rs/xid v1.2.1
+# github.com/rogpeppe/go-internal v1.8.0
+## explicit
+# github.com/rs/xid v1.3.0
+## explicit
 github.com/rs/xid
-# github.com/shirou/gopsutil v3.21.2+incompatible
+# github.com/shirou/gopsutil v3.21.7+incompatible
 ## explicit
 github.com/shirou/gopsutil/cpu
 github.com/shirou/gopsutil/disk
@@ -62,25 +259,35 @@ github.com/shirou/gopsutil/process
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
-# github.com/tklauser/go-sysconf v0.3.5
+# github.com/tklauser/go-sysconf v0.3.7
 ## explicit
 github.com/tklauser/go-sysconf
-# github.com/tklauser/numcpus v0.2.2
+# github.com/tklauser/numcpus v0.2.3
 github.com/tklauser/numcpus
-# github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da
+# github.com/ugorji/go/codec v1.1.7
+github.com/ugorji/go/codec
+# github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 ## explicit
 github.com/yuin/gopher-lua
 github.com/yuin/gopher-lua/ast
 github.com/yuin/gopher-lua/parse
 github.com/yuin/gopher-lua/pm
-# gitlab.jiagouyun.com/cloudcare-tools/cliutils v0.0.0-20210401072947-bb2a050fa753
+# gitlab.jiagouyun.com/cloudcare-tools/cliutils v0.0.0-20210914104241-59035f2f727a
 ## explicit
 gitlab.jiagouyun.com/cloudcare-tools/cliutils
-# go.uber.org/atomic v1.6.0
+gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger
+gitlab.jiagouyun.com/cloudcare-tools/cliutils/testutil
+# go.opentelemetry.io/otel v1.0.0-RC2
+go.opentelemetry.io/otel/attribute
+go.opentelemetry.io/otel/codes
+go.opentelemetry.io/otel/internal
+# go.opentelemetry.io/otel/trace v1.0.0-RC2
+go.opentelemetry.io/otel/trace
+# go.uber.org/atomic v1.7.0
 go.uber.org/atomic
-# go.uber.org/multierr v1.5.0
+# go.uber.org/multierr v1.6.0
 go.uber.org/multierr
-# go.uber.org/zap v1.16.0
+# go.uber.org/zap v1.18.1
 ## explicit
 go.uber.org/zap
 go.uber.org/zap/buffer
@@ -88,13 +295,41 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/sys v0.0.0-20210316164454-77fc1eacc6aa
+# golang.org/x/image v0.0.0-20191206065243-da761ea9ff43
+golang.org/x/image/bmp
+golang.org/x/image/ccitt
+golang.org/x/image/riff
+golang.org/x/image/tiff
+golang.org/x/image/tiff/lzw
+golang.org/x/image/vp8
+golang.org/x/image/vp8l
+golang.org/x/image/webp
+# golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
+## explicit
+# golang.org/x/net v0.0.0-20210525063256-abc453219eb5
+golang.org/x/net/context
+golang.org/x/net/html
+golang.org/x/net/html/atom
+# golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
+## explicit
 golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
+golang.org/x/sys/windows/registry
+golang.org/x/sys/windows/svc
+golang.org/x/sys/windows/svc/eventlog
+golang.org/x/sys/windows/svc/mgr
+# golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
+## explicit
+golang.org/x/term
+# golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
+## explicit
 golang.org/x/time/rate
-# google.golang.org/protobuf v1.25.0
+# golang.org/x/tools v0.1.5
+## explicit
+# google.golang.org/protobuf v1.27.1
+## explicit
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -105,25 +340,28 @@ google.golang.org/protobuf/internal/encoding/messageset
 google.golang.org/protobuf/internal/encoding/tag
 google.golang.org/protobuf/internal/encoding/text
 google.golang.org/protobuf/internal/errors
-google.golang.org/protobuf/internal/fieldsort
 google.golang.org/protobuf/internal/filedesc
 google.golang.org/protobuf/internal/filetype
 google.golang.org/protobuf/internal/flags
 google.golang.org/protobuf/internal/genid
 google.golang.org/protobuf/internal/impl
-google.golang.org/protobuf/internal/mapsort
+google.golang.org/protobuf/internal/order
 google.golang.org/protobuf/internal/pragma
 google.golang.org/protobuf/internal/set
 google.golang.org/protobuf/internal/strs
 google.golang.org/protobuf/internal/version
 google.golang.org/protobuf/proto
+google.golang.org/protobuf/reflect/protodesc
 google.golang.org/protobuf/reflect/protoreflect
 google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
+google.golang.org/protobuf/types/descriptorpb
 google.golang.org/protobuf/types/known/anypb
 google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/natefinch/lumberjack.v2 v2.0.0
-## explicit
 gopkg.in/natefinch/lumberjack.v2
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2

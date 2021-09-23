@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -11,15 +13,15 @@ import (
 // has been preloaded, it can be loaded using require:
 //
 //  local json = require("json")
-func Preload(L *lua.LState) {
-	L.PreloadModule("json", Loader)
+func Preload(l *lua.LState) {
+	l.PreloadModule("json", Loader)
 }
 
 // Loader is the module loader function.
-func Loader(L *lua.LState) int {
-	t := L.NewTable()
-	L.SetFuncs(t, api)
-	L.Push(t)
+func Loader(l *lua.LState) int {
+	t := l.NewTable()
+	l.SetFuncs(t, api)
+	l.Push(t)
 	return 1
 }
 
@@ -28,29 +30,29 @@ var api = map[string]lua.LGFunction{
 	"encode": apiEncode,
 }
 
-func apiDecode(L *lua.LState) int {
-	str := L.CheckString(1)
+func apiDecode(l *lua.LState) int {
+	str := l.CheckString(1)
 
-	value, err := Decode(L, []byte(str))
+	value, err := Decode(l, []byte(str))
 	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(err.Error()))
-		return 2
+		l.Push(lua.LNil)
+		l.Push(lua.LString(err.Error()))
+		return global.LuaRet2
 	}
-	L.Push(value)
+	l.Push(value)
 	return 1
 }
 
-func apiEncode(L *lua.LState) int {
-	value := L.CheckAny(1)
+func apiEncode(l *lua.LState) int {
+	value := l.CheckAny(1)
 
 	data, err := Encode(value)
 	if err != nil {
-		L.Push(lua.LNil)
-		L.Push(lua.LString(err.Error()))
-		return 2
+		l.Push(lua.LNil)
+		l.Push(lua.LString(err.Error()))
+		return global.LuaRet2
 	}
-	L.Push(lua.LString(string(data)))
+	l.Push(lua.LString(string(data)))
 	return 1
 }
 
@@ -134,24 +136,24 @@ func (j jsonValue) MarshalJSON() (data []byte, err error) {
 	default:
 		err = invalidTypeError(j.LValue.Type())
 	}
-	return
+	return data, err
 }
 
 // Decode converts the JSON encoded data to Lua values.
-func Decode(L *lua.LState, data []byte) (lua.LValue, error) {
+func Decode(l *lua.LState, data []byte) (lua.LValue, error) {
 	var value interface{}
 	err := json.Unmarshal(data, &value)
 	if err != nil {
 		return nil, err
 	}
-	return DecodeValue(L, value), nil
+	return DecodeValue(l, value), nil
 }
 
 // DecodeValue converts the value to a Lua value.
 //
 // This function only converts values that the encoding/json package decodes to.
 // All other values will return lua.LNil.
-func DecodeValue(L *lua.LState, value interface{}) lua.LValue {
+func DecodeValue(l *lua.LState, value interface{}) lua.LValue {
 	switch converted := value.(type) {
 	case bool:
 		return lua.LBool(converted)
@@ -162,15 +164,15 @@ func DecodeValue(L *lua.LState, value interface{}) lua.LValue {
 	case json.Number:
 		return lua.LString(converted)
 	case []interface{}:
-		arr := L.CreateTable(len(converted), 0)
+		arr := l.CreateTable(len(converted), 0)
 		for _, item := range converted {
-			arr.Append(DecodeValue(L, item))
+			arr.Append(DecodeValue(l, item))
 		}
 		return arr
 	case map[string]interface{}:
-		tbl := L.CreateTable(0, len(converted))
+		tbl := l.CreateTable(0, len(converted))
 		for key, item := range converted {
-			tbl.RawSetH(lua.LString(key), DecodeValue(L, item))
+			tbl.RawSetH(lua.LString(key), DecodeValue(l, item))
 		}
 		return tbl
 	case nil:

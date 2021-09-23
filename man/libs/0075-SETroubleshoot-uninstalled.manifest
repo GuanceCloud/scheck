@@ -1,0 +1,37 @@
+id="0075-SETroubleshoot-uninstalled "
+category="system"
+level="warn"
+title="确保未安装SETroubleshoot"
+desc="{{.Content}} 存在风险，建议检查后进行卸载"
+cron="1 */5 * * *"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["prelink是一个程序，它修改ELF共享库和ELF动态链接的二进制文件，使动态链接器在启动时执行重定位所需的时间大大减少。"]
+rationale=["预链接功能可能会干扰AIDE的操作，因为它会更改二进制文件。如果恶意用户能够破坏libc等公共库，预链接也会增加系统的漏洞。"]
+riskitems=["服务不可用"]
+audit='''验证是否未安装预链接。运行以下命令：
+
+```bash
+ # rpm -q prelink
+package prelink is not installed
+```
+
+'''
+remediation='''运行以下命令将二进制文件恢复为正常：
+
+``` bash
+# prelink -ua
+```
+验证是否未安装预链接。运行以下命令：
+``` bash
+yum remove prelink
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["Version 7\n>   14.9对敏感数据的访问或更改强制执行详细记录\n   强制执行详细的审核日志记录以访问敏感数据或更改敏感数据（使用文件完整性监视或安全信息和事件监视等工具）。"]

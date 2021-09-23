@@ -1,0 +1,9 @@
+id="0042-libbin-add"
+category="system"
+level="warn"
+title="/bin 目录了添加文件"
+desc="/bin 目录添加了文件 {{.Content}}"
+cron="disable"
+# 开关
+disabled=false
+os_arch=["Linux"]
