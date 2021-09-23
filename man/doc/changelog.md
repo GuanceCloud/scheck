@@ -4,15 +4,14 @@
 
 ### 发布说明
 
-本次发布对 SCheck 做了较大的调整，主要涉及性能、稳定性方面。
+本次发布对 Scheck 做了较大的调整，主要涉及性能、稳定性方面。
 
 - 内存 性能优化
 - 调整文件监听检测方式，替换原来文件缓存的形式
-- 规则脚本除了间歇运行方式，增加一种常驻运行分类，后者常用于监听类场景（如[文件变更]()等）
+- 规则脚本除了间歇运行方式，增加一种常驻运行分类，后者常用于监听类场景,如:[文件变更](https://www.yuque.com/dataflux/sec_checker/funcs#sc_path_watch) 等。
 - 增加 Lua 脚本执行超时控制
-- 增加 Lua 运行的[统计信息]()
-- 增加命令行 `-check` [功能]()
-- [proxy 功能]()
+- 增加 Lua 运行的[统计信息](https://www.yuque.com/dataflux/sec_checker/best-practices#c5609495)
+- 增加命令行 `-check` [功能](https://www.yuque.com/dataflux/sec_checker/best-practices#c5609495)
 
 ## v1.0.1-67-gd445240（2021/6/18）
 ### 发布说明

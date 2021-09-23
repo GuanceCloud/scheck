@@ -46,6 +46,42 @@ Scheck 目前支持 Linux/Windows 两种主流平台：
 > 注：Linux 平台下，Scheck 运行日志在 `/var/log/scheck` 目录下。
 
 
+## 相关命令
+> Security Checker cmd
+- 查看帮助
+```sh
+$scheck -h
+Usage of scheck:
+  -check-md5
+    	md5 checksum
+  -config string
+    	configuration file to load
+  -config-sample
+    	show config sample
+  -funcs
+    	show all supported lua-extend functions
+  -test string
+    	the name of a rule, without file extension
+  -version
+    	show version
+  -doc 
+        Generate doc document from manifest file
+  -tpl
+        Generate doc document from template file
+  -dir
+        配合`-doc` `-tpl`使用，将文件输出到指定的目录上
+  -luastatus
+        展示所有的lua运行状态，并输出到当前的目录下，文件的格式Markdown合适。
+  -sort
+        配合`-luastatus`使用，排序的参数有：名称：name,运行时长：time,运行次数：count,默认使用count
+     ./scheck -luastatus -sort=time
+  -check
+        预编译一次用户目录下所有的lua文件，检查代码的语法性错误。
+  -box
+        展示所有加载到二进制中的文件列表
+```
+
+
 ## 检测规则
 
 检测规则放在规则目录中：由配置文件中 `rule_dir` 或是自定义用户目录`custom_dir`指定。每项规则对应两个文件：  
