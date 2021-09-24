@@ -214,6 +214,11 @@ func (scheduler *TaskScheduler) GetRuleByName(filename string) *Rule {
 			return task
 		}
 	}
+	for key, task := range scheduler.onceTasks {
+		if key == filename {
+			return task
+		}
+	}
 	return nil
 }
 
