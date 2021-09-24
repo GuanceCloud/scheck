@@ -1,7 +1,6 @@
 package impl
 
 import (
-	"log"
 	"os"
 	"runtime"
 	"testing"
@@ -15,17 +14,16 @@ func TestUtmp(t *testing.T) {
 	}
 	f, err := os.Open(`/var/run/utmp`)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	defer f.Close()
 
 	items, err := ParseUtmp(f)
 	if err != nil {
-		log.Println(err)
-		return
+		t.Fatal(err)
 	}
 	for _, item := range items {
-		log.Printf("username=%s, tty=%v, host=%v", item.User, item.Device, item.Host)
+		t.Log("username=%s, tty=%v, host=%v", item.User, item.Device, item.Host)
 	}
 }
 
@@ -35,9 +33,9 @@ func TestSockets(t *testing.T) {
 	}
 	sockets, err := EnumProOpenSockets(nil)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	for _, s := range sockets {
-		log.Printf("pid=%d, fd=%d", s.PID, s.Fd)
+		t.Logf("pid=%d, fd=%d", s.PID, s.Fd)
 	}
 }
