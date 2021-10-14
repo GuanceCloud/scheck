@@ -4,7 +4,7 @@ level="warn"
 title="确保已配置引导加载程序配置的权限(-rw-------)"
 #desc="文件 {{.File}} 发生了变化"
 desc="文件{{.Content}} 发生了变化"
-cron="0 */30 * * *"
+cron="disable"
 # 开关
 disabled=false
 

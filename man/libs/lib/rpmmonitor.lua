@@ -1,7 +1,9 @@
 rpmmonitor = {}
 --For example, make sure sudo(rpm) is installed
+local system = require("system")
+local cache = require("cache")
 function rpm_testing(pck_name)
-    local data = rpm_query(pck_name)
+    local data = system.rpm_query(pck_name)
     if data == nil or data =='' then
         return "false"
     else
@@ -16,20 +18,20 @@ function rpmmonitor.check(pck_name, switch)
     end
 
     local cache_key = pck_name
-    local old=get_cache(cache_key)
+    local old=cache.get_cache(cache_key)
 
     if old == nil   then
         local currents = rpm_testing(pck_name)
         if currents ~= switch then
             trigger({Content=pck_name})
         end
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
         return
     end
     local currents = rpm_testing(pck_name)
     if  current ~= old and currents ~= switch then
         trigger({Content=pck_name})
-        set_cache(cache_key, currents)
+        cache.set_cache(cache_key, currents)
     end
 end
 
@@ -42,21 +44,21 @@ end
 -- --It returns true if installed (with a return value) and false if not installed (with no return)
 --    if rpm_pck ~= '' then
 --    --('package '..pck..' is not installed')
---        set_cache('rpm_installed',true)
+--        cache.set_cache('rpm_installed',true)
 --    else
---        set_cache('rpm_installed',false)
+--        cache.set_cache('rpm_installed',false)
 --    end
 --
---	local current = get_cache('rpm_installed')
---    local old_trigger = get_cache('rpm_trigger')
--- --     if get_cache(rpm_trigger) == nil then
--- --         set_cache(rpm_trigger,true)
+--	local current = cache.get_cache('rpm_installed')
+--    local old_trigger = cache.get_cache('rpm_trigger')
+-- --     if cache.get_cache(rpm_trigger) == nil then
+-- --         cache.set_cache(rpm_trigger,true)
 -- --     end
 --
 -- --Determine whether the current installation value of the package is consistent with the base value
 --    if current == value then
---        --set_cache(rpm_installed,current)
---        set_cache('rpm_trigger','normal')
+--        --cache.set_cache(rpm_installed,current)
+--        cache.set_cache('rpm_trigger','normal')
 --        return
 --    --Determine the last alarm status to prevent repeated alarms
 --    elseif old_trigger == 'normal' or old_trigger == nil then
@@ -65,15 +67,15 @@ end
 --            then
 --                trigger({Content='RPMs：'..pck})
 --                --trigger({Content='Found RPMs '..pck..' with security risks,Suggest Uninstalling'})
---                --set_cache(rpm_installed,current)
---                set_cache('rpm_trigger','error')
+--                --cache.set_cache(rpm_installed,current)
+--                cache.set_cache('rpm_trigger','error')
 --            --If the current value is not consistent with the base value, trigger is required.
 --            elseif current == false
 --            then
 --                trigger({Content='RPMs：'..pck})
 --                --trigger({Content='Found RPMs：'..pck..' not installed，Suggest Installing'})
---                --set_cache(rpm_installed,current)
---                set_cache('rpm_trigger','error')
+--                --cache.set_cache(rpm_installed,current)
+--                cache.set_cache('rpm_trigger','error')
 --            end
 --    end
 --end

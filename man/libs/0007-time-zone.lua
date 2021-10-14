@@ -1,15 +1,17 @@
+local cache = require("cache")
 local function check()
+    local system = require("system")
     local cache_key = "time_zone"
-    local old = get_cache(cache_key)
+    local old = cache.get_cache(cache_key)
     if old == nil then
-        local current = time_zone()
-        set_cache(cache_key, current)
+        local current = system.time_zone()
+        cache.set_cache(cache_key, current)
         return
     end
-    local current = time_zone()
+    local current = system.time_zone()
     if old ~= current then
         trigger({Content=current})
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
     end
 
 end

@@ -1,6 +1,6 @@
 //+build windows
 
-package system
+package file
 
 import (
 	"os"
@@ -8,15 +8,12 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func fileInfo2Table(fi os.FileInfo) *lua.LTable {
-	var file lua.LTable
+func fileInfo2Table(fi os.FileInfo, table *lua.LTable) {
 	var fileModeL = 9
 	typ := "-"
 	mod := fi.Mode().String()
 	if len(mod) > fileModeL {
 		typ = mod[0:1]
 	}
-	file.RawSetString("type", lua.LString(typ))
-
-	return &file
+	table.RawSetString("type", lua.LString(typ))
 }

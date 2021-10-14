@@ -20,7 +20,7 @@ stat -c %U:%G /usr/lib/systemd/system/docker.socket | grep -v root:root
 ```
 上述命令不应返回任何内容。
 '''
-remediation='''
+remediation='''执行下面的命令：
 ```bash
 #> chown root:root /usr/lib/systemd/system/docker.socket
 ```

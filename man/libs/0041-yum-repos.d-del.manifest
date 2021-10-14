@@ -4,7 +4,7 @@ level="warn"
 title="yun仓库文件被删除"
 #desc="文件 {{.File}} 发生了变化"
 desc="删除{{.Content}} yum仓库文件"
-cron="0 */30 * * *"
+cron="disable"
 # 开关
 disabled=false
 

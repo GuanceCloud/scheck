@@ -1,0 +1,1 @@
+local system = require("system")local common = require("common")local sc_file = require("file")local function check()   local dir = "/var/spool/cron"   while not exit do    if sc_file.file_exist(dir)  then     common.watcher(dir, {1, 2, 4, 8, 16}, common.file_trigger)    end    system.sc_sleep(5)   endendcheck()

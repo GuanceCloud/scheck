@@ -2,7 +2,6 @@ test = {}
 function list_table(data)
 
     if type(data) == 'table' then
-        print('---------------table------------------------')
         for k,v in pairs(data) do
             if isArrayTable(data) then
                 list_table(v)
@@ -10,7 +9,6 @@ function list_table(data)
                 print(k,v)
             end
         end
-        print('-----------------table----------------------' )
     else
         print(string.format('%s is %s', data ,type(data)))
     end

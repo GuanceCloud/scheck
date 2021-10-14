@@ -8,13 +8,13 @@
 	- [Scheck 安装](scheck-install)
 	- [Scheck 配置](scheck-configure)
 - [Scheck 多端输出]()
-	- [Scheck log](scheck-log)
 	- [Scheck 连接Datakit](join-datakit)
 	- [Scheck 连接阿里云日志](join-sls)
 
 - [Scheck 脚本二次开发]()
 	- [检查敏感文件的变动实现](scheck-filechange)
 	- [监控系统用户的变化](scheck-userchange)
+	- [用户自定义规则及lib库](custom-how-to)
 
 - [Scheck Funcs支持清单](funcs)
 

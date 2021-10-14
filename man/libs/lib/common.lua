@@ -1,5 +1,11 @@
 common = {}
+local system = require("system")
+local sc_file = require("file")
 
+function common.file_trigger(...)
+    local arg = {...}
+    trigger({Content=string.format("%s change, %s:%s ", arg[1], arg[2], Field_filtering(arg[3]))})
+end
 
 function Field_filtering(data)
     local tabT={}
@@ -28,14 +34,14 @@ function Field_filtering(data)
     return content
 end
 
-function common.watcher(path, enum)
-    if not file_exist(path)  then
+function common.watcher(path, enum, func)
+    if not sc_file.file_exist(path)  then
         return
     end
     local ch3 = channel.make()
-    sc_path_watch(path, ch3)
+    sc_file.sc_path_watch(path, ch3)
     local ticker = channel.make()
-    sc_ticker(ticker)
+    system.sc_ticker(ticker)
     local exit = false
     local data = {}
     while not exit do
@@ -70,7 +76,7 @@ function common.watcher(path, enum)
                                     end
                                 end
                                 if flag then
-                                    trigger({Content=string.format("%s change, %s:%s ", path, key, Field_filtering(value))})
+                                    func(path, key, value, k, v)
                                     data = {}
                                 end
                                 if isQuit then

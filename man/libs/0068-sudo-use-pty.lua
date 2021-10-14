@@ -1,6 +1,8 @@
+local sc_file = require("file")
+local cache = require("cache")
 function grep_sudofile(file)
-    if file_exist(file) then
-        local data = grep("-Ei","^\\s*Defaults\\s+([^#]\\S+,\\s*)?use_pty\\b", file)
+    if sc_file.file_exist(file) then
+        local data = sc_file.grep("-Ei","^\\s*Defaults\\s+([^#]\\S+,\\s*)?use_pty\\b", file)
         if data ~= '' then
             return true
         end
@@ -10,13 +12,13 @@ end
 
 function use_pty()
    local flag = false
-   if file_exist("/etc/sudoers") then
+   if sc_file.file_exist("/etc/sudoers") then
        if grep_sudofile("/etc/sudoers") then
            flag = true
        end
    end
-   if file_exist("/etc/sudoers.d/") then
-        local filelist = ls("/etc/sudoers.d/")
+   if sc_file.file_exist("/etc/sudoers.d/") then
+        local filelist = sc_file.ls("/etc/sudoers.d/")
         for ii,value in ipairs(filelist) do
             if grep_sudofile(value) then
                 flag = true
@@ -31,14 +33,14 @@ local function check()
     local cache_key = "use_pty"
     local current = use_pty()
    -- print(current)
-    local old = get_cache(cache_key)
+    local old = cache.get_cache(cache_key)
 
     if old == nil then
         if not current
         then
             trigger()
         end
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
         return
     end
 
@@ -47,7 +49,7 @@ local function check()
         then
             trigger()
         end
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
     end
 
 end

@@ -133,3 +133,16 @@ func symlink(src, dst string) error {
 	}
 	return os.Symlink(src, dst)
 }
+
+func ChangeFileMode(file string, mode os.FileMode) error {
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	err = f.Chmod(mode)
+	if err != nil {
+		return err
+	}
+	return nil
+}

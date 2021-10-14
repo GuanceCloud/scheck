@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 /*
@@ -23,12 +25,12 @@ func newDatakitWriter(filePath string, maxPending int) *DatakitWriter {
 	if !strings.HasPrefix(filePath, "http://") && !strings.HasPrefix(filePath, "https://") {
 		filePath = "http://" + filePath
 	}
-
+	var chanL = 10
 	dk := &DatakitWriter{
 		httpURL:      filePath,
 		maxPending:   maxPending,
 		lastSendTime: time.Now().Unix(),
-		samSig:       make(chan *sample, 1),
+		samSig:       make(chan *sample, chanL),
 	}
 	go dk.start()
 	l.Infof("init output for datakit ok,path=%s", filePath)
@@ -90,7 +92,7 @@ func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 	if gz {
 		req.Header.Set("Content-Encoding", "gzip")
 	}
-
+	http.DefaultClient.Timeout = global.OutputDefTimeout
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		l.Errorf("%s", err)

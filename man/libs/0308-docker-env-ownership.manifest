@@ -20,7 +20,7 @@ stat -c %U:%G /etc/sysconfig/docker | grep -v root:root
 ```
 上述命令不应返回任何内容。
 '''
-remediation='''
+remediation='''执行下面的命令：
 ```bash
 #> chown root:root /etc/sysconfig/docker
 ```

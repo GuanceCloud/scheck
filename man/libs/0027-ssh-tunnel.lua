@@ -1,5 +1,6 @@
 local function get_tunnel()
-    local processes = processes()
+    local system = require("system")
+    local processes = system.processes()
     local count = 0
     local pid = ''
      for i,v in ipairs(processes) do
@@ -14,15 +15,15 @@ local function get_tunnel()
 end
 
 local function check()
-
+    local cache = require("cache")
     local cache_key="sshd_tunnel"
     local currents,pid = get_tunnel()
-    local old = get_cache(cache_key)
+    local old = cache.get_cache(cache_key)
     if old == nil then
         if currents > 0 then
             trigger({Count=tostring(currents),Pid=pid})
         end
-        set_cache(cache_key, currents)
+        cache.set_cache(cache_key, currents)
         return
     end
 
@@ -30,7 +31,7 @@ local function check()
         if currents > 0 then
             trigger({Count=tostring(currents),Pid=pid})
         end
-   		set_cache(cache_key, currents)
+   		cache.set_cache(cache_key, currents)
    	end
 
 end

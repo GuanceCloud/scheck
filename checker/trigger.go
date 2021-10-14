@@ -6,31 +6,16 @@ import (
 	"os"
 	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
-
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
 
-type provider struct {
-}
-
-func (p *provider) Funcs() []funcs.Func {
-	return []funcs.Func{
-		{Name: `trigger`, Fn: p.trigger},
-	}
-}
-
-func (p *provider) Catalog() string {
-	return "trigger"
-}
-
-func (p *provider) trigger(ls *lua.LState) int {
-	cfg := luafuncs.GetScriptGlobalConfig(ls)
+func Trigger(ls *lua.LState) int {
+	cfg := utils.GetScriptGlobalConfig(ls)
 	var manifestFileName string
 	var templateTable *lua.LTable
 	templateVals := map[string]string{}
@@ -124,8 +109,4 @@ func firstTrigger() {
 	message := fmt.Sprintf("scheck started, %d rules ready at %s", luas, formatTime)
 	fields["message"] = message
 	_ = output.SendMetric("0000-scheck-start", tags, fields, tm)
-}
-
-func Init() {
-	funcs.AddFuncProvider(&provider{})
 }

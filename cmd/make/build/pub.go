@@ -37,8 +37,8 @@ type versionDesc struct {
 
 func tarFiles(goos, goarch string) {
 	bin := AppBin
-	if goos == "windows" {
-		bin += ".exe"
+	if goos == global.OSWindows {
+		bin += global.WindowsExt
 	}
 	gz := filepath.Join(PubDir, Release, fmt.Sprintf("%s-%s-%s-%s.tar.gz",
 		AppBin, goos, goarch, git.Version))
@@ -50,6 +50,24 @@ func tarFiles(goos, goarch string) {
 		bin,
 	}
 	l.Debug(args)
+	cmd := exec.Command("tar", args...)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		l.Fatal(err)
+	}
+}
+
+func tarData() {
+	gz := filepath.Join(PubDir, Release, dataTar)
+	args := []string{
+		`czf`,
+		gz,
+		"data/dict.txt",
+	}
 	cmd := exec.Command("tar", args...)
 
 	cmd.Stdout = os.Stdout
@@ -114,7 +132,6 @@ func PubDatakit() {
 		archs = strings.Split(Archs, "|")
 	}
 	ossfiles := installAllArchs(archs)
-
 	uploadToOSS(ossfiles, oc)
 
 	l.Infof("Done!(elapsed: %v)", time.Since(start))
@@ -124,6 +141,7 @@ func PubDatakit() {
 func installAllArchs(archs []string) map[string]string {
 	ossfiles := map[string]string{
 		path.Join(OSSPath, "version"):                                     path.Join(PubDir, Release, "version"),
+		path.Join(OSSPath, dataTar):                                       path.Join(PubDir, Release, dataTar), // 20211008 slq 添加data目录打包
 		path.Join(OSSPath, "install.sh"):                                  "install.sh",
 		path.Join(OSSPath, "install.ps1"):                                 "install.ps1",
 		path.Join(OSSPath, fmt.Sprintf("install-%s.sh", ReleaseVersion)):  "install.sh",

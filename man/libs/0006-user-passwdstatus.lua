@@ -1,16 +1,17 @@
-
+local system = require("system")
+local cache = require("cache")
 local function check()
     local cache_key = "password_status"
-    local old = get_cache(cache_key)
+    local old = cache.get_cache(cache_key)
 
     local count = 0
     local content = ''
 
     if not old then
-        set_cache(cache_key, shadow())
+        cache.set_cache(cache_key, system.shadow())
         return
     end
-    local currents = shadow()
+    local currents = system.shadow()
     for i,v in ipairs(old) do
         local exist=true
         for ii,vv in ipairs(currents) do
@@ -30,7 +31,7 @@ local function check()
     end
     if content ~= '' then
         trigger({Content=content})
-        set_cache(cache_key, currents)
+        cache.set_cache(cache_key, currents)
     end
 
 

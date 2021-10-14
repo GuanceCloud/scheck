@@ -29,21 +29,22 @@ const (
 	LuaExt         = ".lua"
 	PidExt         = ".pid"
 
-	LuaRet1                    = 1
-	LuaRet2                    = 2
-	LuaArgIdx1                 = 1
-	LuaArgIdx2                 = 2
-	LuaArgIdx3                 = 3
-	LuaConfiguration           = "__this_configuration"
-	LuaConfigurationKey        = "ruleFile"
-	LuaStatusWriteFileInterval = time.Minute * 5
-	LuaCronDisable             = "disable"
-	LuaScriptTimeout           = time.Second * 10
-	LuaSortByCount             = "count"
-	LuaSortByName              = "name"
-	LuaSortBytime              = "time"
-	LuaStatusOK                = "ok"
-	LuaStatusERR               = "warning"
+	LuaRet1             = 1
+	LuaRet2             = 2
+	LuaArgIdx1          = 1
+	LuaArgIdx2          = 2
+	LuaArgIdx3          = 3
+	LuaConfiguration    = "__this_configuration"
+	LuaConfigurationKey = "ruleFile"
+	LuaStatusSaveTime   = time.Minute * 5
+	LuaCronDisable      = "disable"
+	LuaScriptTimeout    = time.Second * 10
+	LuaSortByCount      = "count"
+	LuaSortByName       = "name"
+	LuaSortBytime       = "time"
+	LuaStatusOK         = "ok"
+	LuaStatusERR        = "warning"
+	LuaCustomIDStart    = 10000
 
 	FileModeRW       = os.FileMode(0644)
 	FileModeMkdir    = os.FileMode(0666)
@@ -73,9 +74,8 @@ var (
 		OSArchLinux386:    `/usr/local/scheck`,
 		OSArchDarwinAmd64: `/usr/local/scheck`,
 	}
-	LuaStatusFile        = filepath.Join(InstallDir, ".status.json")
-	LuaStatusOutFileMD   = filepath.Join(InstallDir, "%s.lua_status.md")
-	LuaStatusOutFileHTML = filepath.Join(InstallDir, "%s.lua_status.html")
+	LuaStatusFile      = filepath.Join(InstallDir, ".status.json")
+	LuaStatusOutFileMD = filepath.Join(InstallDir, "%s.lua_status.md")
 
 	// DefLogPath is default config
 	DefLogPath      = "/var/log/scheck"
@@ -92,4 +92,6 @@ var (
 
 	LocalLogMaxAge = time.Hour * 24 * 7
 	LocalLogRotate = time.Hour * 24
+
+	OutputDefTimeout = time.Second * 2
 )

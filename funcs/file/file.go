@@ -1,4 +1,4 @@
-package system
+package file
 
 import (
 	"bytes"
@@ -20,7 +20,24 @@ var (
 	l = logger.DefaultSLogger("func")
 )
 
-func (p *provider) ls(l *lua.LState) int {
+var api = map[string]lua.LGFunction{
+	"ls":            Ls,
+	"file_exist":    Exist,
+	"file_info":     Info,
+	"read_file":     ReadFile,
+	"file_hash":     Hash,
+	"grep":          Grep,
+	"sc_path_watch": PathWatch,
+}
+
+func Loader(l *lua.LState) int {
+	t := l.NewTable()
+	mod := l.SetFuncs(t, api)
+	l.Push(mod)
+	return 1
+}
+
+func Ls(l *lua.LState) int {
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -40,7 +57,8 @@ func (p *provider) ls(l *lua.LState) int {
 		rescue = bool(lv.(lua.LBool))
 	}
 
-	var files lua.LTable
+	var files = l.NewTable()
+
 	if !rescue {
 		list, err := ioutil.ReadDir(dir)
 		if err != nil {
@@ -51,7 +69,8 @@ func (p *provider) ls(l *lua.LState) int {
 			if f == nil {
 				continue
 			}
-			file := fileInfo2Table(f)
+			file := l.NewTable()
+			fileInfo2Table(f, file)
 			file.RawSetString("path", lua.LString(filepath.Join(dir, f.Name())))
 			files.Append(file)
 		}
@@ -59,7 +78,8 @@ func (p *provider) ls(l *lua.LState) int {
 		_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err == nil {
 				if info != nil {
-					file := fileInfo2Table(info)
+					file := l.NewTable()
+					fileInfo2Table(info, file)
 					file.RawSetString("path", lua.LString(path))
 					files.Append(file)
 				}
@@ -68,11 +88,11 @@ func (p *provider) ls(l *lua.LState) int {
 		})
 	}
 
-	l.Push(&files)
+	l.Push(files)
 	return 1
 }
 
-func (p *provider) fileExist(l *lua.LState) int {
+func Exist(l *lua.LState) int {
 	lv := l.Get(1)
 	exist := false
 	if lv.Type() == lua.LTString {
@@ -89,7 +109,7 @@ func (p *provider) fileExist(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) fileInfo(l *lua.LState) int {
+func Info(l *lua.LState) int {
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -103,12 +123,13 @@ func (p *provider) fileInfo(l *lua.LState) int {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
-	info := fileInfo2Table(stat)
+	info := l.NewTable()
+	fileInfo2Table(stat, info)
 	l.Push(info)
 	return 1
 }
 
-func (p *provider) readFile(l *lua.LState) int {
+func ReadFile(l *lua.LState) int {
 	content := ""
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
@@ -128,7 +149,7 @@ func (p *provider) readFile(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) fileHash(l *lua.LState) int {
+func Hash(l *lua.LState) int {
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -151,7 +172,7 @@ func (p *provider) fileHash(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) grep(l *lua.LState) int {
+func Grep(l *lua.LState) int {
 	var opts string
 	lv := l.Get(1)
 	if lv != lua.LNil {
@@ -205,7 +226,7 @@ func (p *provider) grep(l *lua.LState) int {
 			return global.LuaRet2
 		}
 		errstr := errbuf.String()
-		if errstr == "" {
+		if errstr == "" && err != nil {
 			errstr = err.Error()
 		}
 
@@ -236,7 +257,7 @@ func dirWatch(path string, scchan lua.LChannel) {
 	}()
 }
 
-func (p *provider) pathWatch(l *lua.LState) int {
+func PathWatch(l *lua.LState) int {
 	var strN = 1
 	var chanN = 2
 	path := l.ToString(strN)

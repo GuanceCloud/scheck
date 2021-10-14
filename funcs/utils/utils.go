@@ -1,27 +1,48 @@
 package utils
 
-import "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
+import (
+	lua "github.com/yuin/gopher-lua"
+)
 
-type provider struct {
+var jsonAPI = map[string]lua.LGFunction{
+	"json_encode": JSONEncode,
+	"json_decode": JSONDecode,
 }
 
-func (p *provider) Funcs() []funcs.Func {
-	return []funcs.Func{
-		{Name: `set_cache`, Fn: p.setCache},
-		{Name: `get_cache`, Fn: p.getCache},
-		{Name: `set_global_cache`, Fn: p.setGlobalCache},
-		{Name: `get_global_cache`, Fn: p.getGlobalCache},
-		{Name: `json_encode`, Fn: p.jsonEncode},
-		{Name: `json_decode`, Fn: p.jsonDecode},
-		{Name: `mysql_weak_psw`, Fn: p.checkMysqlWeakPassword},
-		{Name: `mysql_ports_list`, Fn: p.mysqlPortsList},
-	}
+var cacheAPI = map[string]lua.LGFunction{
+	"set_cache":        SetCache,
+	"get_cache":        GetCache,
+	"del_cache":        DeleteCache,
+	"clean_cache":      CleanCache,
+	"del_cache_all":    DeleteCacheAll,
+	"set_global_cache": SetGlobalCache,
+	"get_global_cache": GetGlobalCache,
+	"mysql_weak_psw":   CheckMysqlWeakPassword,
+	"mysql_ports_list": MysqlPortsList,
 }
 
-func (p *provider) Catalog() string {
-	return "utils"
+var mysqlAPI = map[string]lua.LGFunction{
+	"mysql_weak_psw":   CheckMysqlWeakPassword,
+	"mysql_ports_list": MysqlPortsList,
 }
 
-func Init() {
-	funcs.AddFuncProvider(&provider{})
+func JSONLoader(l *lua.LState) int {
+	t := l.NewTable()
+	mod := l.SetFuncs(t, jsonAPI)
+	l.Push(mod)
+	return 1
+}
+
+func CacheLoader(l *lua.LState) int {
+	t := l.NewTable()
+	mod := l.SetFuncs(t, cacheAPI)
+	l.Push(mod)
+	return 1
+}
+
+func MysqlLoader(l *lua.LState) int {
+	t := l.NewTable()
+	mod := l.SetFuncs(t, mysqlAPI)
+	l.Push(mod)
+	return 1
 }

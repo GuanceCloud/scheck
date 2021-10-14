@@ -14,6 +14,8 @@ import (
 	"text/template"
 	"time"
 
+	lua2 "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
+
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
 	lua "github.com/yuin/gopher-lua"
@@ -26,12 +28,13 @@ import (
 type Rule struct {
 	File     string
 	Name     string
-	byteCode *luafuncs.ByteCode
+	byteCode *lua2.ByteCode
 	cron     string
 	mux      sync.Mutex
 	disabled bool
 	interval int64
 	RunTime  int64
+	useTime  int64
 	manifest *RuleManifest
 }
 
@@ -43,6 +46,7 @@ type RuleManifest struct {
 	Desc       string   `toml:"desc"`
 	Cron       string   `toml:"cron"`
 	OSArch     []string `toml:"os_arch"`
+	TimeOut    int      `toml:"timeout,omitempty"`
 	tags       map[string]string
 	path       string
 	tmpl       *template.Template
@@ -61,7 +65,7 @@ func (r *Rule) load() error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
-	bcode, err := luafuncs.CompilesScript(r.File)
+	bcode, err := lua2.CompilesScript(r.File)
 	if err != nil {
 		return err
 	}
@@ -105,14 +109,20 @@ func (r *Rule) load() error {
 	return nil
 }
 
-func (r *Rule) RunJob(state *luafuncs.ScriptRunTime) {
+func (r *Rule) RunJob(state *lua2.ScriptRunTime) {
 	now := time.Now()
 	// to set filePath
 	var lt lua.LTable
 	lt.RawSetString(global.LuaConfigurationKey, lua.LString(r.Name))
 	state.Ls.SetGlobal(global.LuaConfiguration, &lt)
 
-	cxt, cancel := context.WithTimeout(context.Background(), global.LuaScriptTimeout)
+	var timeout time.Duration
+	if r.manifest.TimeOut != 0 {
+		timeout = time.Duration(r.manifest.TimeOut) * time.Second
+	} else {
+		timeout = global.LuaScriptTimeout
+	}
+	cxt, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	state.Ls.SetContext(cxt)
 
@@ -121,6 +131,12 @@ func (r *Rule) RunJob(state *luafuncs.ScriptRunTime) {
 	errChan := make(chan bool)
 	var err error
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				l.Warnf("pcall err = %v", err)
+				return
+			}
+		}()
 		l.Debugf("rule name: %s is running!!!", r.Name)
 		if err = state.Ls.PCall(0, lua.MultRet, nil); err != nil {
 			errChan <- false
@@ -136,7 +152,10 @@ func (r *Rule) RunJob(state *luafuncs.ScriptRunTime) {
 			l.Errorf("lua.state run  err=%v ", err)
 		}
 	}
-	luafuncs.UpdateStatus(r.Name, time.Since(now), err != nil)
+	use := time.Since(now)
+	r.useTime = int64(use) / 1e6
+
+	luafuncs.UpdateStatus(r.Name, use, err != nil)
 	state.Ls.RemoveContext()
 	pool.putPool(state)
 }
@@ -146,7 +165,7 @@ func (r *Rule) RunOnce(cxt context.Context, c chan string) {
 		l.Warn("the statePool is nil!!!")
 		return
 	}
-	state := luafuncs.NewScriptRunTime()
+	state := lua2.NewScriptRunTime()
 	state.Ls.SetContext(cxt)
 
 	var lt lua.LTable
@@ -220,6 +239,7 @@ func (rm *RuleManifest) parse() (err error) {
 		"desc":     false,
 		"cron":     false,
 		"os_arch":  false,
+		"timeout":  false,
 	}
 	// 屏蔽字段
 	invalidField := map[string]bool{
@@ -236,7 +256,8 @@ func (rm *RuleManifest) parse() (err error) {
 	rm1.setRequireKey(tbl, requireKeys)
 
 	for k, bset := range requireKeys {
-		if !bset {
+		var notRequire = "timeout"
+		if !bset && k != notRequire {
 			return fmt.Errorf("%s must not be empty", k)
 		}
 	}
@@ -253,6 +274,7 @@ func (rm *RuleManifest) parse() (err error) {
 	return nil
 }
 
+// nolint
 func (rm *RuleManifest) setRequireKey(tbl *ast.Table, requireKeys map[string]bool) {
 	for k := range requireKeys {
 		v := tbl.Fields[k]
@@ -281,11 +303,17 @@ func (rm *RuleManifest) setRequireKey(tbl *ast.Table, requireKeys map[string]boo
 			}
 			rm.Cron = str
 		case "os_arch":
-			arr, err := ensureFieldStrings(k, v)
+			var arr []string
+			arr, err = ensureFieldStrings(k, v)
 			if err != nil {
 				l.Warnf("os_arch is err = %v", err)
 			}
 			rm.OSArch = arr
+		case "timeout":
+			timeout, err := strconv.Atoi(str)
+			if err == nil {
+				rm.TimeOut = timeout
+			}
 		}
 		if str != "" {
 			requireKeys[k] = true
@@ -293,6 +321,7 @@ func (rm *RuleManifest) setRequireKey(tbl *ast.Table, requireKeys map[string]boo
 	}
 }
 
+// nolint
 func (rm *RuleManifest) setTag(tbl *ast.Table, requireKeys, invalidField map[string]bool) error {
 	rm.tags = map[string]string{}
 	omithost := false
@@ -330,6 +359,7 @@ func (rm *RuleManifest) setTag(tbl *ast.Table, requireKeys, invalidField map[str
 		str := ""
 		err := ensureFieldString(k, v, &str)
 		if err != nil {
+			l.Warnf("load manifest field err=%v", err)
 			return err
 		}
 
@@ -357,6 +387,14 @@ func ensureFieldString(k string, v interface{}, s *string) error {
 		}
 		if str, ok := kv.Value.(*ast.Array); ok {
 			*s = str.Source()
+			return nil
+		}
+		if t, ok := kv.Value.(*ast.Integer); ok {
+			timeout, err := t.Int()
+			if err != nil {
+				return fmt.Errorf("unknown int64 value type %q, expecting boolean", kv.Value)
+			}
+			*s = strconv.FormatInt(timeout, global.ParseBase)
 			return nil
 		}
 	}
@@ -405,6 +443,7 @@ var cronMaps = map[int]int64{
 	3: 60 * 60 * 24,
 	4: 60 * 60 * 24 * 30,
 }
+
 var cronInterval = []int64{60, 60, 24, 30, 1, 1}
 
 func checkRunTime(cronStr string) int64 {

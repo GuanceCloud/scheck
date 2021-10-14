@@ -46,6 +46,7 @@ var (
 		`local path of scheck and agent install files`)
 )
 
+// nolint
 func main() {
 	flag.Parse()
 	parseLog()
@@ -98,9 +99,25 @@ func main() {
 			l.Errorf("err = %v", err)
 			return
 		}
+		err = global.ChangeFileMode(filepath.Join(global.InstallDir, global.AppBin), global.FileModeMkdirAll)
+		if err != nil {
+			l.Errorf("change file mode err=%v", err)
+			return
+		}
 		// download version
 		vURL := "https://" + path.Join(DataKitBaseURL, "version")
 		if err = install.Download(cli, vURL, filepath.Join(global.InstallDir, "version"), false, true, true); err != nil {
+			l.Errorf("err = %v", err)
+			return
+		}
+		err = global.ChangeFileMode(filepath.Join(global.InstallDir, "version"), global.FileModeRW)
+		if err != nil {
+			l.Errorf("change file mode err=%v", err)
+			return
+		}
+		// download data
+		dataURL := "https://" + path.Join(DataKitBaseURL, "data.tar.gz")
+		if err = install.Download(cli, dataURL, global.InstallDir, true, true, false); err != nil {
 			l.Errorf("err = %v", err)
 			return
 		}

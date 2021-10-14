@@ -14,10 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
 	hostutil "github.com/shirou/gopsutil/host"
-	log "github.com/sirupsen/logrus"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 var (
@@ -45,6 +44,8 @@ var (
 		"uts",
 	}
 )
+
+var log = logger.DefaultSLogger("proc")
 
 type (
 	pidFdPair struct {

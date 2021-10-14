@@ -3,13 +3,13 @@ package checker
 import (
 	"sync"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
 )
 
 type sig struct{}
 
 type statePool struct {
-	states     []*luafuncs.ScriptRunTime
+	states     []*lua.ScriptRunTime
 	poolStatus map[int]bool
 	cap        int
 	initCap    int
@@ -20,7 +20,7 @@ type statePool struct {
 
 func InitStatePool(initCap, totCap int) {
 	p := &statePool{
-		states:     make([]*luafuncs.ScriptRunTime, 0),
+		states:     make([]*lua.ScriptRunTime, 0),
 		poolStatus: make(map[int]bool),
 		cap:        totCap,
 		initCap:    initCap,
@@ -29,7 +29,7 @@ func InitStatePool(initCap, totCap int) {
 		lock:       new(sync.Mutex),
 	}
 	for i := 0; i < p.initCap; i++ {
-		state := luafuncs.NewScriptRunTime()
+		state := lua.NewScriptRunTime()
 		state.ID = i
 		p.states = append(p.states, state)
 		p.poolStatus[i] = false
@@ -40,9 +40,9 @@ func InitStatePool(initCap, totCap int) {
 }
 
 // 从池子中获取一个lua state
-func (p *statePool) getState() *luafuncs.ScriptRunTime {
+func (p *statePool) getState() *lua.ScriptRunTime {
 	p.lock.Lock()
-	var w *luafuncs.ScriptRunTime
+	var w *lua.ScriptRunTime
 	waiting := false
 	workers := p.states
 	n := p.getFreeIndex()
@@ -72,7 +72,7 @@ func (p *statePool) getState() *luafuncs.ScriptRunTime {
 		}
 		p.lock.Unlock()
 	} else if w == nil {
-		w = luafuncs.NewScriptRunTime()
+		w = lua.NewScriptRunTime()
 		w.ID = -1
 	}
 	return w
@@ -88,7 +88,7 @@ func (p *statePool) getFreeIndex() int {
 	return n
 }
 
-func (p *statePool) putPool(srt *luafuncs.ScriptRunTime) {
+func (p *statePool) putPool(srt *lua.ScriptRunTime) {
 	p.lock.Lock()
 	p.running--
 	if srt.ID != -1 {
@@ -97,5 +97,6 @@ func (p *statePool) putPool(srt *luafuncs.ScriptRunTime) {
 	} else {
 		srt.Ls.Close()
 	}
+	l.Debugf("put to pool . and running=%d", p.running)
 	p.lock.Unlock()
 }

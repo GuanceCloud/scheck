@@ -20,7 +20,7 @@ audit='''执行以下命令以验证文件权限是否设置为“644”或更�
 stat -c %a /usr/lib/systemd/system/docker.service
 ```
 '''
-remediation='''
+remediation='''执行下面的命令：
 ```bash
 #> chmod 644 /usr/lib/systemd/system/docker.service
 ```

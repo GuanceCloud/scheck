@@ -1,48 +1,98 @@
+# 介绍
+原来的形式是初始化lua虚拟机时 将所有的函数注册进去，而lua脚本并没有用到这些方法，造成了虚拟机的冗余。
 
-1. [ls](#ls)   
-2. [file_exist](#file_exist)  
-3. [file_info](#file_info)  
-4. [read_file](#read_file)  
-5. [file_hash](#file_hash)  
-6. [hostname](#hostname)  
-7. [uptime](#uptime)  
-8. [time_zone](#time_zone)  
-9. [kernel_info](#kernel_info)  
-10. [kernel_modules](#kernel_modules)  
-11. [ulimit_info](#ulimit_info)  
-12. [mounts](#mounts)  
-13. [interface_addresses](#interface_addresses)  
-14. [iptables](#iptables)  
-15. [processes](#processes)  
-16. [process_open_sockets](#process_open_sockets)  
-17. [process_open_files](#process_open_files)  
-18. [listening_ports](#listening_ports)  
-19. [users](#users)  
-20. [logged_in_users](#logged_in_users)  
-21. [last](#last)  
-22. [lastb](#lastb)  
-23. [shadow](#shadow)  
-24. [shell_history](#shell_history)  
-25. [trigger](#trigger)  
-26. [get_cache](#get_cache)   
-27. [set_cache](#set_cache)  
-28. [json_encode](#json_encode)   
-29. [json_decode](#json_decode)  
-30. [crontab](#crontab)  
-31. [uname](#uname)  
-32. [sysctl](#sysctl)  
-33. [rpm_list](#rpm_list)  
-34. [rpm_query](#rpm_query)  
-35. [grep](#grep)  
-36. [get_global_cache](#get_global_cache)  
-37. [set_global_cache](#set_global_cache)  
-38. [mysql_weak_psw](#mysql_weak_psw)  
-39. [mysql_ports_list](#mysql_ports_list)  
-40. [sc_sleep](#sc_sleep)
-41. [sc_path_watch](#sc_path_watch)
-42. [sc_ticker](#sc_ticker)
+随着函数的增多 这样的冗余的情况会越来越来越严重，所以就做了分包及模块化处理。
 
-## ls
+## 如何使用这些模块
+go的函数按包的形式分成多个module，在lua脚本使用module的时候 需要先导入包（trigger除外）
+
+lua代码：
+``` lua
+    -- 使用file模块
+    local file = require("file")
+    local info = file.file_info("./example.exe")
+    print(info['size'])
+    -- do something ...
+    
+    -- 使用cache模块
+    local cache = require("cache")
+    cache.set_cache({"123","abc"})
+    print(cache.get_cache("123")) -- "abc"
+
+    -- trigger 无需声明引用
+    local current = "123"
+    trigger({Content=current})
+```
+
+## 模块及funcs列表
+ > 注意 不同操作系统下的方法集不同，不可跨系统调用！all_os是所有操作系统共有的方法
+- [file](#file)
+    - [all_os](#file_all_os)
+      - [ls](#ls)
+      - [file_exist](#file_exist)
+      - [file_info](#file_info)
+      - [read_file](#read_file)
+      - [file_hash](#file_hash)
+      - [sc_path_watch](#sc_path_watch)
+      - [grep](#grep)
+- [system](#system)
+    - [all_os](#system_all_os)
+      - [hostname](#hostname)
+      - [uptime](#uptime)
+      - [time_zone](#time_zone)
+      - [mounts](#mounts)
+      - [uname](#uname)
+      - [sc_sleep](#sc_sleep)
+      - [sc_ticker](#sc_ticker)
+    - [linux](#system_linux)
+      - [kernel_info](#kernel_info)
+      - [kernel_modules](#kernel_modules)
+      - [ulimit_info](#ulimit_info)
+      - [processes](#processes)
+      - [process_open_files](#process_open_files)
+      - [users](#users)
+      - [logged_in_users](#logged_in_users)
+      - [last](#last)
+      - [lastb](#lastb)
+      - [shadow](#shadow)
+      - [shell_history](#shell_history)
+      - [crontab](#crontab)
+      - [sysctl](#sysctl)
+      - [rpm_list](#rpm_list)
+      - [rpm_query](#rpm_query)
+    - [windows](#system_windows)
+- [net](#net)
+    - [all_os](#net_all_os)
+      - [interface_addresses](#interface_addresses)
+    - [linux](#net_linux)
+      - [iptables](#iptables)
+      - [process_open_sockets](#process_open_sockets)
+      - [listening_ports](#listening_ports)
+    - [windows](#net_windows)
+- [cache](#cache)
+    - [all_os](#cache_all_os)
+      - [get_cache](#get_cache)
+      - [set_cache](#set_cache)
+      - [del_cache](#del_cache)
+      - [del_cache_all](#del_cache_all)
+      - [get_global_cache](#get_global_cache)
+      - [set_global_cache](#set_global_cache)
+- [json](#json)
+    - [all_os](#json_all_os)
+      - [json_encode](#json_encode)
+      - [json_decode](#json_decode)
+- [mysql](#mysql)
+    - [all_os](#mysql_all_os)
+      - [mysql_weak_psw](#mysql_weak_psw)
+      - [mysql_ports_list](#mysql_ports_list)
+- [其他](#其他)
+      - [trigger](#trigger)
+
+
+## file
+### file_all_os
+
+#### ls
 
 `ls(dir[, rescue])`
 
@@ -82,7 +132,7 @@ it issues an error when fail to read.
 
 ---
 
-## file_exist
+#### file_exist
 
 `file_exist(filepath)`
 
@@ -111,7 +161,7 @@ print(exists)
 
 ---
 
-## file_info
+#### file_info
 
 `file_info(filepath)`
 
@@ -158,7 +208,7 @@ info = file_info(file)
 ---
 
 
-## read_file
+#### read_file
 
 `read_file(filepath)`
 
@@ -190,7 +240,7 @@ content = read_file(file)
 ---
 
 
-## file_hash
+#### file_hash
 
 `file_hash(filepath)`
 
@@ -221,7 +271,74 @@ content = file_hash(file)
 
 ---
 
-## hostname
+#### sc_path_watch
+
+`sc_path_watch(dir,chan)`
+
+watch whether the file or directory has changed.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| dir | `string` | dir or filename | true |
+| chan | `lua.LChannel` | lua channel | true |
+
+
+*Return value(s):*  
+
+No return value and never stop.
+If the dir or file changes, it will be notified through to lua.LChannel.
+
+*the lua.LChannel:* 
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| path | string | file's full path |
+| status | int | file status |
+*file status:*
+
+| status | name | Description |
+| --- | ---- | ---- |
+| 1 | CREATE | create file in dir |
+| 2 | WRITE | write file  |
+| 4 | REMOVE | when file is del |
+| 8 | RENAME | file rename |
+| 16 | CHMOD | chmod is change |
+  
+
+#### grep
+
+`grep(option, pattern, file)`
+
+run grep command
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| option | `string` | option(s) for grep | false |
+| pattern | `string` | pattern for grep | true |
+| file | `string` | file to search by grep | true |
+
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string` | result of grep, empty if not found |
+| `string` | error info if failed |
+
+---
+
+## system
+### system_all_os
+#### hostname
 
 `hostname()`
 
@@ -239,7 +356,7 @@ it issues an error when fail to get.
 
 ---
 
-## uptime
+#### uptime
 
 `uptime()`
 
@@ -254,7 +371,7 @@ time passed since last boot.
 
 ---
 
-## time_zone
+#### time_zone
 
 `time_zone()`
 
@@ -269,8 +386,93 @@ current timezone in the system
 
 ---
 
+#### mounts
 
-## kernel_info
+`mounts()`
+
+System mounted devices and filesystems (not process specific)
+
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item corresponding to a mounted device describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| device | string | Mounted device |
+| path | string | Mounted device path |
+| type | string | Mounted device type |
+| flags | string | Mounted device flags |
+
+---
+
+#### uname
+
+`uname()`
+
+the operating system name and version
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `table` | see below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| platform | string | OS Platform or ID, eg., centos |
+| platform_version | string | OS Platform version, eg., 7.7.1908 |
+| family | string | OS Platform family, eg., rhel |
+| os | string | os name, eg., Linux |
+| arch | string | OS Architecture, eg., x86_64 |
+| kernel_version | string | os kernel version |
+
+---
+
+#### sc_sleep
+
+`sc_sleep(time)`
+
+Thread sleeps for a certain number of seconds
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| time | `int` | second sleep time | true |
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+#### sc_ticker
+
+ `sc_ticker(channel,time)`
+ 
+ Send signals to the lua.LChannel regularly
+ 
+ *Parameters:*  
+ 
+ | Name | Type | Description | Required |
+ | --- | ---- | ---- | ---- |
+ | chan | `lua.LChannel` | lua channel | true |
+ | time | `int` | second time | true |
+ 
+ *Return value(s):*  
+ 
+ No return value
+ sent Lua.LString to lua.LChannel.
+### system_linux
+#### kernel_info
 
 `kernel_info()`
 
@@ -295,7 +497,7 @@ it issues an error when fail to read.
 
 ---
 
-## kernel_modules
+#### kernel_modules
 
 `kernel_modules()`
 
@@ -321,7 +523,7 @@ it issues an error when fail to read.
 
 ---
 
-## ulimit_info
+#### ulimit_info
 
 `ulimit_info()`
 
@@ -344,32 +546,7 @@ it issues an error when fail to read.
 
 ---
 
-## mounts
-
-`mounts()`
-
-System mounted devices and filesystems (not process specific)
-
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item corresponding to a mounted device describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| device | string | Mounted device |
-| path | string | Mounted device path |
-| type | string | Mounted device type |
-| flags | string | Mounted device flags |
-
----
-
-## processes
+#### processes
 
 `processes()`
 
@@ -413,8 +590,273 @@ it issues an error when fail to read.
 | nice | number | Process nice level (-20 to 20, default 0) |
 
 ---
+#### process_open_files
 
-## interface_addresses
+`process_open_files()`
+
+File descriptors for each process.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item corresponding to a processe which have open file, describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| fd | number | Process-specific file descriptor numbe |
+| path | string | Filesystem path of descriptor |
+
+---
+
+#### users
+
+`users()`
+
+Local user accounts (including domain accounts that have logged on locally (Windows))
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| username | string | Username |
+| uid | number | User ID |
+| gid | number | Group ID (unsigned) |
+| directory | string | User's home directory |
+| shell | string | User's configured default shell |
+
+
+---
+
+#### logged_in_users
+
+`logged_in_users()`
+
+Users with an active shell on the system.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| username | string | Username |
+| type | number | Login type, see utmp.h |
+| tty | number | Device name |
+| host | string | Remote hostname |
+| time | string | Time entry was made, unix timestamp in seconds |
+
+
+---
+
+#### last
+
+`last()`
+
+System logins and logouts.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| username | string | Username |
+| type | number | Login type, see utmp.h |
+| tty | number | Device name |
+| host | string | Remote hostname |
+| time | string | Time entry was made, unix timestamp in seconds |
+
+
+---
+
+#### lastb
+
+`lastb()`
+
+Failed logins.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| pid | number | Process (or thread) ID |
+| username | string | Username |
+| type | number | Login type, see utmp.h |
+| tty | number | Device name |
+| host | string | Remote hostname |
+| time | string | Time entry was made, unix timestamp in seconds |
+
+---
+
+#### shadow
+
+`shadow()`
+
+Local system users encrypted passwords and related information. Please note, that you usually need superuser rights to access `/etc/shadow`.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| username | string | Username |
+| password_status | string | Password status |
+| last_change | number | Date of last password change (starting from UNIX epoch date) |
+| expire | number | Number of days since UNIX epoch date until account is disabled |
+
+---
+
+#### shell_history
+
+`shell_history()`
+
+A line-delimited (command) table of per-user .*_history data.
+
+*Return value(s):*  
+
+it issues an error when fail to read.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| uid | number | Shell history owner |
+| history_file | string | Path to the .*_history for this user |
+| command | string | Unparsed date/line/command history line |
+| time | number | Entry timestamp. It could be absent, default value is 0. |
+
+---
+
+#### crontab
+
+`crontab()`
+
+Line parsed values from system and user cron/tab.
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `table`(array) | each item describe as below |
+
+ 
+| Name | Type | Description |
+| --- | ---- | ---- |
+| minute | string | The exact minute for the job |
+| hour | string | The hour of the day for the job |
+| day_of_monthmand | string | The day of the month for the job |
+| month | string | The month of the year for the job |
+| day_of_week | string | The day of the week for the job |
+| command | string | Raw command string |
+| path | string | File parsed |
+
+---
+
+#### sysctl
+
+`sysctl([key])`
+
+the operating system sysctl info
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | specify a key to get back, otherwise return all key-values | false |
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `table` | same as run linux command 'sysctl -a' |
+
+---
+
+#### rpm_list
+
+`rpm_list()`
+
+list all current rpm packages
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `string` | same as run linux command 'rpm -qa' |
+
+---
+
+#### rpm_query
+
+`rpm_query(pkg)`
+
+check a package is installed
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| package | `string` | the package name, eg. yum | false |
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string` | package's fullname, or empty if not found |
+
+---
+
+### system_windows
+
+## net
+### net_all_os
+#### interface_addresses
 
 `interface_addresses()`
 
@@ -440,7 +882,9 @@ it issues an error when fail to read.
 
 ---
 
-## iptables
+### net_linux
+
+#### iptables
 
 `iptables()`
 
@@ -461,7 +905,7 @@ it issues an error when fail to read.
 
 ---
 
-## process_open_sockets
+#### process_open_sockets
 
 `process_open_sockets()`
 
@@ -495,30 +939,7 @@ it issues an error when fail to read.
 
 ---
 
-## process_open_files
-
-`process_open_files()`
-
-File descriptors for each process.
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item corresponding to a processe which have open file, describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| pid | number | Process (or thread) ID |
-| fd | number | Process-specific file descriptor numbe |
-| path | string | Filesystem path of descriptor |
-
----
-
-## listening_ports
+#### listening_ports
 
 `listening_ports()`
 
@@ -548,181 +969,11 @@ it issues an error when fail to read.
 | path | string | For UNIX sockets (family=AF_UNIX), the domain path |
 
 ---
+### net_windows
 
-## users
-
-`users()`
-
-Local user accounts (including domain accounts that have logged on locally (Windows))
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| username | string | Username |
-| uid | number | User ID |
-| gid | number | Group ID (unsigned) |
-| directory | string | User's home directory |
-| shell | string | User's configured default shell |
-
-
----
-
-## logged_in_users
-
-`logged_in_users()`
-
-Users with an active shell on the system.
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| pid | number | Process (or thread) ID |
-| username | string | Username |
-| type | number | Login type, see utmp.h |
-| tty | number | Device name |
-| host | string | Remote hostname |
-| time | string | Time entry was made, unix timestamp in seconds |
-
-
----
-
-## last
-
-`last()`
-
-System logins and logouts.
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| pid | number | Process (or thread) ID |
-| username | string | Username |
-| type | number | Login type, see utmp.h |
-| tty | number | Device name |
-| host | string | Remote hostname |
-| time | string | Time entry was made, unix timestamp in seconds |
-
-
----
-
-## lastb
-
-`lastb()`
-
-Failed logins.
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| pid | number | Process (or thread) ID |
-| username | string | Username |
-| type | number | Login type, see utmp.h |
-| tty | number | Device name |
-| host | string | Remote hostname |
-| time | string | Time entry was made, unix timestamp in seconds |
-
----
-
-## shadow
-
-`shadow()`
-
-Local system users encrypted passwords and related information. Please note, that you usually need superuser rights to access `/etc/shadow`.
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| username | string | Username |
-| password_status | string | Password status |
-| last_change | number | Date of last password change (starting from UNIX epoch date) |
-| expire | number | Number of days since UNIX epoch date until account is disabled |
-
----
-
-## shell_history
-
-`shell_history()`
-
-A line-delimited (command) table of per-user .*_history data.
-
-*Return value(s):*  
-
-it issues an error when fail to read.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| uid | number | Shell history owner |
-| history_file | string | Path to the .*_history for this user |
-| command | string | Unparsed date/line/command history line |
-| time | number | Entry timestamp. It could be absent, default value is 0. |
-
----
-
-## trigger
-
-`trigger([template_vals])`
-
-trigger an event and send it to target with line protocol.
-
-*Parameters:*  
-
-| Name | Type | Description | Required |
-| --- | ---- | ---- | ---- |
-| template_vals | `table` | if you use template in manifest, the values of this table will replace the template variables | false |
-
-
-*Return value(s):*  
-
-it issues an error when failed.
-
----
-
-## get_cache
+## cache
+### cache_all_os
+#### get_cache
 
 `get_cache(key)`
 
@@ -743,7 +994,7 @@ get value for cache key.
 
 ---
 
-## set_cache
+#### set_cache
 
 `set_cache(key, value)`
 
@@ -766,7 +1017,92 @@ set a cache key-value pair.
 
 ---
 
-## json_encode
+#### clean_cache
+
+`clean_cache()`
+
+clean this rule cache .
+
+*Parameters:*  
+
+*Return value(s):*  
+
+---
+
+#### del_cache
+
+`del_cache(key)`
+
+delete cache by key.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+
+*Return value(s):*  
+no return
+
+---
+#### del_cache_all
+
+`del_cache()`
+
+delete all cache.
+
+*Parameters:*  
+
+*Return value(s):*  
+
+---
+
+#### get_global_cache
+
+`get_global_cache(key)`
+
+get value for global cache key.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+
+
+*Return value(s):*  
+
+| Type | Description |
+| --- | ---- |
+| `string`/`boolean`/`number` | cache value |
+
+---
+
+#### set_global_cache
+
+`set_global_cache(key, value)`
+
+set a key-value to global cache.
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| key | `string` | name of cache key | true |
+| value | `string`/`boolean`/`number` |  cache value by key | true |
+
+
+*Return value(s):*  
+
+
+| Type | Description |
+| --- | ---- |
+| `string` | error detail if failed |
+
+## json
+### json_all_os
+
+#### json_encode
 
 `json_encode(object)`
 
@@ -789,8 +1125,7 @@ it issues an error if fail to encode
 
 ---
 
-
-## json_decode
+#### json_decode
 
 `json_decode(str)`
 
@@ -813,142 +1148,11 @@ it issues an error if fail to encode
 
 ---
 
-## crontab
+## mysql
 
-`crontab()`
+### mysql_all_os
 
-Line parsed values from system and user cron/tab.
-
-*Return value(s):*  
-
-it issues an error when failed.
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| minute | string | The exact minute for the job |
-| hour | string | The hour of the day for the job |
-| day_of_monthmand | string | The day of the month for the job |
-| month | string | The month of the year for the job |
-| day_of_week | string | The day of the week for the job |
-| command | string | Raw command string |
-| path | string | File parsed |
-
----
-
-## uname
-
-`uname()`
-
-the operating system name and version
-
-*Return value(s):*  
-
-it issues an error when failed.
-
-| Type | Description |
-| --- | ---- |
-| `table` | see below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| platform | string | OS Platform or ID, eg., centos |
-| platform_version | string | OS Platform version, eg., 7.7.1908 |
-| family | string | OS Platform family, eg., rhel |
-| os | string | os name, eg., Linux |
-| arch | string | OS Architecture, eg., x86_64 |
-| kernel_version | string | os kernel version |
-
----
-
-## sysctl
-
-`sysctl([key])`
-
-the operating system sysctl info
-
-*Parameters:*  
-
-| Name | Type | Description | Required |
-| --- | ---- | ---- | ---- |
-| key | `string` | specify a key to get back, otherwise return all key-values | false |
-
-*Return value(s):*  
-
-it issues an error when failed.
-
-| Type | Description |
-| --- | ---- |
-| `table` | same as run linux command 'sysctl -a' |
-
----
-
-## rpm_list
-
-`rpm_list()`
-
-list all current rpm packages
-
-*Return value(s):*  
-
-it issues an error when failed.
-
-| Type | Description |
-| --- | ---- |
-| `string` | same as run linux command 'rpm -qa' |
-
----
-
-## rpm_query
-
-`rpm_query(pkg)`
-
-check a package is installed
-
-*Parameters:*  
-
-| Name | Type | Description | Required |
-| --- | ---- | ---- | ---- |
-| package | `string` | the package name, eg. yum | false |
-
-*Return value(s):*  
-
-| Type | Description |
-| --- | ---- |
-| `string` | package's fullname, or empty if not found |
-
----
-
-## grep
-
-`grep(option, pattern, file)`
-
-run grep command
-
-*Parameters:*  
-
-| Name | Type | Description | Required |
-| --- | ---- | ---- | ---- |
-| option | `string` | option(s) for grep | false |
-| pattern | `string` | pattern for grep | true |
-| file | `string` | file to search by grep | true |
-
-
-*Return value(s):*  
-
-| Type | Description |
-| --- | ---- |
-| `string` | result of grep, empty if not found |
-| `string` | error info if failed |
-
----
-
-## mysql_weak_psw
+#### mysql_weak_psw
 
 `mysql_weak_psw(host, port [,username])`
 
@@ -975,50 +1179,8 @@ it issues an error when failed.
 
 ---
 
-## get_global_cache
+#### mysql_ports_list
 
-`get_global_cache(key)`
-
-get value for global cache key.
-
-*Parameters:*  
-
-| Name | Type | Description | Required |
-| --- | ---- | ---- | ---- |
-| key | `string` | name of cache key | true |
-
-
-*Return value(s):*  
-
-| Type | Description |
-| --- | ---- |
-| `string`/`boolean`/`number` | cache value |
-
----
-
-## set_global_cache
-
-`set_global_cache(key, value)`
-
-set a key-value to global cache.
-
-*Parameters:*  
-
-| Name | Type | Description | Required |
-| --- | ---- | ---- | ---- |
-| key | `string` | name of cache key | true |
-| value | `string`/`boolean`/`number` |  cache value by key | true |
-
-
-*Return value(s):*  
-
-
-| Type | Description |
-| --- | ---- |
-| `string` | error detail if failed |
-
-
-## mysql_ports_list
 
 `mysql_ports_list()`
 
@@ -1056,80 +1218,22 @@ cmdline	/usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3307 -conta
 pid	7062
 ``` 
 
-## sc_sleep
+## 其他
+#### trigger
 
-`sc_sleep(time)`
+`trigger([template_vals])`
 
-Thread sleeps for a certain number of seconds
+trigger an event and send it to target with line protocol.
 
 *Parameters:*  
 
 | Name | Type | Description | Required |
 | --- | ---- | ---- | ---- |
-| time | `int` | second sleep time | true |
+| template_vals | `table` | if you use template in manifest, the values of this table will replace the template variables | false |
 
 
 *Return value(s):*  
 
 it issues an error when failed.
 
-
-## sc_path_watch
-
-`sc_path_watch(dir,chan)`
-
-watch whether the file or directory has changed.
-
-*Parameters:*  
-
-| Name | Type | Description | Required |
-| --- | ---- | ---- | ---- |
-| dir | `string` | dir or filename | true |
-| chan | `lua.LChannel` | lua channel | true |
-
-
-*Return value(s):*  
-
-No return value and never stop.
-If the dir or file changes, it will be notified through to lua.LChannel.
-
-*the lua.LChannel:* 
-
-| Type | Description |
-| --- | ---- |
-| `table`(array) | each item describe as below |
-
- 
-| Name | Type | Description |
-| --- | ---- | ---- |
-| path | string | file's full path |
-| status | int | file status |
-*file status:*
-
-| status | name | Description |
-| --- | ---- | ---- |
-| 1 | CREATE | create file in dir |
-| 2 | WRITE | write file  |
-| 4 | REMOVE | when file is del |
-| 8 | RENAME | file rename |
-| 16 | CHMOD | chmod is change |
-  
-
-## sc_ticker
-
- `sc_ticker(channel,time)`
- 
- Send signals to the lua.LChannel regularly
- 
- *Parameters:*  
- 
- | Name | Type | Description | Required |
- | --- | ---- | ---- | ---- |
- | chan | `lua.LChannel` | lua channel | true |
- | time | `int` | second time | true |
- 
- *Return value(s):*  
- 
- No return value
- sent Lua.LString to lua.LChannel.
- 
+---

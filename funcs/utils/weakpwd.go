@@ -10,7 +10,6 @@ import (
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
@@ -77,9 +76,9 @@ func (c *MySQLChecker) hit(info *MySQLServiceInfo) (bool, error) {
 	return true, nil
 }
 
-func (p *provider) checkMysqlWeakPassword(l *lua.LState) int {
+func CheckMysqlWeakPassword(l *lua.LState) int {
 	var mysqlChecker MySQLChecker
-	mysqlChecker.dictPath = filepath.Join(config.Cfg.System.RuleDir, `passwd_dict`, `dict.txt`)
+	mysqlChecker.dictPath = filepath.Join(global.InstallDir, `data`, `dict.txt`)
 
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
