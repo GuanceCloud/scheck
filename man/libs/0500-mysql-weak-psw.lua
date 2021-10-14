@@ -1,8 +1,10 @@
 local test = require("test")
-
+local system = require("system")
+local cache = require("cache")
+local mysql = require("mysql")
 local function mysql_weak_psw_port(port)
   --for k,v in ipairs(ports) do
-     local res, ress = mysql_weak_psw('localhost', tostring(port))
+     local res, ress = mysql.mysql_weak_psw('localhost', tostring(port))
      if res then
       return ress
      end
@@ -11,7 +13,7 @@ local function mysql_weak_psw_port(port)
 end
 
 local function is_mysqld()
-    local processes = processes()
+    local processes = system.processes()
     for i,v in ipairs(processes) do
         local res = string.find(v['cmdline'], "mysqld")
         if  res ~= nil  then
@@ -28,14 +30,14 @@ local function check()
     --if not is_mysqld() then
     --    return
     --end
-    local is_install_mysql = get_global_cache('install_mysql')
+    local is_install_mysql = cache.get_global_cache('install_mysql')
     if is_install_mysql == nil or not is_install_mysql then
         return
     end
 
     local cache_key="mysql"
-    local old = get_cache(cache_key)
-    local mysqls = mysql_ports_list()
+    local old = cache.get_cache(cache_key)
+    local mysqls = mysql.mysql_ports_list()
     for ii,vv in ipairs(mysqls) do
         local port = ''
         local user = ''

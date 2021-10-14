@@ -87,6 +87,8 @@ Usage of scheck:
     	show all supported lua-extend functions
   -test string
     	the name of a rule, without file extension
+  -testc int
+    	test rule count
   -version
     	show version
   -doc 

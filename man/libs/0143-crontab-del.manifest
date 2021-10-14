@@ -1,0 +1,30 @@
+id="0143-crontab-del"
+category="system"
+level="warn"
+title="crontab定时任务被删除"
+desc="主机被删除 {{ .Num }} 条crontab定时任务"
+cron="disable"
+# 开关
+disabled=false
+
+
+
+os_arch=["Linux"]
+description=["crontab定时任务被删除"]
+rationale=["主机是否删除crontab定时任务，如果主机删除未知crontab定时任务，会造成主机的信息安全泄露，所以需要在审计范围内"]
+riskitems=["黑客渗透", "数据泄露", "网络安全", "挖矿风险", "肉机风险"]
+audit='''验证主机是否删除crontab定时任务。可以执行以下命令验证：
+
+```bash
+cat /etc/passwd | cut -f 1 -d : |xargs -I {} crontab -l -u {}
+```
+'''
+remediation='''如果主机删除crontab定时任务，请勿必仔细查看用户crontab定时任务，如果存在可疑crontab定时任务，请删除。
+```bash
+crontab -e
+```
+'''
+impact=["无"]
+defaultvalue=["无"]
+references=["无"]
+CIS=["无"]

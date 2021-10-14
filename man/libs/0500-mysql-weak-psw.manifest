@@ -6,7 +6,8 @@ desc="mysql 存在弱密码，用户名为 {{ .User }}，端口号 {{ .Port }}, 
 cron="1 1 1 * *"
 # 开关
 disabled=false
-
+# 设置超时控制 60s
+timeout=60
 
 
 os_arch=["Linux"]

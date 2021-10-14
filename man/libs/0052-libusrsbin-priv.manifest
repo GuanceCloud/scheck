@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="/usr/sbin目录下有文件权限被修改"
 desc="{{.Content}} 权限发生变化"
-cron="1 */5 * * *"
+cron="disable"
 # 开关
 disabled=false
 

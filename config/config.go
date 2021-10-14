@@ -231,7 +231,7 @@ func (c *Config) Init() {
 	// to init logging
 	c.setLogging()
 	//  CustomRuleDir file & rule.d file
-	initDir()
+	c.initDir()
 }
 
 // init log
@@ -262,15 +262,15 @@ func (c *Config) setLogging() {
 }
 
 // 初始化配置中的rule文件和用户自定义rules文件
-func initDir() {
-	_, err := os.Stat(Cfg.System.CustomRuleDir)
+func (c *Config) initDir() {
+	_, err := os.Stat(c.System.CustomRuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.CustomRuleDir, global.FileModeMkdir)
+		_ = os.MkdirAll(c.System.CustomRuleDir, global.FileModeMkdir)
 	}
 
-	_, err = os.Stat(Cfg.System.RuleDir)
+	_, err = os.Stat(c.System.RuleDir)
 	if err != nil {
-		_ = os.MkdirAll(Cfg.System.RuleDir, global.FileModeMkdir)
+		_ = os.MkdirAll(c.System.RuleDir, global.FileModeMkdir)
 	}
 }
 

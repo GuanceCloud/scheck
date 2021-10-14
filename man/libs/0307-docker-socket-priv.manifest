@@ -20,7 +20,7 @@ stat -c %a /usr/lib/systemd/system/docker.socket
 ```
 上述命令不应返回任何内容。
 '''
-remediation='''
+remediation='''执行下面的命令：
 ```bash
 #> chmod 644 /usr/lib/systemd/system/docker.socket
 ```

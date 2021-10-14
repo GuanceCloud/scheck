@@ -1,6 +1,7 @@
-
+local system = require("system")
+local cache = require("cache")
 local function  is_use_lxc()
-    local processes = processes()
+    local processes = system.processes()
     for i,v in ipairs(processes) do
         local res1 = string.find(v['cmdline'], "docker")
         local res2 = string.find(v['cmdline'], "lxc")
@@ -12,22 +13,20 @@ local function  is_use_lxc()
 end
 
 local function check()
-    local is_install_docker = get_global_cache('install_docker')
+    local is_install_docker = cache.get_global_cache('install_docker')
     if is_install_docker == nil or not is_install_docker then
         return
     end
 
     local cache_key = "lxc"
-    --local value = kernel_info()['version']
-    --local current = is_use_lxc()
-    local old = get_cache(cache_key)
+    local old = cache.get_cache(cache_key)
 
     if old == nil then
         local current = is_use_lxc()
         if current then
             trigger()
         end
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
         return
     end
 
@@ -36,7 +35,7 @@ local function check()
         if current then
             trigger()
         end
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
     end
 end
 check()

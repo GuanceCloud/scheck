@@ -2,7 +2,6 @@ package checker
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,11 +10,9 @@ import (
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/cgroup"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	lua2 "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/output"
 )
@@ -69,12 +66,30 @@ func GetManifestByName(fileName string) (*RuleManifest, error) {
 	if Chk != nil && Chk.taskScheduler != nil {
 		rule := Chk.taskScheduler.GetRuleByName(fileName)
 		if rule != nil && rule.manifest != nil {
-			l.Debugf("find by name from scheduler...")
+			l.Debugf("find by name=%s from scheduler...", fileName)
 			return rule.manifest, nil
 		}
 	}
 	// test测试时 传递的是绝对路径
 	return GetManifest(fileName)
+}
+
+func GetAllManifest() map[string]*RuleManifest {
+	if Chk == nil || Chk.taskScheduler == nil {
+		return nil
+	}
+	ms := make(map[string]*RuleManifest)
+	for k, rule := range Chk.taskScheduler.tasks {
+		if rule != nil && rule.manifest != nil {
+			ms[k] = rule.manifest
+		}
+	}
+	for k, rule := range Chk.taskScheduler.onceTasks {
+		if rule != nil && rule.manifest != nil {
+			ms[k] = rule.manifest
+		}
+	}
+	return ms
 }
 
 func GetManifest(filename string) (*RuleManifest, error) {
@@ -123,20 +138,11 @@ func (c *Checker) start(ctx context.Context) {
 }
 
 func InitLuaGlobalFunc() {
-	Init()
-	system.Init()
-	utils.Init()
+	lua2.HandleFunc("trigger", Trigger)
 }
 
 func ShowFuncs() {
+	lua2.InitModules()
 	InitLuaGlobalFunc()
-	names := []string{}
-	for _, p := range funcs.FuncProviders {
-		for _, f := range p.Funcs() {
-			names = append(names, f.Name)
-		}
-	}
-	s := strings.Join(names, "\n")
-	s += "\n"
-	fmt.Println(s)
+	lua2.ShowModule()
 }

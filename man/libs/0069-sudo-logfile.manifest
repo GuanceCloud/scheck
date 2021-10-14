@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="sudo日志未配置或被删除"
 desc="sudo.log 未配置或被删除"
-cron="0 */30 * * *"
+cron="disable"
 # 开关
 disabled=false
 

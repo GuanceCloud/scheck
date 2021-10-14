@@ -6,9 +6,6 @@ import (
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
-
-	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -34,6 +31,12 @@ type (
 		mux     sync.Mutex
 	}
 )
+
+// ScriptGlobalCfg:lua运行时回调go函数时，go无法得知是哪个脚本，
+// 所以在每个脚本运行之前都放到global中一个键值对(key:文件名)
+type ScriptGlobalCfg struct {
+	RulePath string
+}
 
 var cacheDB = cachePool{
 	scripts: map[string]*scriptCache{},
@@ -102,7 +105,6 @@ func (c *scriptCache) setKey(key string, val *cacheValue) error {
 	defer c.mux.Unlock()
 	if c.cur+val.len > MaxCacheSizePerScript {
 		err := fmt.Errorf("cache size limit exceeded")
-		log.Errorf("%s", err)
 		return err
 	}
 	c.kvSorage[key] = val
@@ -124,7 +126,15 @@ func (c *scriptCache) clean() {
 	c.cur = 0
 }
 
-func (p *provider) setGlobalCache(l *lua.LState) int {
+func (c *scriptCache) cleanKey(key string) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	clen := c.kvSorage[key].len
+	delete(c.kvSorage, key)
+	c.cur -= clen
+}
+
+func SetGlobalCache(l *lua.LState) int {
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -155,7 +165,7 @@ func (p *provider) setGlobalCache(l *lua.LState) int {
 	return 0
 }
 
-func (p *provider) getGlobalCache(l *lua.LState) int {
+func GetGlobalCache(l *lua.LState) int {
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -172,24 +182,21 @@ func (p *provider) getGlobalCache(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) setCache(l *lua.LState) int {
-	globalCfg := luafuncs.GetScriptGlobalConfig(l)
+func SetCache(l *lua.LState) int {
+	globalCfg := GetScriptGlobalConfig(l)
 	if globalCfg == nil || globalCfg.RulePath == "" {
 		return 0
 	}
-
 	sc := cacheDB.getScriptCache(globalCfg.RulePath)
 	if sc == nil {
 		return 0
 	}
-
 	lv := l.Get(global.LuaArgIdx1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
 		return 0
 	}
 	key := string(lv.(lua.LString))
-
 	lv = l.Get(global.LuaArgIdx2)
 	if lv == lua.LNil {
 		_ = sc.setKey(key, nil)
@@ -200,7 +207,6 @@ func (p *provider) setCache(l *lua.LState) int {
 	case lua.LTNumber:
 	case lua.LTString:
 	case lua.LTTable:
-
 	default:
 		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number'", lv.Type().String())
 		return 0
@@ -208,17 +214,52 @@ func (p *provider) setCache(l *lua.LState) int {
 
 	val := &cacheValue{}
 	val.fromLuaVal(lv)
-
 	_ = sc.setKey(key, val)
 	return 0
 }
 
-func (p *provider) getCache(l *lua.LState) int {
-	globalCfg := luafuncs.GetScriptGlobalConfig(l)
+func GetCache(l *lua.LState) int {
+	globalCfg := GetScriptGlobalConfig(l)
 	if globalCfg == nil || globalCfg.RulePath == "" {
 		return 0
 	}
+	sc := cacheDB.getScriptCache(globalCfg.RulePath)
+	if sc == nil {
+		return 0
+	}
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return 0
+	}
+	key := string(lv.(lua.LString))
+	val := sc.getKey(key)
+	if val == nil {
+		l.Push(lua.LNil)
+	} else {
+		l.Push(val.toLuaVal())
+	}
+	return 1
+}
 
+func CleanCache(l *lua.LState) int {
+	globalCfg := GetScriptGlobalConfig(l)
+	if globalCfg == nil || globalCfg.RulePath == "" {
+		return 0
+	}
+	sc := cacheDB.getScriptCache(globalCfg.RulePath)
+	if sc == nil {
+		return 0
+	}
+	sc.clean()
+	return 0
+}
+
+func DeleteCache(l *lua.LState) int {
+	globalCfg := GetScriptGlobalConfig(l)
+	if globalCfg == nil || globalCfg.RulePath == "" {
+		return 0
+	}
 	sc := cacheDB.getScriptCache(globalCfg.RulePath)
 	if sc == nil {
 		return 0
@@ -230,12 +271,34 @@ func (p *provider) getCache(l *lua.LState) int {
 		return 0
 	}
 	key := string(lv.(lua.LString))
+	sc.cleanKey(key)
+	return 0
+}
 
-	val := sc.getKey(key)
-	if val == nil {
-		l.Push(lua.LNil)
-	} else {
-		l.Push(val.toLuaVal())
+func DeleteCacheAll(l *lua.LState) int {
+	// delete all rules cache
+	cacheDB.mux.Lock()
+	cacheDB.scripts = make(map[string]*scriptCache)
+	cacheDB.mux.Unlock()
+	return 0
+}
+
+func SetScriptGlobalConfig(l *lua.LState, cfg *ScriptGlobalCfg) {
+	var t lua.LTable
+	t.RawSetString(global.LuaConfigurationKey, lua.LString(cfg.RulePath))
+	l.SetGlobal(global.LuaConfiguration, &t)
+}
+
+func GetScriptGlobalConfig(l *lua.LState) *ScriptGlobalCfg {
+	lv := l.GetGlobal(global.LuaConfiguration)
+	if lv.Type() == lua.LTTable {
+		t := lv.(*lua.LTable)
+		var cfg ScriptGlobalCfg
+		v := t.RawGetString(global.LuaConfigurationKey)
+		if v.Type() == lua.LTString {
+			cfg.RulePath = string(v.(lua.LString))
+		}
+		return &cfg
 	}
-	return 1
+	return nil
 }

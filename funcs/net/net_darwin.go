@@ -1,18 +1,25 @@
-package system
+package net
 
 import (
 	"io/ioutil"
-	"net"
-	"net/http"
 	"strings"
 	"syscall"
 
-	netutil "github.com/shirou/gopsutil/net"
 	lua "github.com/yuin/gopher-lua"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/impl"
 )
 
-func (p *provider) ipTables(l *lua.LState) int {
+func loadOtherOS() map[string]lua.LGFunction {
+	return darwinAPI
+}
+
+var darwinAPI = map[string]lua.LGFunction{
+	"iptables":             IPTables,
+	"process_open_sockets": ProcessOpenSockets,
+	"listening_ports":      ListeningPorts,
+}
+
+func IPTables(l *lua.LState) int {
 	data, err := ioutil.ReadFile(`/proc/net/ip_tables_names`)
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -32,7 +39,7 @@ func (p *provider) ipTables(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) processOpenSockets(l *lua.LState) int {
+func ProcessOpenSockets(l *lua.LState) int {
 	var socketList []*impl.SocketInfo
 	var err error
 
@@ -89,7 +96,7 @@ func (p *provider) processOpenSockets(l *lua.LState) int {
 	return 1
 }
 
-func (p *provider) listeningPorts(l *lua.LState) int {
+func ListeningPorts(l *lua.LState) int {
 	var pids []int
 	lv := l.Get(1)
 	if lv != lua.LNil {
@@ -150,68 +157,5 @@ func (p *provider) listeningPorts(l *lua.LState) int {
 	}
 
 	l.Push(&result)
-	return 1
-}
-
-func (p *provider) interfaceAddresses(l *lua.LState) int {
-	ifs, err := netutil.Interfaces()
-	if err != nil {
-		l.RaiseError("%s", err)
-		return lua.MultRet
-	}
-	var result lua.LTable
-	for _, it := range ifs {
-		ip4 := ""
-		ip6 := ""
-		loopback := false
-		for _, ad := range it.Addrs {
-			ip, _, _ := net.ParseCIDR(ad.Addr)
-			if ip.IsLoopback() {
-				loopback = true
-				continue
-			}
-			if ip.To4() != nil {
-				ip4 = ad.Addr
-			} else if ip.To16() != nil {
-				ip6 = ad.Addr
-			}
-		}
-
-		if loopback {
-			continue
-		}
-
-		var eth lua.LTable
-		eth.RawSetString("interface", lua.LString(it.Name))
-		eth.RawSetString("ip4", lua.LString(ip4))
-		eth.RawSetString("ip6", lua.LString(ip6))
-		eth.RawSetString("mtu", lua.LNumber(it.MTU))
-		eth.RawSetString("mac", lua.LString(it.HardwareAddr))
-		result.Append(&eth)
-	}
-
-	l.Push(&result)
-	return 1
-}
-
-func (p *provider) httpGet(l *lua.LState) int {
-	lv := l.Get(1)
-	if lv.Type() != lua.LTString {
-		l.TypeError(1, lua.LTString)
-		return lua.MultRet
-	}
-	url := lv.(lua.LString)
-	body, err := http.Get(url.String())
-	if err != nil {
-		l.RaiseError("%s", err)
-		return lua.MultRet
-	}
-	defer body.Body.Close()
-	data, err := ioutil.ReadAll(body.Body)
-	if err != nil {
-		l.RaiseError("%s", err)
-		return lua.MultRet
-	}
-	l.Push(lua.LString(string(data)))
 	return 1
 }

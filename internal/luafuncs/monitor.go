@@ -14,9 +14,6 @@ import (
 	"golang.org/x/term"
 
 	"github.com/dustin/go-humanize"
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
@@ -29,6 +26,7 @@ lua 脚本在运行时候
 		- 单次运行时间 平均时间 最长时间 运行次数 上一次运行时间
 		- tigger 次数
 		- 错误次数
+		- 规则类型 + 类型判断
 运行时统计 定时写入本地文件，可通过 scheck -luastatus 命令 ，使用md模版生成文档或直接打印出来。
 */
 
@@ -50,7 +48,7 @@ const (
 
 	format = "|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|"
 
-	end = "\n > lua scripts运行情况放在文件: %s文件格式为html 可用过编译器或者浏览器等打开"
+	// end = "\n > lua scripts运行情况放在文件: %s文件格式为html 可用过编译器或者浏览器等打开"
 )
 
 var (
@@ -103,7 +101,7 @@ func newMonitor() *Monitor {
 func Start() {
 	l = logger.SLogger("internal.lua")
 	monitor = newMonitor()
-	go monitor.timeToSave(global.LuaStatusWriteFileInterval)
+	go monitor.timeToSave(global.LuaStatusSaveTime)
 }
 
 func newScriptStatus(name, category string, interval int64) *Script {
@@ -121,43 +119,49 @@ func newScriptStatus(name, category string, interval int64) *Script {
 func (m *Monitor) timeToSave(tickTime time.Duration) {
 	ticker := time.NewTicker(tickTime)
 	for range ticker.C {
-		bts, err := ioutil.ReadFile(m.jsonFile)
-		if err != nil {
-			l.Errorf("err=%v", err)
-			continue
-		}
-		if len(bts) == 0 {
-			bts, err = m.MonitorMarshal()
-			if err != nil {
-				l.Errorf("marshal err =%v", err)
-				continue
-			}
-			err = ioutil.WriteFile(m.jsonFile, bts, global.FileModeRW)
-			if err != nil {
-				l.Errorf("write err =%v", err)
-			}
-			continue
-		}
+		m.saveData()
+	}
+}
 
-		l.Debug("merge script...")
-		oldMonitor := new(Monitor)
-		err = json.Unmarshal(bts, oldMonitor)
+func (m *Monitor) saveData() {
+	bts, err := ioutil.ReadFile(m.jsonFile)
+	if err != nil {
+		l.Errorf("err=%v", err)
+		return
+	}
+	if len(bts) == 0 {
+		// 第一次写入文件，合并数据之后直接序列化后返回。
+		m.mergeRuntime()
+		bts, err = m.MonitorMarshal()
 		if err != nil {
 			l.Errorf("marshal err =%v", err)
-			continue
+			return
 		}
-		m.lock.Lock()
-		m.mergeOld(oldMonitor.Scripts)
-		m.lock.Unlock()
-
-		newBts, err := m.MonitorMarshal()
+		err = ioutil.WriteFile(m.jsonFile, bts, global.FileModeRW)
 		if err != nil {
-			l.Errorf("err=%v", err)
-			continue
+			l.Errorf("write err =%v", err)
 		}
-		if err = ioutil.WriteFile(m.jsonFile, newBts, global.FileModeRW); err != nil {
-			l.Errorf("err=%v", err)
-		}
+		return
+	}
+
+	l.Debug("merge script...")
+	oldMonitor := new(Monitor)
+	err = json.Unmarshal(bts, oldMonitor)
+	if err != nil {
+		l.Errorf("marshal err =%v", err)
+		return
+	}
+	m.lock.Lock()
+	m.mergeOld(oldMonitor.Scripts)
+	m.lock.Unlock()
+
+	newBts, err := m.MonitorMarshal()
+	if err != nil {
+		l.Errorf("err=%v", err)
+		return
+	}
+	if err = ioutil.WriteFile(m.jsonFile, newBts, global.FileModeRW); err != nil {
+		l.Errorf("err=%v", err)
 	}
 }
 
@@ -166,8 +170,11 @@ func (m *Monitor) mergeRuntime() {
 		tot := int64(0)
 		max := int64(0)
 		min := int64(0)
-		for i, rt := range nsc.runTimes {
-			if i == 0 && min == 0 {
+		for _, rt := range nsc.runTimes {
+			if rt == 0 {
+				continue
+			}
+			if min == 0 {
 				min = rt
 			}
 			if rt < min {
@@ -211,12 +218,17 @@ func (m *Monitor) mergeOld(oldScripts map[string]*Script) {
 			// 从文件中读取后 没有该脚本的运行数据，就以新的数据为准，在这里直接返回等待下一次
 			continue
 		}
-		if oldScripts[name].RuntimeMax > max {
-			max = oldScripts[name].RuntimeMax
+		if osc.RuntimeMax > max {
+			max = osc.RuntimeMax
 		}
-		if oldScripts[name].RuntimeMin != 0 && oldScripts[name].RuntimeMin < min {
-			min = oldScripts[name].RuntimeMin
+		if osc.RuntimeMin != 0 {
+			if min == 0 {
+				min = osc.RuntimeMin
+			} else if osc.RuntimeMin < min {
+				min = osc.RuntimeMin
+			}
 		}
+
 		tot += osc.RuntimeAvg * int64(osc.RunCount)
 
 		nsc.RuntimeMax = max
@@ -250,6 +262,21 @@ func Add(name, category string, interval int64, isCustom bool) {
 		monitor.RuleNum++
 	}
 	l.Debugf("name = %s :add to monitor", name)
+}
+
+// delete rule
+func Delete(name string) {
+	if monitor == nil {
+		return
+	}
+	monitor.lock.Lock()
+	defer monitor.lock.Unlock()
+
+	if _, ok := monitor.Scripts[name]; ok {
+		delete(monitor.Scripts, name)
+		monitor.CustomNum--
+		l.Debugf("name = %s :delete from monitor", name)
+	}
 }
 
 func UpdateStatus(name string, runTime time.Duration, isErr bool) {
@@ -402,7 +429,6 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 
 // ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
 func ExportAsMD(sortBy string) {
-	htmlFile := fmt.Sprintf(global.LuaStatusOutFileHTML, time.Now().Format("20060102-150405"))
 	if sortBy == "" {
 		sortBy = global.LuaSortByCount
 	}
@@ -421,15 +447,9 @@ func ExportAsMD(sortBy string) {
 		l.Errorf("lua status is null ,wait 5 minter")
 		return
 	}
-	tot += fmt.Sprintf(end, htmlFile)
-
-	// write to (md/html) file
-	err := ioutil.WriteFile(htmlFile, getHTML(tot), global.FileModeRW)
-	if err != nil {
-		l.Errorf("write to file err=%v", err)
-	}
 
 	width := 100
+	var err error
 	if term.IsTerminal(0) {
 		if width, _, err = term.GetSize(0); err != nil {
 			width = 100
@@ -438,12 +458,4 @@ func ExportAsMD(sortBy string) {
 
 	leftPad := 2
 	fmt.Println(string(term_markdown.Render(tot, width, leftPad)))
-}
-
-func getHTML(tot string) []byte {
-	psr := parser.NewWithExtensions(parser.CommonExtensions)
-	htmlFlags := html.CommonFlags | html.HrefTargetBlank | html.CompletePage
-	opts := html.RendererOptions{Flags: htmlFlags}
-	renderer := html.NewRenderer(opts)
-	return markdown.ToHTML([]byte(tot), psr, renderer)
 }

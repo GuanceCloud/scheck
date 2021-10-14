@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="主机添加新用户"
 desc="主机添加 {{.Num}} 位新用户， {{.Content}} 被添加"
-cron="1 */5 * * *"
+cron="disable"
 # 开关
 disabled=false
 

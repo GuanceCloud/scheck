@@ -1,0 +1,9 @@
+disabled=false
+os_arch=["Linux","windows"]
+CIS=["无"]
+[cgroup]
+  # 可选 默认关闭 cpu是百分比
+  enable = false
+  cpu_max = 10.0
+  cpu_min = 5.0
+  mem = 100

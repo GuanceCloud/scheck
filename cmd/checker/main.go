@@ -11,6 +11,9 @@ import (
 	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
 
 	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
@@ -32,6 +35,7 @@ var (
 	flagCfgSample       = flag.Bool("config-sample", false, `show config sample`)
 	flagConfig          = flag.String("config", "", "configuration file to load")
 	flagTestRule        = flag.String("test", ``, `the name of a rule, without file extension`)
+	flagTestRuleCount   = flag.Int("testc", 1, `with --test  & test rule count`)
 	flagRulesToDoc      = flag.Bool("doc", false, `Generate doc document from manifest file`)
 	flagRulesToTemplate = flag.Bool("tpl", false, `Generate doc document from template file`)
 	flagOutDir          = flag.String("dir", "", `document Exported directory`)
@@ -63,6 +67,7 @@ func main() {
 	}
 	config.Cfg.Init()
 	checker.InitLuaGlobalFunc()
+	lua.InitModules()
 	l = logger.SLogger("main")
 	if config.Cfg.System.Pprof {
 		go goPprof()
@@ -119,12 +124,6 @@ ReleasedInputs: %s
 		os.Exit(0)
 	}
 
-	if *flagTestRule != "" {
-		checker.InitLuaGlobalFunc()
-		luafuncs.TestLua(*flagTestRule)
-		os.Exit(0)
-	}
-
 	if *flagRulesToDoc {
 		if *flagOutDir == "" {
 			man.ToMakeMdFile(man.GetAllName(), "sc_doc") // 导出文件夹名字不能和packr.box重名!!!
@@ -158,7 +157,19 @@ ReleasedInputs: %s
 func parseCheck() {
 	if *flagCheck {
 		config.LoadConfig(*flagConfig)
-		luafuncs.CheckLua(config.Cfg.System.CustomRuleDir)
+		lua.CheckLua(config.Cfg.System.CustomRuleDir)
+		os.Exit(0)
+	}
+	if *flagTestRule != "" {
+		config.LoadConfig(*flagConfig)
+		lua.InitModules()
+		checker.InitLuaGlobalFunc()
+		if *flagTestRuleCount != 0 {
+			for i := 0; i < *flagTestRuleCount; i++ {
+				lua.TestLua(*flagTestRule)
+				time.Sleep(time.Second)
+			}
+		}
 		os.Exit(0)
 	}
 }
@@ -173,7 +184,7 @@ func parseConfig() {
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
-			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
+			f, err := os.OpenFile(*flagConfig, os.O_CREATE|os.O_RDWR, global.FileModeRW)
 			if err != nil {
 				l.Fatalf("%s", err)
 			}
@@ -194,7 +205,6 @@ func run() {
 		defer func() {
 			wg.Done()
 		}()
-
 		man.ScheckCoreSyncDisk(config.Cfg.System.RuleDir)
 		checker.Start(ctx, config.Cfg.System, config.Cfg.ScOutput)
 	}()

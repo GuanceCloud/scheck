@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="主机用户被删除"
 desc="主机删除 {{.Num}} 位用户，删除用户是 {{.Content}}"
-cron="1 */5 * * *"
+cron="disable"
 # 开关
 disabled=false
 

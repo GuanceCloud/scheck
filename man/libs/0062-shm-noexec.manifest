@@ -7,7 +7,7 @@ desc="分区 {{.Content}} 未设置 noexec 挂载选项"
 cron="0 */30 * * *"
 # 开关
 disabled=false
-
+timeout=20
 
 
 os_arch=["Linux"]

@@ -18,7 +18,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system/impl"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/impl"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
@@ -307,7 +307,7 @@ func Max(x, y int) int {
 }
 
 // nolint
-func (p *provider) mysqlPortsList(l *lua.LState) int {
+func MysqlPortsList(l *lua.LState) int {
 	var result lua.LTable
 	listenPorts := impl.GetListeningPorts()
 	for i := range listenPorts {

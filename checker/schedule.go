@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -56,7 +57,13 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		return
 	}
 	isCustom := ruleDir == scheduler.customRuleDir
+	checkfiles := make(map[string]bool)
 	for _, file := range files {
+		/*
+			文件夹直接忽略
+			因为 每次当lua脚本运行需要加载lib库时 都是实时加载lib中的文件，可以做到实时更新
+			lua规则文件需要检测和热更
+		*/
 		if file.IsDir() {
 			continue
 		}
@@ -66,11 +73,15 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 		if strings.HasSuffix(file.Name(), global.LuaExt) {
 			if isCustom {
 				rulename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+				checkfiles[rulename] = true
+				modifyTime := fileModify(path)
 				if t, ok := scheduler.customRulesTime[rulename]; ok {
-					if t == fileModify(path) {
+					if t == modifyTime {
 						continue
 					}
 				}
+				l.Debugf("users rules is  change name = %s", rulename)
+				scheduler.customRulesTime[rulename] = modifyTime
 			}
 			if err := r.load(); err != nil {
 				l.Errorf("load from dir err=%v", err)
@@ -88,6 +99,9 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			}
 		}
 	}
+	if isCustom && len(checkfiles) < len(scheduler.customRulesTime) {
+		scheduler.deleteUserRule(checkfiles)
+	}
 	if len(scheduler.tasks) == 0 {
 		l.Warnf("There are no rules in the folder to load! . system exit !!!")
 		os.Exit(-1)
@@ -102,13 +116,14 @@ func (scheduler *TaskScheduler) Stop() {
 	scheduler.stop <- struct{}{}
 }
 
-// doAndReset
+// doAndReset: reset the rule next runtime
 func (scheduler *TaskScheduler) doAndReset(key string) {
 	scheduler.lock.Lock()
 	defer scheduler.lock.Unlock()
-	if task, ok := scheduler.tasks[key]; ok {
-		task.RunTime = time.Now().UnixNano()/1e6 + task.interval
-		scheduler.tasks[key] = task
+	if rule, ok := scheduler.tasks[key]; ok {
+		// 20211009 slq ：当前时间+间隔时间+运行使用时间，这样的优点是 使规则运行趋于平滑，减少同一时间同时执行的数量
+		rule.RunTime = time.Now().UnixNano()/1e6 + rule.interval + rule.useTime
+		scheduler.tasks[key] = rule
 	}
 }
 
@@ -120,13 +135,13 @@ func (scheduler *TaskScheduler) run() {
 	}
 	for {
 		now := time.Now()
-		task, key := scheduler.GetTask()
-		runTime := task.RunTime
+		rule, key := scheduler.GetTask()
+		runTime := rule.RunTime
 		next := runTime - now.UnixNano()/1e6
 		if next <= 0 {
-			if task != nil {
+			if rule != nil {
 				state := pool.getState()
-				go task.RunJob(state)
+				go rule.RunJob(state)
 			}
 			scheduler.doAndReset(key)
 			continue
@@ -138,8 +153,8 @@ func (scheduler *TaskScheduler) run() {
 			case <-timer.C:
 				state := pool.getState()
 				scheduler.doAndReset(key)
-				if task != nil {
-					go task.RunJob(state)
+				if rule != nil {
+					go rule.RunJob(state)
 					timer.Stop()
 				}
 			case <-scheduler.stop:
@@ -156,7 +171,7 @@ func (scheduler *TaskScheduler) run() {
 func (scheduler *TaskScheduler) runOnce() {
 	var onces = len(scheduler.onceTasks)
 	if onces == 0 {
-		l.Warnf("schedules  is empty....")
+		l.Warnf("schedules:the long term ruler task is empty....")
 		return
 	}
 	cxtMap := sync.Map{}                // 主动停止通知信号
@@ -185,13 +200,19 @@ func (scheduler *TaskScheduler) runOnce() {
 			if onces != count {
 				// do something...
 				l.Warnf("Unexpected reduction in number of runs !!! tot=%d run=%d", onces, count)
+				onces = count // The warn message will always remind if onces != count
 			}
 			if count == 0 {
 				close(errChan)
+				return
 			}
 		case name := <-errChan:
 			// to call monitor or trigger
 			count--
+			if count < 0 {
+				l.Errorf("no rule is running!")
+				return
+			}
 			l.Errorf("rule name = %s is stop!!!", name)
 		}
 	}
@@ -204,6 +225,9 @@ func (scheduler *TaskScheduler) checkName(name string) bool {
 				return false
 			}
 		}
+	}
+	if !checkID(name) {
+		l.Warnf("ID=%s check is illegal. custom rule must be greater than 10000 !", name)
 	}
 	return true
 }
@@ -257,19 +281,10 @@ func (scheduler *TaskScheduler) addRule(r *Rule) {
 		scheduler.tasks[r.Name] = r
 	}
 	scheduler.manifests[r.Name] = r.manifest
-	scheduler.customRulesTime[r.Name] = fileModify(r.File)
 }
 
-// hotUpdate to hotUpdate users rules dir
+// hotUpdate :timing to Update users rules if file has change
 func (scheduler *TaskScheduler) hotUpdate() {
-	files, err := ioutil.ReadDir(scheduler.customRuleDir)
-	if err != nil {
-		l.Errorf("hotUpdate :loadRules filepath=%s err=%v", scheduler.customRuleDir, err)
-		return
-	}
-	if files != nil && len(files) == 0 {
-		return
-	}
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for {
@@ -283,6 +298,25 @@ func (scheduler *TaskScheduler) hotUpdate() {
 	}
 }
 
+// deleteUserRule: delete rule and delete monitor
+func (scheduler *TaskScheduler) deleteUserRule(checkFiles map[string]bool) {
+	scheduler.lock.Lock()
+	defer scheduler.lock.Unlock()
+	for name := range scheduler.customRulesTime {
+		if _, ok := checkFiles[name]; !ok {
+			if _, ok := scheduler.tasks[name]; ok {
+				l.Infof("delete rule from task,name=%s", name)
+				delete(scheduler.tasks, name)
+			}
+			if _, ok := scheduler.onceTasks[name]; ok {
+				l.Infof("delete rule from onceTask,name=%s", name)
+				delete(scheduler.tasks, name)
+			}
+			luafuncs.Delete(name)
+		}
+	}
+}
+
 func GetRuleNum() int {
 	if Chk != nil && Chk.taskScheduler != nil {
 		return len(Chk.taskScheduler.tasks) + len(Chk.taskScheduler.onceTasks)
@@ -290,6 +324,20 @@ func GetRuleNum() int {
 	return 0
 }
 
+func checkID(luaName string) bool {
+	names := strings.Split(luaName, "-")
+	ID := names[0]
+	id, err := strconv.Atoi(ID)
+	if err != nil {
+		return false
+	}
+	if id < global.LuaCustomIDStart {
+		return false
+	}
+	return true
+}
+
+// fileModify:return modify times sum of lua file and manifest file.
 func fileModify(filePath string) int64 {
 	fileInfo, _ := os.Stat(filePath)
 	ruleModify := fileInfo.ModTime().Unix()

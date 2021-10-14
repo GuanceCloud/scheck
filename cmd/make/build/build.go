@@ -45,6 +45,7 @@ var (
 	OSSPath         = "scheck"
 	AllArch         = "all"
 	LocalArch       = "local"
+	dataTar         = "data.tar.gz"
 	Archs           string
 	Release         string
 	MainEntry       string
@@ -57,7 +58,7 @@ func prepare() *versionDesc {
 	if err := os.MkdirAll(BuildDir, os.ModePerm); err != nil {
 		l.Fatalf("MkdirAll %s error, err: %s", BuildDir, err)
 	}
-	l.Info("PubDir: %s", filepath.Join(PubDir, Release))
+	l.Infof("PubDir: %s", filepath.Join(PubDir, Release))
 	if err := os.MkdirAll(filepath.Join(PubDir, Release), os.ModePerm); err != nil {
 		l.Fatalf("MkdirAll %s error, err: %s", PubDir, err)
 	}
@@ -144,6 +145,8 @@ func Compile() {
 		// build installer 将install/main.go 编译成exe文件
 		buidAllInstaller(BuildInstallDir, goos, goarch)
 	}
+	// data
+	tarData()
 	l.Infof("Done!(elapsed %v)", time.Since(start))
 }
 

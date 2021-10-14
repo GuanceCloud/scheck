@@ -3,7 +3,7 @@ category="system"
 level="warn"
 title="/usr/sbin 目录有文件被删除"
 desc="{{.Content}} 有文件被删除"
-cron="1 */5 * * *"
+cron="disable"
 # 开关
 disabled=false
 

@@ -1,14 +1,16 @@
+local net = require("net")
+local cache = require("cache")
 local function check()
     local cache_key='check_ports'
-    local old=get_cache(cache_key)
+    local old=cache.get_cache(cache_key)
     if not old then
-        local ports = listening_ports()
-        set_cache(cache_key, ports)
+        local ports = net.listening_ports()
+        cache.set_cache(cache_key, ports)
         return
     end
 
     local content=''
-    local ports = listening_ports()
+    local ports = net.listening_ports()
     for i,v in ipairs(ports) do
         if v["family"] == 'AF_INET' then
             local exist=false
@@ -27,7 +29,7 @@ local function check()
 
     if content ~= '' then
         trigger({Content=content})
-        set_cache(cache_key, ports)
+        cache.set_cache(cache_key, ports)
     end
 
 end

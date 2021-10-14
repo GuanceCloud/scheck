@@ -75,7 +75,7 @@ func SendMetric(measurement string, tags map[string]string, fields map[string]in
 		uploads["stdout"] = newLocalLog("stdout")
 	}
 	for _, writer := range uploads {
-		writer.ReadMsg(measurement, tags, fields, t...)
+		go writer.ReadMsg(measurement, tags, fields, t...)
 	}
 	return nil
 }

@@ -1,3 +1,4 @@
+local cache = require("cache")
 local function chsize(char)
     if not char then
         --print("not char")
@@ -49,30 +50,28 @@ function utf8sub(str, startChar, numChars)
 end
 
 
-
+local system = require("system")
 local function check()
-    local is_install_docker = get_global_cache('install_docker')
+    local is_install_docker = cache.get_global_cache('install_docker')
     if is_install_docker == nil or is_install_docker then
         return
     end
 
-
     local cache_key = "docker_kernel_version"
-    --local value = kernel_info()['version']
-    local current = tonumber(utf8sub(kernel_info()['version'], 1, 4))
-    local old = get_cache(cache_key)
+    local current = tonumber(utf8sub( system.kernel_info()['version'], 1, 4))
+    local old = cache.get_cache(cache_key)
 
     if old == nil then
         if current < 3.1 then
             trigger({Version=current})
         end
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
         return
     end
 
     if old ~= current then
         trigger({Version=current})
-        set_cache(cache_key, current)
+        cache.set_cache(cache_key, current)
     end
 end
 check()

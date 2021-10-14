@@ -1,12 +1,13 @@
-
+local cache = require("cache")
 local function check()
     local cache_key="mounts"
-    local currents=mounts()
+    local system = require("system")
+    local currents = system.mounts()
 
-    local old=get_cache(cache_key)
+    local old=cache.get_cache(cache_key)
 
     if old == nil then
-        set_cache(cache_key, currents)
+        cache.set_cache(cache_key, currents)
         return
     end
 
@@ -29,7 +30,7 @@ local function check()
 
     if content ~= '' then
         trigger({Content=content})
-        set_cache(cache_key, currents)
+        cache.set_cache(cache_key, currents)
     end
 
 end
