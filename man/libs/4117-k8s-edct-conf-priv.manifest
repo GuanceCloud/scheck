@@ -1,0 +1,32 @@
+id="4117-k8s-edct-conf-priv"
+category="container"
+level="info"
+title="etcd 配置文件权限没有设置为644或更高"
+desc="etcd 配置文件权限没有设置为644或更高 当前文件权限为{{ .Priv }} "
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+
+os_arch=["Linux"]
+description=["如果您在使用systemd管理服务的计算机上使用kubernetes的etcd，请验证kubernetes.service文件权限是否正确设置为644或更严格。"]
+rationale=["kubernetes.etcd文件包含可能更改kubernetes守护程序行为的敏感参数。因此，除了root之外的任何其他用户都不应该写它来维护文件的完整性。"]
+riskitems=["容器安全"]
+audit='''执行以下命令以验证文件权限是否设置为“644”或更严格：
+
+```bash
+stat -c %a /etc/kubernetes/manifests/etcd.yaml
+```
+'''
+remediation='''执行下面的命令修改三个配置文件的权限：
+```bash
+#> chmod 644 /etc/kubernetes/manifests/etcd.yaml
+```
+这会将文件权限设置为“644”。
+'''
+impact=["无"]
+defaultvalue=["默认情况下 etcd.yaml 权限是640"]
+references=["[etcd](https://coreos.com/etcd)","[kubernetes-etcd](https://kubernetes.io/docs/admin/etcd/)"]
+CIS=["无"]

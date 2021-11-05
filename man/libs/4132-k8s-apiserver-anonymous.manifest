@@ -1,0 +1,30 @@
+id="4132-k8s-apiserver-anonymous"
+category="container"
+level="info"
+title="禁用对apiserver的匿名请求"
+desc="apiserver 需要禁止用户的匿名请求，请将参数--anonymous-auth 设置成false"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+os_arch=["Linux"]
+description=["禁用对API服务器的匿名请求"]
+rationale=["apiserver 应当依赖于身份验证。如果您正在使用RBAC授权，那么通常认为允许匿名访问API服务器以进行运行状况检查和发现的目的是合理的，但是也应当考虑匿名访问对服务会造成一定的风险"]
+riskitems=["容器安全"]
+audit='''执行以下命令以验证：
+```bash
+ps -ef | grep kube-apiserver |grep anonymous-auth
+```
+'''
+remediation='''kubelet 版本要求不能低于v1.16.0
+执行下面的命令：
+```bash
+#> vim 	/etc/kubernetes/manifests/kube-apiserver.yaml
+```
+设置或添加参数 --anonymous-auth=false
+'''
+impact=["您必须重新调整内核参数以匹配kubelet参数"]
+defaultvalue=["默认情况,是开启匿名访问的"]
+references=["[kube-apiserver](https://kubernetes.io/docs/admin/kube-apiserver/)"]
+CIS=["无"]

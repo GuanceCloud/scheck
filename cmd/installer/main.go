@@ -164,7 +164,8 @@ func parseLog() {
 		}
 	} else {
 		l.Infof("set log file to %s", *flagInstallLog)
-		if err := logger.InitRoot(&logger.Option{Path: *flagInstallLog, Level: logger.DEBUG, Flags: logger.OPT_DEFAULT}); err != nil {
+		err := logger.InitRoot(&logger.Option{Path: *flagInstallLog, Level: logger.DEBUG, Flags: logger.OPT_DEFAULT})
+		if err != nil {
 			l.Errorf("set root log failed: %s", err.Error())
 		}
 		install.Init()
@@ -209,6 +210,7 @@ Golang Version: %s
 	}
 }
 
+// nolint
 func mvOldScheck(svc service.Service) {
 	olddir := oldInstallDir
 	switch runtime.GOOS + "/" + runtime.GOARCH {

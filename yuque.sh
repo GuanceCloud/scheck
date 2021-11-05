@@ -6,5 +6,5 @@
 
 rm -rf .docs
 mkdir -p .docs
-./build/scheck-darwin-amd64/scheck -doc -dir .docs
-waque upload .docs/*.md
+./build/scheck-windows-amd64/scheck.exe -doc -dir .docs
+/c/Users/18332/AppData/Roaming/npm/waque upload .docs/*.md

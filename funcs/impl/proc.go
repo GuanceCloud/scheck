@@ -1,3 +1,4 @@
+// Package impl export for system and container
 package impl
 
 import (
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	hostutil "github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/process"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
@@ -226,7 +228,7 @@ func getSimpleProcStat(pid int) (*SimpleProcStat, error) {
 
 func getSimpleProcIo(pid int) (*SimpleProcIo, error) {
 	path := getProcAttrFilePath(pid, "io")
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		log.Warnf("%s", err)
 		return nil, err
@@ -235,7 +237,7 @@ func getSimpleProcIo(pid int) (*SimpleProcIo, error) {
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
 		detail := strings.Split(line, ":")
-		var mustLen = 2
+		mustLen := 2
 		if len(detail) != mustLen {
 			continue
 		}
@@ -270,7 +272,7 @@ func readProcLink(pid int, attr string) string {
 
 func readProcCMDLine(pid int) string {
 	path := getProcAttrFilePath(pid, "cmdline")
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		log.Warnf("%s", err)
 		return ""
@@ -475,13 +477,13 @@ func procReadDescriptor(pid int, descriptor string) (string, error) {
 
 func procDecodeAddressFromHex(encodedAddress string, family int) string {
 	var addr string
-	var afLen = 8
-	var af6Len = 32
+	afLen := 8
+	af6Len := 32
 	if family == syscall.AF_INET {
 		if len(encodedAddress) == afLen {
 			var decoded uint32
 			if _, err := fmt.Sscanf(encodedAddress, "%X", &decoded); err == nil {
-				var addL = 4
+				addL := 4
 				a := make([]byte, addL)
 				binary.LittleEndian.PutUint32(a, decoded)
 				ip4 := net.IPv4(a[0], a[1], a[2], a[3])
@@ -508,8 +510,7 @@ func procDecodeAddressFromHex(encodedAddress string, family int) string {
 
 func procDecodePortFromHex(encodedPort string) uint16 {
 	var port uint16
-	var encodeLen = 4
-	if len(encodedPort) == encodeLen {
+	if len(encodedPort) == 4 {
 		if _, err := fmt.Sscanf(encodedPort, "%X", &port); err != nil {
 			log.Errorf("fail to convert port %s, error: %s", encodedPort, err)
 		}
@@ -606,7 +607,7 @@ func procGetSocketListInet(family, protocol int, ns int64, path, content string)
 		fields := strings.FieldsFunc(line, func(r rune) bool {
 			return r == ' '
 		})
-		var fieldsL = 10
+		fieldsL := 10
 		if len(fields) < fieldsL {
 			log.Warnf("invalid socket descriptor found for %s, line: %s", path, line)
 			continue
@@ -663,7 +664,7 @@ func procGetSocketListUnix(ns int64, path, content string) ([]*SocketInfo, error
 		fields := strings.FieldsFunc(line, func(r rune) bool {
 			return r == ' '
 		})
-		var lisL = 7
+		lisL := 7
 		if len(fields) < lisL {
 			log.Warnf("invalid socket descriptor found for %s, line: %s", path, line)
 			continue
@@ -715,7 +716,7 @@ func procGetSocketList(family, protocol, pid int, ns int64) ([]*SocketInfo, erro
 	}
 
 	var content string
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, err
 	}
@@ -729,8 +730,7 @@ func procGetSocketList(family, protocol, pid int, ns int64) ([]*SocketInfo, erro
 	}
 }
 
-// nolint:gocyclo
-func EnumProOpenSockets(pids []int) ([]*SocketInfo, error) {
+func EnumProOpenSockets(pids []int) ([]*SocketInfo, error) { // nolint
 	var err error
 	if len(pids) == 0 {
 		pids, err = procEnumerateProcesses()
@@ -794,11 +794,13 @@ func GetUserDetail(username string) ([]*UserInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	var result []*UserInfo
 	reader := bufio.NewReader(file)
-	var passedL = 7
+	passedL := 7
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -826,7 +828,7 @@ func GetUserDetail(username string) ([]*UserInfo, error) {
 		result = append(result, u)
 	}
 
-	return result, nil
+	return result, err
 }
 
 func GenShellHistoryFromFile(file string) ([]*HistoryItem, error) {
@@ -835,7 +837,7 @@ func GenShellHistoryFromFile(file string) ([]*HistoryItem, error) {
 		return nil, nil
 	}
 
-	content, err := ioutil.ReadFile(file)
+	content, err := ioutil.ReadFile(filepath.Clean(file))
 	if err != nil {
 		return nil, err
 	}
@@ -914,4 +916,87 @@ func GetListeningPorts() []map[string]interface{} {
 		listenPortList = append(listenPortList, item)
 	}
 	return listenPortList
+}
+
+// GetCommandLine :获取一个进程的命令行参数.
+func GetCommandLine(processName string) string {
+	var systemBoot uint64
+	if info, err := hostutil.Info(); err == nil {
+		systemBoot = info.Uptime
+		if systemBoot > 0 {
+			systemBoot = uint64(time.Now().Unix()) - systemBoot
+		}
+	}
+
+	pids, err := process.Pids()
+	if err != nil {
+		return ""
+	}
+
+	for _, pid := range pids {
+		if p, err := GetProcessInfo(int(pid), int64(systemBoot)); err == nil && p != nil {
+			if p.Name == processName {
+				return p.Cmdline
+			}
+		}
+	}
+	return ""
+}
+
+//  GetCmdline 将命令行参数 解析到map中
+func GetCmdline(cmdline string) map[string]string {
+	cmds := strings.Split(cmdline, " ")
+	if len(cmds) == 0 {
+		return nil
+	}
+	arguments := make(map[string]string)
+	cmds = cmds[1:] // first one command name
+	argL := 2
+	for len(cmds) > 0 {
+		// --开始 判断有没有 = 没有 ，判断下一个是不是-或者==开头 不是的话 赋值前一个，是的话 控制。
+		cmd := cmds[0]
+		isLong := len(cmd) > 2 && cmd[0:2] == "--"
+		isShort := len(cmd) > 2 && cmd[0] == '-' && cmd[1] != '-'
+		if isLong || isShort {
+			var key string
+			if isShort {
+				key = cmd[1:]
+			} else {
+				key = cmd[2:]
+			}
+			if strings.Contains(key, "=") {
+				subs := strings.Split(key, "=")
+				if len(subs) == argL {
+					if str, ok := arguments[subs[0]]; ok { // 有可能出现两个相同的key 值需要用逗号分隔 并进行拼接。
+						arguments[subs[0]] = str + "," + subs[1]
+					} else {
+						arguments[subs[0]] = subs[1]
+					}
+				} else if len(subs) > argL {
+					index := strings.Index(key, "=") // key : abc=d=true
+					arguments[subs[0]] = key[index+1:]
+				}
+				cmds = cmds[1:]
+			} else { // nolint
+				// 没有等号 值有可能在后一个: -v 1.3 。也可能没有： -i -t
+				if len(cmds) > 1 {
+					if strings.HasPrefix(cmds[1], "-") {
+						arguments[key] = ""
+						cmds = cmds[1:]
+					} else {
+						arguments[key] = cmds[1]
+						cmds = cmds[2:]
+					}
+				}
+			}
+		} else {
+			// 没有-开头  进入下一个
+			if len(cmds) > 1 {
+				cmds = cmds[1:]
+			} else {
+				break
+			}
+		}
+	}
+	return arguments
 }

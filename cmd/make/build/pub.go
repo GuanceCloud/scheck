@@ -13,12 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
+	"github.com/dustin/go-humanize"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
-
-	"github.com/dustin/go-humanize"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 var (
@@ -50,13 +48,12 @@ func tarFiles(goos, goarch string) {
 		bin,
 	}
 	l.Debug(args)
-	cmd := exec.Command("tar", args...)
+	cmd := exec.Command("tar", args...) // nolint:gosec
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		l.Fatal(err)
 	}
 }
@@ -68,13 +65,12 @@ func tarData() {
 		gz,
 		"data/dict.txt",
 	}
-	cmd := exec.Command("tar", args...)
+	cmd := exec.Command("tar", args...) // nolint:gosec
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		l.Fatal(err)
 	}
 }
@@ -93,7 +89,9 @@ func getCurrentVersionInfo(urlSrt string) *versionDesc {
 		return nil
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	info, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		l.Fatal(err)
@@ -137,11 +135,11 @@ func PubDatakit() {
 	l.Infof("Done!(elapsed: %v)", time.Since(start))
 }
 
-// installAllArchs : tar files and collect OSS upload/backup info
+// installAllArchs : tar files and collect OSS upload/backup info.
 func installAllArchs(archs []string) map[string]string {
 	ossfiles := map[string]string{
 		path.Join(OSSPath, "version"):                                     path.Join(PubDir, Release, "version"),
-		path.Join(OSSPath, dataTar):                                       path.Join(PubDir, Release, dataTar), // 20211008 slq 添加data目录打包
+		path.Join(OSSPath, dataTar):                                       path.Join(PubDir, Release, dataTar),
 		path.Join(OSSPath, "install.sh"):                                  "install.sh",
 		path.Join(OSSPath, "install.ps1"):                                 "install.ps1",
 		path.Join(OSSPath, fmt.Sprintf("install-%s.sh", ReleaseVersion)):  "install.sh",
@@ -199,7 +197,7 @@ func InitOC() *cliutils.OssCli {
 	if ak == "" || sk == "" {
 		l.Fatalf("oss access key or secret key missing, tag=%s", strings.ToUpper(Release))
 	}
-	var split = 2 // at most 2 substrings
+	split := 2 // at most 2 substrings
 	ossSlice := strings.SplitN(DownloadAddr, "/", split)
 	if len(ossSlice) != split {
 		l.Fatalf("downloadAddr:%s err", DownloadAddr)

@@ -209,6 +209,10 @@ trigger(tmpl_vals)
 ```shell
 $ scheck --test  ./rules.d/demo
 ```
+test测试 也可以同时测试多个，假设该脚本运行是建立在另个脚本执行之后的：
+```shell
+$ scheck --test  rules.d/0000-global-cache,rules.d/0400-k8s-node-conf-priv
+```
 
 ## lua 函数
 

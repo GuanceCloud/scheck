@@ -2,7 +2,6 @@ package install
 
 import (
 	"github.com/kardianos/service"
-
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	dkservice "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
 )

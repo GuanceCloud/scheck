@@ -1,9 +1,11 @@
+// Package lua : func from github.com/yuin/gopher-lua
 package lua
 
 import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	lua "github.com/yuin/gopher-lua"
 	luaparse "github.com/yuin/gopher-lua/parse"
@@ -27,18 +29,16 @@ type (
 	}
 )
 
-var (
-	supportLuaLibs = []luaLib{
-		{lua.LoadLibName, lua.OpenPackage, nil},
-		{lua.BaseLibName, lua.OpenBase, nil},
-		{lua.TabLibName, lua.OpenTable, nil},
-		{lua.StringLibName, lua.OpenString, nil},
-		{lua.MathLibName, lua.OpenMath, nil},
-		{lua.DebugLibName, lua.OpenDebug, nil},
-		{lua.ChannelLibName, lua.OpenChannel, nil},
-		{lua.OsLibName, lua.OpenOs, []string{"exit", "execute", "remove", "rename", "setenv", "setlocale"}},
-	}
-)
+var supportLuaLibs = []luaLib{
+	{lua.LoadLibName, lua.OpenPackage, nil},
+	{lua.BaseLibName, lua.OpenBase, nil},
+	{lua.TabLibName, lua.OpenTable, nil},
+	{lua.StringLibName, lua.OpenString, nil},
+	{lua.MathLibName, lua.OpenMath, nil},
+	{lua.DebugLibName, lua.OpenDebug, nil},
+	{lua.ChannelLibName, lua.OpenChannel, nil},
+	{lua.OsLibName, lua.OpenOs, []string{"exit", "execute", "remove", "rename", "setenv", "setlocale"}},
+}
 
 var l = logger.DefaultSLogger("lua")
 
@@ -67,19 +67,21 @@ func (r *ScriptRunTime) PCall(bcode *ByteCode) error {
 }
 
 func CompilesScript(filePath string) (*ByteCode, error) {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filepath.Clean(filePath))
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 	reader := bufio.NewReader(file)
 	chunk, err := luaparse.Parse(reader, filePath)
 	if err != nil {
-		return nil, fmt.Errorf("fail to parse lua file '%s', err: %s", filePath, err)
+		return nil, fmt.Errorf("fail to parse lua file '%s', err: %w", filePath, err)
 	}
 	proto, err := lua.Compile(chunk, filePath)
 	if err != nil {
-		return nil, fmt.Errorf("fail to compile lua file '%s', err: %s", filePath, err)
+		return nil, fmt.Errorf("fail to compile lua file '%s', err: %w", filePath, err)
 	}
 	return &ByteCode{
 		Proto: proto,
@@ -100,13 +102,15 @@ func LoadLuaLibs(ls *lua.LState) error {
 			Protect: true,
 		}, lua.LString(lib.name))
 		if err != nil {
-			return fmt.Errorf("load %s failed, %s", lib.name, err)
+			return fmt.Errorf("load %s failed, %w", lib.name, err)
 		}
 		lvMod := ls.Get(-1)
 		if lvMod.Type() == lua.LTTable {
-			lt := lvMod.(*lua.LTable)
-			for _, mth := range lib.disabledMethods {
-				lt.RawSetString(mth, ls.NewClosure(unsupportFn, lua.LString(mth)))
+			lt, ok := lvMod.(*lua.LTable)
+			if ok {
+				for _, mth := range lib.disabledMethods {
+					lt.RawSetString(mth, ls.NewClosure(unsupportFn, lua.LString(mth)))
+				}
 			}
 		}
 		ls.Pop(1)

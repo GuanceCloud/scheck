@@ -16,9 +16,6 @@ function mountflagmonitor.check(mountpath, mountflag, value)
             else
                cache.set_cache('flagexist',true)
             end
-            --print(string.match(v['flags'],flag))
-            --print(i..v['path']..' '..v['device']..' '..v['type']..' '..v['flags'])
-            --print(flagexist)
         end
     end
 

@@ -24,7 +24,6 @@ function kernelmonitor.module_isinstall(module_name, isInstalled)
     if old == nil then
         local currents = judge_modules_installed(system.kernel_modules(), module_name)
         if currents ~= isInstalled then
-           -- print(string.format("kernel %s is %s ", module_name, status ))
             trigger({Content=string.format("kernel %s is %s ", module_name, status )})
         end
         cache.set_cache(cache_key, currents)

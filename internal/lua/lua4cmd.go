@@ -6,45 +6,47 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
-
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/utils"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 func TestLua(rulepath string) {
-	rulepath, _ = filepath.Abs(rulepath)
-	if !strings.HasSuffix(rulepath, global.LuaExt) {
-		rulepath += global.LuaExt
-	}
+	paths := strings.Split(rulepath, ",")
+	for _, filePath := range paths {
+		filePath, _ = filepath.Abs(filePath)
+		if !strings.HasSuffix(filePath, global.LuaExt) {
+			filePath += global.LuaExt
+		}
 
-	byteCode, err := CompilesScript(rulepath)
-	if err != nil {
-		fmt.Printf("Compile lua scripterr=%v \n", err)
-		return
-	}
-	if config.Cfg != nil {
-		lua.LuaPathDefault = filepath.Join(config.Cfg.System.RuleDir, "lib", "?.lua")
-		lua.LuaPathDefault += ";" + filepath.Join(config.Cfg.System.CustomRuleLibDir, "?.lua")
-	} else {
-		lua.LuaPathDefault = filepath.Join(global.InstallDir, global.DefRulesDir, "lib", "?.lua")
-	}
+		byteCode, err := CompilesScript(filePath)
+		if err != nil {
+			fmt.Printf("Compile lua scripterr=%v \n", err)
+			return
+		}
+		if config.Cfg != nil {
+			lua.LuaPathDefault = filepath.Join(config.Cfg.System.RuleDir, "lib", "?.lua")
+			lua.LuaPathDefault += ";" + filepath.Join(config.Cfg.System.CustomRuleLibDir, "?.lua")
+		} else {
+			lua.LuaPathDefault = filepath.Join(global.InstallDir, global.DefRulesDir, "lib", "?.lua")
+		}
 
-	ls := lua.NewState(lua.Options{SkipOpenLibs: true})
-	if err = LoadLuaLibs(ls); err != nil {
-		ls.Close()
-		fmt.Printf("LoadLuaLibs err=%v \n ", err)
-		return
-	}
-	utils.SetScriptGlobalConfig(ls, &utils.ScriptGlobalCfg{RulePath: rulepath})
-	LoadModule(ls)
-	lfunc := ls.NewFunctionFromProto(byteCode.Proto)
-	ls.Push(lfunc)
-	if err = ls.PCall(0, lua.MultRet, nil); err != nil {
-		fmt.Printf("testLua err=%v \n", err)
+		ls := lua.NewState(lua.Options{SkipOpenLibs: true})
+		if err = LoadLuaLibs(ls); err != nil {
+			ls.Close()
+			fmt.Printf("LoadLuaLibs err=%v \n ", err)
+			return
+		}
+		utils.SetScriptGlobalConfig(ls, &utils.ScriptGlobalCfg{RulePath: filePath})
+		LoadModule(ls)
+		lfunc := ls.NewFunctionFromProto(byteCode.Proto)
+		ls.Push(lfunc)
+		if err = ls.PCall(0, lua.MultRet, nil); err != nil {
+			fmt.Printf("testLua err=%v \n", err)
+		}
 	}
 }
 
@@ -88,7 +90,7 @@ func CheckLua(customRuleDir string) {
 
 func CompilesManifest(fileName string) error {
 	var tbl *ast.Table
-	contents, err := ioutil.ReadFile(fileName)
+	contents, err := ioutil.ReadFile(filepath.Clean(fileName))
 	if err != nil {
 		return err
 	}

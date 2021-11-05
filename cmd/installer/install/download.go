@@ -1,8 +1,10 @@
+// Package install :download func
 package install
 
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -15,12 +17,12 @@ type writeCounter struct {
 	last    float64
 }
 
-func (wc *writeCounter) Write(p []byte) (int, error) {
-	n := len(p)
+func (wc *writeCounter) Write(p []byte) (n int, err error) {
+	n = len(p)
 	wc.current += uint64(n)
 	wc.last += float64(n)
 	wc.PrintProgress()
-	return n, nil
+	return n, err
 }
 
 func (wc *writeCounter) PrintProgress() {
@@ -44,7 +46,9 @@ func Download(cli *http.Client, from, to string, isGzip, progress, downloadOnly 
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	progbar := &writeCounter{
 		total: uint64(resp.ContentLength),
 	}
@@ -59,7 +63,7 @@ func Download(cli *http.Client, from, to string, isGzip, progress, downloadOnly 
 }
 
 func doDownload(r io.Reader, to string) error {
-	f, err := os.OpenFile(to, os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
+	f, err := os.OpenFile(filepath.Clean(to), os.O_CREATE|os.O_RDWR, os.ModeAppend|os.ModePerm)
 	if err != nil {
 		l.Errorf("open file err=%v to=%s", err, to)
 		return err
@@ -73,12 +77,14 @@ func doDownload(r io.Reader, to string) error {
 }
 
 func ExtractDatakit(gz, to string) error {
-	data, err := os.Open(gz)
+	data, err := os.Open(filepath.Clean(gz))
 	if err != nil {
 		l.Fatalf("open file %s failed: %s", gz, err)
 	}
 
-	defer data.Close()
+	defer func() {
+		_ = data.Close()
+	}()
 
 	return doExtract(data, to)
 }
@@ -90,17 +96,20 @@ func doExtract(r io.Reader, to string) error {
 		return err
 	}
 
-	defer gzr.Close()
+	defer func() {
+		_ = gzr.Close()
+	}()
 	tr := tar.NewReader(gzr)
 	for {
 		hdr, err := tr.Next()
-		switch {
-		case err == io.EOF:
-			return nil
-		case err != nil:
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
 			l.Error(err)
 			return err
-		case hdr == nil:
+		}
+		if hdr == nil {
 			continue
 		}
 
@@ -121,7 +130,7 @@ func doExtract(r io.Reader, to string) error {
 			}
 
 			// TODO: lock file before extracting, to avoid `text file busy` error
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode)) // nolint
 			if err != nil {
 				l.Error(err)
 				return err

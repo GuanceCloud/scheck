@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"bytes"
 	"io/ioutil"
 	"testing"
 
@@ -10,14 +9,20 @@ import (
 )
 
 func TestGetManifest(t *testing.T) {
-	bts, err := ioutil.ReadFile("../man/libs/0019-hosts-exist.manifest")
+	/*
+		4117-k8s-edct-conf-priv
+		4118-k8s-etcd-ownership
+		4121-k8s-edct-dir-priv
+		4122-k8s-etcd-dir-ownership
+	*/
+	bts, err := ioutil.ReadFile("../man/libs/4122-k8s-etcd-dir-ownership.manifest")
 	if err != nil {
 		t.Log(err)
 		return
 	}
 	// t.Log(bts)
-	contents := bytes.TrimPrefix(bts, []byte("\xef\xbb\xbf"))
-	tbl, err := toml.Parse(contents)
+	// contents := bytes.TrimPrefix(bts, []byte("\xef\xbb\xbf"))
+	tbl, err := toml.Parse(bts)
 	if err != nil {
 		t.Logf("toml.Parse err=%v", err)
 		return

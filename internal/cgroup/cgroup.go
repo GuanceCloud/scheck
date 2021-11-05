@@ -1,3 +1,4 @@
+// Package cgroup :Control memory and CPU
 package cgroup
 
 import (
@@ -13,9 +14,7 @@ const (
 	DefMEM = 200
 )
 
-var (
-	l = logger.DefaultSLogger("cgroup")
-)
+var l = logger.DefaultSLogger("cgroup")
 
 func Run(cgroup *config.Cgroup) {
 	l = logger.SLogger("cgroup")

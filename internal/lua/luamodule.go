@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/container"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/file"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/net"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/system"
@@ -40,7 +41,9 @@ func InitModules() {
 	goOpenLibsMux.modules["file"] = file.Loader
 	goOpenLibsMux.modules["system"] = system.Loader
 	goOpenLibsMux.modules["net"] = net.Loader
+	goOpenLibsMux.modules["container"] = container.Loader
 
+	goOpenLibsMux.modules["utils"] = utils.UtilsLoader
 	goOpenLibsMux.modules["json"] = utils.JSONLoader
 	goOpenLibsMux.modules["cache"] = utils.CacheLoader
 	goOpenLibsMux.modules["mysql"] = utils.MysqlLoader
@@ -65,12 +68,14 @@ func ShowModule() {
 		goOpenLibsMux.modules[moduleName](state)
 		lv := state.Get(1)
 		if lv.Type() == lua.LTTable {
-			lt := lv.(*lua.LTable)
-			fmt.Printf("- %s :\n", moduleName)
-			lt.ForEach(func(lname lua.LValue, lfn lua.LValue) {
-				name := lua.LVAsString(lname)
-				fmt.Printf("		- %s \n", name)
-			})
+			lt, ok := lv.(*lua.LTable)
+			if ok {
+				fmt.Printf("- %s :\n", moduleName)
+				lt.ForEach(func(lname lua.LValue, lfn lua.LValue) {
+					name := lua.LVAsString(lname)
+					fmt.Printf("		- %s \n", name)
+				})
+			}
 		}
 	}
 	for funcName := range goOpenLibsMux.globalFn {

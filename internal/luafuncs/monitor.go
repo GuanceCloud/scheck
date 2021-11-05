@@ -1,3 +1,4 @@
+// Package luafuncs : lua funcs
 package luafuncs
 
 import (
@@ -11,12 +12,11 @@ import (
 	"time"
 
 	term_markdown "github.com/MichaelMure/go-term-markdown"
-	"golang.org/x/term"
-
 	"github.com/dustin/go-humanize"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"golang.org/x/term"
 )
 
 /*
@@ -36,7 +36,7 @@ const (
 - scheck 当前的版本为%s 发布时间%s
 - scheck 已经运行了%s
 - 当前共有%d个lua脚本 其中自带的有%d个 属于用户自定义的有%d个
-- 当前排序的方式为%s,排序方式可分为三种：运行次数(-count),用时(-time),名称(-name)。默认按照运行次数排序。
+- 当前排序的方式为%s,排序方式可分为三种：运行次数(-count),用时(-time),名称(-name)。可使用 -sort=count/time/name 默认为count
 
 ### 以下为各个lua脚本运行情况：
 `
@@ -48,7 +48,7 @@ const (
 
 	format = "|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|"
 
-	// end = "\n > lua scripts运行情况放在文件: %s文件格式为html 可用过编译器或者浏览器等打开"
+	// end = "\n > lua scripts运行情况放在文件: %s文件格式为html 可用过编译器或者浏览器等打开".
 )
 
 var (
@@ -90,14 +90,13 @@ func newMonitor() *Monitor {
 		StartTime: time.Now(),
 	}
 	_ = os.Remove(m.jsonFile)
-	_, err := os.Create(m.jsonFile)
-	if err != nil {
+	if _, err := os.Create(m.jsonFile); err != nil {
 		l.Errorf("creat file err=%v", err)
 	}
 	return m
 }
 
-// Start:监控每一个lua的运行情况
+// Start :监控每一个lua的运行情况.
 func Start() {
 	l = logger.SLogger("internal.lua")
 	monitor = newMonitor()
@@ -115,7 +114,7 @@ func newScriptStatus(name, category string, interval int64) *Script {
 	}
 }
 
-// 定时 写入文件
+// 定时 写入文件.
 func (m *Monitor) timeToSave(tickTime time.Duration) {
 	ticker := time.NewTicker(tickTime)
 	for range ticker.C {
@@ -247,7 +246,7 @@ func (m *Monitor) mergeOld(oldScripts map[string]*Script) {
 	}
 }
 
-// Add:all rule add to monitor.
+// Add :all rule add to monitor.
 func Add(name, category string, interval int64, isCustom bool) {
 	ss := newScriptStatus(name, category, interval)
 	if monitor == nil {
@@ -264,7 +263,7 @@ func Add(name, category string, interval int64, isCustom bool) {
 	l.Debugf("name = %s :add to monitor", name)
 }
 
-// delete rule
+// Delete rule.
 func Delete(name string) {
 	if monitor == nil {
 		return
@@ -323,7 +322,7 @@ type OutType struct {
 	Interval    int64  // 同上
 }
 
-// RunStatusMonitor: 可导出的状态图结构体
+// RunStatusMonitor : 可导出的状态图结构体.
 type RunStatusMonitor struct {
 	HostName      string
 	OsArch        string
@@ -393,7 +392,8 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 		timeMax := time.Duration(script.RuntimeMax).String()
 		timeMin := time.Duration(script.RuntimeMin).String()
 
-		out := &OutType{Name: script.Name,
+		out := &OutType{
+			Name:        script.Name,
 			Status:      script.Status,
 			Category:    script.Category,
 			RuntimeAvg:  timeAvg,
@@ -403,7 +403,8 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 			ErrCount:    script.ErrCount,
 			TriggerNum:  script.TriggerNum,
 			LastRuntime: last,
-			Interval:    script.Interval}
+			Interval:    script.Interval,
+		}
 		rsm.Scripts = append(rsm.Scripts, out)
 	}
 	systemRunTime := humanize.RelTime(monitor.StartTime, now, "ago", "")
@@ -427,7 +428,7 @@ func (rsm *RunStatusMonitor) getStatus() (out string) {
 	return out
 }
 
-// ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来
+// ExportAsMD :从文件中读取数据，整理后输出到文件并且打印出来.
 func ExportAsMD(sortBy string) {
 	if sortBy == "" {
 		sortBy = global.LuaSortByCount

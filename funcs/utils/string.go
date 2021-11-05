@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 
 	lua "github.com/yuin/gopher-lua"
 )
@@ -79,7 +80,7 @@ func (j jsonValue) MarshalJSON() (data []byte, err error) {
 
 		key, value := converted.Next(lua.LNil)
 
-		switch key.Type() {
+		switch key.Type() { // nolint
 		case lua.LTNil: // empty table
 			data = []byte(`[]`)
 		case lua.LTNumber:
@@ -160,4 +161,34 @@ func DecodeValue(l *lua.LState, value interface{}) lua.LValue {
 	}
 
 	return lua.LNil
+}
+
+func CommandValue(l *lua.LState) int { // key=val
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
+	}
+	str := string(lv.(lua.LString))
+
+	lv2 := l.Get(2)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
+	}
+	command := string(lv2.(lua.LString))
+	// str : key=val
+	cmds := strings.Split(str, ",")
+	argL := 2
+	for _, cmd := range cmds {
+		if strings.Contains(cmd, command) {
+			args := strings.Split(cmd, command)
+			if len(args) == argL {
+				l.Push(lua.LString(args[1]))
+				return 1
+			}
+		}
+	}
+	l.Push(lua.LNil)
+	return 1
 }

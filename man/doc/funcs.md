@@ -91,6 +91,10 @@ lua代码：
     - [all_os](#mysql_all_os)
       - [mysql_weak_psw](#mysql_weak_psw)
       - [mysql_ports_list](#mysql_ports_list)
+- [容器](#容器相关（container）)
+    - [sc_docker_exist](#sc_docker_exist)
+    - [sc_docker_containers](#sc_docker_containers)
+    - [sc_docker_runlike](#sc_docker_runlike)
 - [其他](#其他)
       - [trigger](#trigger)
 
@@ -1223,6 +1227,60 @@ state	LISTEN
 cmdline	/usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3307 -container-ip 172.18.0.4 -container-port 3306
 pid	7062
 ``` 
+
+## 容器相关（container）
+#### sc_docker_exist
+
+`sc_docker_exist()`
+
+check docker run at host
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `boolean` | true docker service exists on the host |
+
+#### sc_docker_containers
+
+`sc_docker_containers()`
+
+check mysql weak password
+
+before other docker funcs ,sc_docker_exist  must at first !!!
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `[]string` | the containerName list |
+
+
+#### sc_docker_runlike
+
+`sc_docker_runlike(containerName)`
+
+check mysql weak password
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| containerName | `string` | image ID | true |
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `string` | the containerName run command |
+
 
 ## 其他
 #### trigger

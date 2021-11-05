@@ -1,9 +1,9 @@
+# Scheck 安装
 
 - 版本：%s
 - 发布日期：%s
 - 操作系统支持：windows/amd64,windows/386,linux/arm,linux/arm64,linux/386,linux/amd64
 
-# 简介
 
 本文介绍 Scheck 的基本安装。
 
@@ -13,23 +13,23 @@
 ### Linux 平台
 
 ```Shell
-sudo -- bash -c "$(curl -L https://static.dataflux.cn/security-checker/install.sh)"
+sudo -- bash -c "$(curl -L https://static.guance.com/security-checker/install.sh)"
 ```
 
 ### Windows 平台
 ```powershell
-Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://static.dataflux.cn/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
+Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://static.guance.com/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
 ```
 
 
 ## *更新*：  
 ### Linux 平台
 ```Shell
-SC_UPGRADE=1 bash -c "$(curl -L https://static.dataflux.cn/security-checker/install.sh)"
+SC_UPGRADE=1 bash -c "$(curl -L https://static.guance.com/security-checker/install.sh)"
 ```
 ### Windows 平台
 ```powershell
-$env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://static.dataflux.cn/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
+$env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module bitstransfer; start-bitstransfer -source https://static.guance.com/security-checker/install.ps1 -destination .install.ps1; powershell .install.ps1;
 ```
 
 

@@ -1,7 +1,9 @@
 package global
 
 import (
-	"crypto/md5" // #nosec
+
+	// #nosec
+	"crypto/md5"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -29,8 +31,7 @@ func isRuning(pidFile string) bool {
 	var name string
 	var p *process.Process
 
-	cont, err := ioutil.ReadFile(pidFile)
-
+	cont, err := ioutil.ReadFile(filepath.Clean(pidFile))
 	// pid文件不存在
 	if err != nil {
 		return false
@@ -62,13 +63,15 @@ func CheckMd5(releaseType string) {
 		fmt.Printf("http get err=%v \n", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	remoteVal, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("read response body err=%v \n", err)
 		return
 	}
-	checkLocalPath := filepath.Join(InstallDir, AppBin)
+	checkLocalPath := filepath.Clean(filepath.Join(InstallDir, AppBin))
 	data, err := ioutil.ReadFile(checkLocalPath)
 	if err != nil {
 		fmt.Printf("readFile path=%s, err=%v \n", checkLocalPath, err)
@@ -135,11 +138,13 @@ func symlink(src, dst string) error {
 }
 
 func ChangeFileMode(file string, mode os.FileMode) error {
-	f, err := os.Open(file)
+	f, err := os.Open(filepath.Clean(file))
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	err = f.Chmod(mode)
 	if err != nil {
 		return err

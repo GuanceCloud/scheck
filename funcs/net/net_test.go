@@ -6,6 +6,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+// nolint
 func rangeDepth2Tabel(lv lua.LValue, t *testing.T) {
 	if lv.Type() == lua.LTTable {
 		lt := lv.(*lua.LTable)

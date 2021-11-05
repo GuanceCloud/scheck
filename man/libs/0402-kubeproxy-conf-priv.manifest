@@ -1,0 +1,32 @@
+id="0402-kubeproxy-conf-priv"
+category="container"
+level="warn"
+title="proxy kubeconfig file权限没有设置为644或更高"
+desc="proxy kubeconfig file权限没有设置为644或更高，当前文件权限为{{ .Priv }} "
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+
+os_arch=["Linux"]
+description=["如果您在使用systemd管理服务的计算机上使用kube-proxy，请验证proxy kubeconfig file文件权限是否正确设置为644或更严格。"]
+rationale=["kube-proxy文件包含可能更改kube-proxy守护程序行为的敏感参数。因此，除了root之外的任何其他用户都不应该写它来维护文件的完整性。"]
+riskitems=["容器安全"]
+audit='''执行以下命令以验证文件权限是否设置为“644”或更严格：
+
+```bash
+stat -c %a /var/lib/kube-proxy/config.conf
+```
+'''
+remediation='''执行下面的命令：
+```bash
+#> chmod 644 /var/lib/kube-proxy/config.conf
+```
+这会将文件权限设置为“644”。
+'''
+impact=["无"]
+defaultvalue=["系统上可能不存在此文件。在这种情况下，本建议不适用。默认情况下，如果文件存在，则文件权限将正确设置为644。"]
+references=["[kube-proxy](https://kubernetes.io/docs/admin/kube-proxy/)"]
+CIS=["无"]

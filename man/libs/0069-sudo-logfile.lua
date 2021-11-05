@@ -32,7 +32,6 @@ end
 local function check()
     local cache_key = "/var/log/sudo.log"
     local current = log_file()
-   -- print(current)
     local old = cache.get_cache(cache_key)
 
     if old == nil then

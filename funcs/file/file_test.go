@@ -67,12 +67,14 @@ func Test_provider_fileInfo(t *testing.T) {
 				} else {
 					lv := test.args.l.Get(test.args.l.GetTop())
 					if lv.Type() == lua.LTTable {
-						lt := lv.(*lua.LTable)
-						lt.ForEach(func(key lua.LValue, value lua.LValue) {
-							keyStr := lua.LVAsString(key)
-							valStr := lua.LVAsString(value)
-							t.Logf("key=%s val=%s", keyStr, valStr)
-						})
+						lt, ok := lv.(*lua.LTable)
+						if ok {
+							lt.ForEach(func(key lua.LValue, value lua.LValue) {
+								keyStr := lua.LVAsString(key)
+								valStr := lua.LVAsString(value)
+								t.Logf("key=%s val=%s", keyStr, valStr)
+							})
+						}
 					} else {
 						t.Log(lua.LVAsString(lv))
 					}
@@ -87,12 +89,14 @@ func Test_provider_fileInfo(t *testing.T) {
 				} else {
 					lv := test.args.l.Get(test.args.l.GetTop())
 					if lv.Type() == lua.LTTable {
-						lt := lv.(*lua.LTable)
-						lt.ForEach(func(key lua.LValue, value lua.LValue) {
-							keyStr := lua.LVAsString(key)
-							valStr := lua.LVAsString(value)
-							t.Logf("key=%s val=%s", keyStr, valStr)
-						})
+						lt, ok := lv.(*lua.LTable)
+						if ok {
+							lt.ForEach(func(key lua.LValue, value lua.LValue) {
+								keyStr := lua.LVAsString(key)
+								valStr := lua.LVAsString(value)
+								t.Logf("key=%s val=%s", keyStr, valStr)
+							})
+						}
 					}
 				}
 			})

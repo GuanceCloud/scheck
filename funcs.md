@@ -1218,6 +1218,58 @@ cmdline	/usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 3307 -conta
 pid	7062
 ``` 
 
+## 容器相关（container）
+#### sc_docker_exist
+
+`sc_docker_exist()`
+
+check docker run at host
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `boolean` | true docker service exists on the host |
+
+#### sc_docker_containers
+
+`sc_docker_containers()`
+
+check mysql weak password
+
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `[]string` | the containerName list |
+
+
+#### sc_docker_runlike
+
+`sc_docker_runlike(containerName)`
+
+check mysql weak password
+
+*Parameters:*  
+
+| Name | Type | Description | Required |
+| --- | ---- | ---- | ---- |
+| containerName | `string` | image ID | true |
+
+*Return value(s):*  
+
+it issues an error when failed.
+
+| Type | Description |
+| --- | ---- |
+| `string` | the containerName run command |
+
 ## 其他
 #### trigger
 

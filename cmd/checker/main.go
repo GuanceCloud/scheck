@@ -13,8 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
-
 	_ "github.com/go-sql-driver/mysql"
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/checker"
@@ -22,6 +20,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/dumperror"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/service"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/tool"
@@ -158,6 +157,7 @@ func parseCheck() {
 	if *flagCheck {
 		config.LoadConfig(*flagConfig)
 		lua.CheckLua(config.Cfg.System.CustomRuleDir)
+		lua.CheckLua(config.Cfg.System.RuleDir)
 		os.Exit(0)
 	}
 	if *flagTestRule != "" {

@@ -52,8 +52,6 @@ local function check()
             user='root'
             pid=pid..vv['pid']
         end
-        --end
-        --print(pid)
         if port ~= "" then
             trigger({Port=port,User=user,Pid=tostring(pid)})
         end

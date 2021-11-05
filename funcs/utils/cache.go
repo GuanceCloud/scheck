@@ -1,12 +1,12 @@
+// Package utils has json,mysql,cache,utils and so on.
 package utils
 
 import (
 	"fmt"
 	"sync"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 const (
@@ -32,8 +32,8 @@ type (
 	}
 )
 
-// ScriptGlobalCfg:lua运行时回调go函数时，go无法得知是哪个脚本，
-// 所以在每个脚本运行之前都放到global中一个键值对(key:文件名)
+// ScriptGlobalCfg :lua运行时回调go函数时，go无法得知是哪个脚本，
+// 所以在每个脚本运行之前都放到global中一个键值对(key:文件名).
 type ScriptGlobalCfg struct {
 	RulePath string
 }
@@ -60,11 +60,15 @@ func (c *cacheValue) fromLuaVal(lv lua.LValue) {
 		c.len = len(lv.String())
 	case lua.LTTable:
 		var newt lua.LTable
-		t := lv.(*lua.LTable)
-		t.ForEach(func(k lua.LValue, v lua.LValue) {
-			newt.RawSet(k, v)
-		})
+		t, ok := lv.(*lua.LTable)
+		if ok {
+			t.ForEach(func(k lua.LValue, v lua.LValue) {
+				newt.RawSet(k, v)
+			})
+		}
 		c.val = &newt
+	case lua.LTChannel, lua.LTFunction, lua.LTNil, lua.LTThread, lua.LTUserData:
+	default:
 	}
 }
 
@@ -78,11 +82,15 @@ func (c *cacheValue) toLuaVal() lua.LValue {
 		return lua.LString(c.val.(string))
 	case lua.LTTable:
 		var newt lua.LTable
-		t := c.val.(*lua.LTable)
-		t.ForEach(func(k lua.LValue, v lua.LValue) {
-			newt.RawSet(k, v)
-		})
+		t, ok := c.val.(*lua.LTable)
+		if ok {
+			t.ForEach(func(k lua.LValue, v lua.LValue) {
+				newt.RawSet(k, v)
+			})
+		}
 		return &newt
+	case lua.LTChannel, lua.LTFunction, lua.LTNil, lua.LTThread, lua.LTUserData:
+	default:
 	}
 	return lua.LNil
 }
@@ -152,10 +160,10 @@ func SetGlobalCache(l *lua.LState) int {
 	case lua.LTNumber:
 	case lua.LTString:
 	case lua.LTTable:
-
-	default:
+	case lua.LTChannel, lua.LTFunction, lua.LTNil, lua.LTThread, lua.LTUserData:
 		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number'", lv.Type().String())
 		return 0
+	default:
 	}
 
 	val := &cacheValue{}
@@ -173,8 +181,7 @@ func GetGlobalCache(l *lua.LState) int {
 	}
 	key := string(lv.(lua.LString))
 
-	val := globalCache.getKey(key)
-	if val == nil {
+	if val := globalCache.getKey(key); val == nil {
 		l.Push(lua.LNil)
 	} else {
 		l.Push(val.toLuaVal())
@@ -207,7 +214,7 @@ func SetCache(l *lua.LState) int {
 	case lua.LTNumber:
 	case lua.LTString:
 	case lua.LTTable:
-	default:
+	case lua.LTChannel, lua.LTFunction, lua.LTNil, lua.LTThread, lua.LTUserData:
 		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number'", lv.Type().String())
 		return 0
 	}
@@ -233,8 +240,7 @@ func GetCache(l *lua.LState) int {
 		return 0
 	}
 	key := string(lv.(lua.LString))
-	val := sc.getKey(key)
-	if val == nil {
+	if val := sc.getKey(key); val == nil {
 		l.Push(lua.LNil)
 	} else {
 		l.Push(val.toLuaVal())
@@ -292,13 +298,15 @@ func SetScriptGlobalConfig(l *lua.LState, cfg *ScriptGlobalCfg) {
 func GetScriptGlobalConfig(l *lua.LState) *ScriptGlobalCfg {
 	lv := l.GetGlobal(global.LuaConfiguration)
 	if lv.Type() == lua.LTTable {
-		t := lv.(*lua.LTable)
-		var cfg ScriptGlobalCfg
-		v := t.RawGetString(global.LuaConfigurationKey)
-		if v.Type() == lua.LTString {
-			cfg.RulePath = string(v.(lua.LString))
+		t, ok := lv.(*lua.LTable)
+		if ok {
+			var cfg ScriptGlobalCfg
+			v := t.RawGetString(global.LuaConfigurationKey)
+			if v.Type() == lua.LTString {
+				cfg.RulePath = string(v.(lua.LString))
+			}
+			return &cfg
 		}
-		return &cfg
 	}
 	return nil
 }

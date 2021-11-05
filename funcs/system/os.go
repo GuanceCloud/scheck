@@ -1,3 +1,4 @@
+// Package system export fot lua
 package system
 
 import (
@@ -10,17 +11,19 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 )
 
-var apiLock = make(chan int, 1)
-var api = map[string]lua.LGFunction{
-	"hostname":  Hostname,
-	"time_zone": Zone,
-	"uptime":    Uptime,
-	"mounts":    Mounts,
-	"uname":     Uname,
-	"sc_sleep":  Sleep,
-	"sc_ticker": Ticker,
-	"sc_log":    ScLog,
-}
+var (
+	apiLock = make(chan int, 1)
+	api     = map[string]lua.LGFunction{
+		"hostname":  Hostname,
+		"time_zone": Zone,
+		"uptime":    Uptime,
+		"mounts":    Mounts,
+		"uname":     Uname,
+		"sc_sleep":  Sleep,
+		"sc_ticker": Ticker,
+		"sc_log":    ScLog,
+	}
+)
 
 func Loader(l *lua.LState) int {
 	apiLock <- 0
@@ -115,8 +118,8 @@ func Sleep(l *lua.LState) int {
 }
 
 func Ticker(l *lua.LState) int {
-	var chanN = 1
-	var intN = 2
+	chanN := 1
+	intN := 2
 	var interval time.Duration
 	scChan := l.ToChannel(chanN)
 	lv := l.Get(intN)

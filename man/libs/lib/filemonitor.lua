@@ -132,6 +132,12 @@ local function is_root_ownership(file)
 	return res, uid, gid
 end
 
+local function user_ownership(file)
+	local mode = sc_file.file_info(file)
+	local username = mode['username']
+	return username
+end
+
 function filemonitor.priv_root_ownership(file)
 
 	if not sc_file.file_exist(file) then
@@ -156,5 +162,27 @@ function filemonitor.priv_root_ownership(file)
 	end
 end
 
+function filemonitor.priv_ownership(file,user)
+	if not sc_file.file_exist(file) then
+		return
+	end
+	local cache_key='user_ownership'
+	local old = cache.get_cache(cache_key)
+	if old == nil then
+		local username = user_ownership(file)
+		if username ~= user then
+			trigger()
+		end
+		cache.set_cache(cache_key, username)
+		return
+	end
+	local username = user_ownership(file)
+	if old ~= username  then
+		if username ~= user then
+			trigger()
+		end
+		cache.set_cache(cache_key, username)
+	end
+end
 
 return filemonitor

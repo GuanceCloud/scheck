@@ -13,7 +13,6 @@ var (
 	TemplateBox = packr.New("template", "./template")
 )
 
-// GetAllName 返回配置中的所有lua列表 去除后缀名的格式
 func GetAllName() []string {
 	all := ScriptBox.List()
 	rms := make([]string, 0)
@@ -28,8 +27,6 @@ func GetAllName() []string {
 	return rms
 }
 
-// todo 用户自己的lua文件发生变化时可以自动重载 删除文件后 也要从执行脚本列表中删除?
-// ------二次开发使用 从文件夹中读取文件
 func GetTpl(box *packr.Box, name string) (string, error) {
 	return box.FindString(name)
 }
