@@ -1,3 +1,4 @@
+// Package config is scheck config file
 package config
 
 import (
@@ -125,7 +126,7 @@ type Logging struct {
 	Rotate   int    `toml:"rotate"`
 }
 
-// Cgroup cpu&mem 控制量
+// Cgroup cpu&mem 控制量.
 type Cgroup struct {
 	Enable bool    `toml:"enable"`
 	CPUMax float64 `toml:"cpu_max"`
@@ -177,7 +178,7 @@ func DefaultConfig() *Config {
 	return c
 }
 
-// try load old config
+// TryLoadConfig : try load old config.
 func TryLoadConfig(filePath string) bool {
 	type Conf struct {
 		RuleDir       string `toml:"rule_dir"`
@@ -189,12 +190,12 @@ func TryLoadConfig(filePath string) bool {
 		DisableLog    bool   `toml:"disable_log"`
 	}
 	oldConf := new(Conf)
-	cfgData, err := ioutil.ReadFile(filePath)
+	cfgData, err := ioutil.ReadFile(filepath.Clean(filePath))
 	if err != nil {
 		l.Fatalf("ReadFile err %v", err)
 	}
 
-	if err = toml.Unmarshal(cfgData, oldConf); err != nil {
+	if err := toml.Unmarshal(cfgData, oldConf); err != nil {
 		return true
 	}
 	newConf := DefaultConfig()
@@ -217,7 +218,8 @@ func TryLoadConfig(filePath string) bool {
 }
 
 func LoadConfig(p string) {
-	cfgData, _ := ioutil.ReadFile(p)
+	cfgData, _ := ioutil.ReadFile(filepath.Clean(p))
+
 	c := &Config{}
 	if err := toml.Unmarshal(cfgData, c); err != nil {
 		l.Fatalf("marshall  error:%v and  config is= %+v \n", err, c)
@@ -226,7 +228,7 @@ func LoadConfig(p string) {
 	Cfg = c
 }
 
-// Init config init
+// Init config init.
 func (c *Config) Init() {
 	// to init logging
 	c.setLogging()
@@ -234,7 +236,7 @@ func (c *Config) Init() {
 	c.initDir()
 }
 
-// init log
+// init log.
 func (c *Config) setLogging() {
 	// set global log root
 	if c.Logging.Log == "stdout" || c.Logging.Log == "" { // set log to disk file
@@ -243,7 +245,8 @@ func (c *Config) setLogging() {
 		if err := logger.InitRoot(
 			&logger.Option{
 				Level: c.Logging.LogLevel,
-				Flags: optFlags}); err != nil {
+				Flags: optFlags,
+			}); err != nil {
 			l.Errorf("set root log fatal: %s", err.Error())
 		}
 	} else {
@@ -253,7 +256,8 @@ func (c *Config) setLogging() {
 		if err := logger.InitRoot(&logger.Option{
 			Path:  c.Logging.Log,
 			Level: c.Logging.LogLevel,
-			Flags: logger.OPT_DEFAULT}); err != nil {
+			Flags: logger.OPT_DEFAULT,
+		}); err != nil {
 			l.Errorf("set root log faile: %s", err.Error())
 		}
 	}
@@ -261,7 +265,7 @@ func (c *Config) setLogging() {
 	l.Infof("log init ok")
 }
 
-// 初始化配置中的rule文件和用户自定义rules文件
+// 初始化配置中的rule文件和用户自定义rules文件.
 func (c *Config) initDir() {
 	_, err := os.Stat(c.System.CustomRuleDir)
 	if err != nil {
@@ -275,11 +279,13 @@ func (c *Config) initDir() {
 }
 
 func tmplToFile(c *Config, fpath string) {
-	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, global.FileModeRW)
+	f, err := os.OpenFile(filepath.Clean(fpath), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, global.FileModeRW)
 	if err != nil {
 		l.Fatalf("open file err =%v", err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	tmpl, err := template.New("config").Parse(MainConfigSample)
 	if err != nil {
 		l.Fatalf("make template err=%v", err)

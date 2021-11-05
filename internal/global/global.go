@@ -1,3 +1,4 @@
+// Package global : scheck global assignment
 package global
 
 import (
@@ -46,9 +47,9 @@ const (
 	LuaStatusERR        = "warning"
 	LuaCustomIDStart    = 10000
 
-	FileModeRW       = os.FileMode(0644)
-	FileModeMkdir    = os.FileMode(0666)
-	FileModeMkdirAll = os.FileMode(0755)
+	FileModeRW       = os.FileMode(0o644)
+	FileModeMkdir    = os.FileMode(0o666)
+	FileModeMkdirAll = os.FileMode(0o755)
 
 	KB = 1024
 	MB = KB * 1024
@@ -74,10 +75,14 @@ var (
 		OSArchLinux386:    `/usr/local/scheck`,
 		OSArchDarwinAmd64: `/usr/local/scheck`,
 	}
+	OptionSplitChar = map[string]string{
+		OSWindows: "^\r\n  ",
+		OSLinux:   "\\\n  ",
+	}
 	LuaStatusFile      = filepath.Join(InstallDir, ".status.json")
 	LuaStatusOutFileMD = filepath.Join(InstallDir, "%s.lua_status.md")
 
-	// DefLogPath is default config
+	// DefLogPath is default config.
 	DefLogPath      = "/var/log/scheck"
 	DefRulesDir     = "rules.d"
 	LuaLocalLibPath = "lib"

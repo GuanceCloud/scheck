@@ -11,6 +11,7 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	errors "golang.org/x/xerrors"
 )
 
 type MySQLServiceInfo struct {
@@ -31,7 +32,9 @@ func (c *MySQLChecker) Check(host, port, user string) (hit bool, pwd string, err
 	if err != nil {
 		return
 	}
-	defer fd.Close()
+	defer func() {
+		_ = fd.Close()
+	}()
 	c.scanner = bufio.NewScanner(fd)
 
 	var info MySQLServiceInfo
@@ -39,7 +42,7 @@ func (c *MySQLChecker) Check(host, port, user string) (hit bool, pwd string, err
 	info.Port = port
 	info.UserName = user
 
-	var timeSleep = 50
+	timeSleep := 50
 	for {
 		if !c.scanner.Scan() {
 			err = c.scanner.Err()
@@ -69,9 +72,11 @@ func (c *MySQLChecker) hit(info *MySQLServiceInfo) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 	if err := db.Ping(); err != nil {
-		return false, nil
+		return false, err
 	}
 	return true, nil
 }
@@ -106,7 +111,7 @@ func CheckMysqlWeakPassword(l *lua.LState) int {
 
 	hit, pwd, err := mysqlChecker.Check(host, port, user)
 
-	if err != nil && err != io.EOF {
+	if err != nil && errors.Is(err, io.EOF) {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}

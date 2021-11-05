@@ -1,0 +1,39 @@
+id="0422-k8s-authorization-mode"
+category="container"
+level="warn"
+title="kubelet 确保授权模式参数设置的不是：AlwaysAllow"
+desc="kubelet 确保授权模式参数设置应当是Webhook，当前文件权限为{{ .Content }} "
+cron="0 */30 * * *"
+# 开关
+disabled=false
+
+
+
+
+os_arch=["Linux"]
+description=["如果使用Kubelet配置文件，请编辑该文件以将授权：模式设置为Webhook"]
+rationale=["默认情况下，Kubelets允许所有经过身份验证的请求（甚至是匿名请求），而不需要从发送者进行显式授权检查。您应该限制此行为，并且只允许显式授权的请求"]
+riskitems=["容器安全"]
+audit='''执行以下命令以验证：
+```bash
+ps -ef | grep kubelet |grep authorization-mode
+```
+'''
+remediation='''执行下面的命令：
+```bash
+#> vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+```
+设置 --authorization-mode=Webhook
+注意：如果存在--authorization-mode参数 请设置成Webhook。
+如果不存在这个参数，请检查启动kubelet的参数-config所配置的文件，
+并且检查文件中的配置项：authorization: mode 检查并设置成Webhook。
+设置完这些参数后并保证无误后 重启kubelet：
+```bash
+systemctl daemon-reload
+systemctl restart kubelet.service
+```
+'''
+impact=["无"]
+defaultvalue=["默认情况下，--authorization-mode 参数设置为AlwaysAllow"]
+references=["[kubelet](https://kubernetes.io/docs/admin/kubelet/)"]
+CIS=["无"]

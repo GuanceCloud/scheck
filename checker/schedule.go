@@ -11,15 +11,12 @@ import (
 	"time"
 
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 )
 
-var (
-	pool *statePool
-)
+var pool *statePool
 
-// only exec cron timer cron
+// TaskScheduler :only exec cron timer cron.
 type TaskScheduler struct {
 	rulesDir        string
 	customRuleDir   string
@@ -31,7 +28,7 @@ type TaskScheduler struct {
 	lock            sync.Mutex
 }
 
-// NewTaskScheduler: return a Controller Scheduler
+// NewTaskScheduler : return a Controller Scheduler.
 func NewTaskScheduler(rulesDir, customRuleDir string, hotUpdate bool) *TaskScheduler {
 	schedule := &TaskScheduler{
 		rulesDir:        rulesDir,
@@ -90,7 +87,8 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 			if !r.disabled {
 				if isCustom {
 					if !scheduler.checkName(r.Name) {
-						l.Warnf("scheck: is forbidden to have the same name,and the file in %s", filepath.Join(global.InstallDir, global.DefRulesDir))
+						l.Warnf("scheck: is forbidden to have the same name,and the file in %s",
+							filepath.Join(global.InstallDir, global.DefRulesDir))
 						continue
 					}
 				}
@@ -108,7 +106,7 @@ func (scheduler *TaskScheduler) LoadFromFile(ruleDir string) {
 	}
 }
 
-// stop all
+// Stop :stop all.
 func (scheduler *TaskScheduler) Stop() {
 	if len(scheduler.onceTasks) != 0 {
 		scheduler.stop <- struct{}{}
@@ -116,7 +114,7 @@ func (scheduler *TaskScheduler) Stop() {
 	scheduler.stop <- struct{}{}
 }
 
-// doAndReset: reset the rule next runtime
+// doAndReset: reset the rule next runtime.
 func (scheduler *TaskScheduler) doAndReset(key string) {
 	scheduler.lock.Lock()
 	defer scheduler.lock.Unlock()
@@ -127,7 +125,7 @@ func (scheduler *TaskScheduler) doAndReset(key string) {
 	}
 }
 
-// run task list
+// run :task list.
 func (scheduler *TaskScheduler) run() {
 	if len(scheduler.tasks) == 0 {
 		l.Warnf("schedules is empty....")
@@ -167,9 +165,9 @@ func (scheduler *TaskScheduler) run() {
 	}
 }
 
-// runOther: if rule.cron=disable then rule run once.
+// runOnce : if rule.cron=disable then rule run once.
 func (scheduler *TaskScheduler) runOnce() {
-	var onces = len(scheduler.onceTasks)
+	onces := len(scheduler.onceTasks)
 	if onces == 0 {
 		l.Warnf("schedules:the long term ruler task is empty....")
 		return
@@ -246,7 +244,7 @@ func (scheduler *TaskScheduler) GetRuleByName(filename string) *Rule {
 	return nil
 }
 
-// return a task and key In task list
+// GetTask :return a task and key In task list.
 func (scheduler *TaskScheduler) GetTask() (task *Rule, tempKey string) {
 	min := int64(0)
 	tempKey = ""
@@ -283,7 +281,7 @@ func (scheduler *TaskScheduler) addRule(r *Rule) {
 	scheduler.manifests[r.Name] = r.manifest
 }
 
-// hotUpdate :timing to Update users rules if file has change
+// hotUpdate :timing to Update users rules if file has change.
 func (scheduler *TaskScheduler) hotUpdate() {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
@@ -298,7 +296,7 @@ func (scheduler *TaskScheduler) hotUpdate() {
 	}
 }
 
-// deleteUserRule: delete rule and delete monitor
+// deleteUserRule : delete rule and delete monitor.
 func (scheduler *TaskScheduler) deleteUserRule(checkFiles map[string]bool) {
 	scheduler.lock.Lock()
 	defer scheduler.lock.Unlock()
@@ -337,7 +335,7 @@ func checkID(luaName string) bool {
 	return true
 }
 
-// fileModify:return modify times sum of lua file and manifest file.
+// fileModify :return modify times sum of lua file and manifest file.
 func fileModify(filePath string) int64 {
 	fileInfo, _ := os.Stat(filePath)
 	ruleModify := fileInfo.ModTime().Unix()

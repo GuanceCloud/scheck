@@ -11,9 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
-
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/impl"
 )
 
@@ -41,17 +40,20 @@ var darwinAPI = map[string]lua.LGFunction{
 	"rpm_query":          RpmQuery,
 }
 
+// nolint
 func KernelInfo(l *lua.LState) int {
 	var kernel lua.LTable
 
 	if data, err := ioutil.ReadFile(`/proc/cmdline`); err == nil {
 		args := strings.Split(string(data), " ")
 		additionalArguments := ""
+		var boot = 11
+		var argL = 5
 		for _, arg := range args {
-			if len(arg) > 11 && arg[0:11] == "BOOT_IMAGE=" {
-				kernel.RawSetString("path", lua.LString(arg[11:]))
-			} else if len(arg) > 5 && arg[0:5] == "root=" {
-				kernel.RawSetString("device", lua.LString(arg[5:]))
+			if len(arg) > boot && arg[0:boot] == "BOOT_IMAGE=" {
+				kernel.RawSetString("path", lua.LString(arg[boot:]))
+			} else if len(arg) > argL && arg[0:argL] == "root=" {
+				kernel.RawSetString("device", lua.LString(arg[argL:]))
 			} else {
 				if additionalArguments != "" {
 					additionalArguments += " "
@@ -77,7 +79,7 @@ func KernelInfo(l *lua.LState) int {
 
 func KernelModules(l *lua.LState) int {
 	var result lua.LTable
-	var partsMax = 5
+	partsMax := 5
 	if data, err := ioutil.ReadFile(`/proc/modules`); err == nil {
 		mods := strings.Split(string(data), "\n")
 		for _, mod := range mods {
@@ -138,6 +140,7 @@ func Users(l *lua.LState) int {
 	return 1
 }
 
+// nolint
 func Shadow(l *lua.LState) int {
 	var partsL = 9
 	file, err := os.Open("/etc/shadow")
@@ -145,7 +148,9 @@ func Shadow(l *lua.LState) int {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	var result lua.LTable
 	reader := bufio.NewReader(file)
@@ -172,14 +177,12 @@ func Shadow(l *lua.LState) int {
 		psw := parts[1]
 		if psw == "" {
 			status = "empty"
+		} else if psw == "!!" {
+			status = "not-set"
+		} else if psw[:1] == "*" || psw[:1] == "!" || psw[:1] == "x" {
+			status = "locked"
 		} else {
-			if psw == "!!" {
-				status = "not-set"
-			} else if psw[:1] == "*" || psw[:1] == "!" || psw[:1] == "x" {
-				status = "locked"
-			} else {
-				status = "active"
-			}
+			status = "active"
 		}
 
 		if d, err := strconv.Atoi(parts[2]); err == nil && d > 0 {
@@ -344,11 +347,13 @@ func ShellHistory(l *lua.LState) int {
 }
 
 func parseUtmpFile(file string) (*lua.LTable, error) {
-	f, err := os.Open(file)
+	f, err := os.Open(filepath.Clean(file))
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	var result lua.LTable
 	utmps, err := impl.ParseUtmp(f)
 	if err != nil {
@@ -507,7 +512,7 @@ func Sysctl(l *lua.LState) int {
 
 	lines := strings.Split(buf.String(), "\n")
 	var result lua.LTable
-	var lineL = 2
+	lineL := 2
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, "=")

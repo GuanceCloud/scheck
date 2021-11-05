@@ -14,17 +14,24 @@ import (
 
 */
 
+// nolint
 func rangeDepth2Tabel(lv lua.LValue, t *testing.T) {
 	if lv.Type() == lua.LTTable {
-		lt := lv.(*lua.LTable)
-		lt.ForEach(func(_ lua.LValue, value lua.LValue) {
-			valT := value.(*lua.LTable)
-			valT.ForEach(func(name lua.LValue, cron lua.LValue) {
-				nameStr := lua.LVAsString(name)
-				cronStr := lua.LVAsString(cron)
-				t.Logf("show:  %s : %s", nameStr, cronStr)
+		if lt, ok := lv.(*lua.LTable); !ok {
+			return
+		} else {
+			lt.ForEach(func(_ lua.LValue, value lua.LValue) {
+				valT, ok := value.(*lua.LTable)
+				if !ok {
+					return
+				}
+				valT.ForEach(func(name lua.LValue, cron lua.LValue) {
+					nameStr := lua.LVAsString(name)
+					cronStr := lua.LVAsString(cron)
+					t.Logf("show:  %s : %s", nameStr, cronStr)
+				})
 			})
-		})
+		}
 	}
 }
 
@@ -143,13 +150,15 @@ func TestUname(t *testing.T) {
 			} else {
 				lv := test.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
-					lt := lv.(*lua.LTable)
-					lt.ForEach(func(key lua.LValue, value lua.LValue) {
-						keyStr := lua.LVAsString(key)
-						valStr := lua.LVAsString(value)
-						t.Logf("key=%s val=%s", keyStr, valStr)
-					})
-					t.Log("uname  run ok ")
+					lt, ok := lv.(*lua.LTable)
+					if ok {
+						lt.ForEach(func(key lua.LValue, value lua.LValue) {
+							keyStr := lua.LVAsString(key)
+							valStr := lua.LVAsString(value)
+							t.Logf("key=%s val=%s", keyStr, valStr)
+						})
+						t.Log("uname  run ok ")
+					}
 				}
 			}
 		})

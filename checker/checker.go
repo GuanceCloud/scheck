@@ -1,3 +1,4 @@
+// Package checker start to scheck
 package checker
 
 import (
@@ -32,7 +33,7 @@ type Checker struct {
 	taskScheduler *TaskScheduler
 }
 
-// Start
+// Start : start check.
 func Start(ctx context.Context, confSys *config.System, outputpath *config.ScOutput) {
 	l = logger.SLogger("checker")
 	luafuncs.Start()

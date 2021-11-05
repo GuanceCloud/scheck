@@ -1,7 +1,6 @@
 package checker
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -14,17 +13,16 @@ import (
 	"text/template"
 	"time"
 
-	lua2 "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
-
 	"github.com/influxdata/toml"
 	"github.com/influxdata/toml/ast"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
+	lua2 "gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/luafuncs"
 )
 
-// Rule corresponding to a lua script file
+// Rule corresponding to a lua script file.
 type Rule struct {
 	File     string
 	Name     string
@@ -60,7 +58,7 @@ func newRule(path string) *Rule {
 	}
 }
 
-// load 从文件夹中加载
+// load 从文件夹中加载.
 func (r *Rule) load() error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
@@ -224,7 +222,7 @@ func (rm *RuleManifest) parse() (err error) {
 		return
 	}
 	// 去掉有可能在UTF8编码中存在的BOM头
-	contents = bytes.TrimPrefix(contents, []byte("\xef\xbb\xbf"))
+	// contents = bytes.TrimPrefix(contents, []byte("\xef\xbb\xbf"))
 	tbl, err = toml.Parse(contents)
 	if err != nil {
 		l.Warnf("toml.Parse err=%v", err)
@@ -256,14 +254,14 @@ func (rm *RuleManifest) parse() (err error) {
 	rm1.setRequireKey(tbl, requireKeys)
 
 	for k, bset := range requireKeys {
-		var notRequire = "timeout"
+		notRequire := "timeout"
 		if !bset && k != notRequire {
 			return fmt.Errorf("%s must not be empty", k)
 		}
 	}
 	// 模版rm.Desc
 	if rm1.tmpl, err = template.New("test").Parse(rm1.Desc); err != nil {
-		return fmt.Errorf("invalid desc: %s", err)
+		return fmt.Errorf("invalid desc: %w", err)
 	}
 
 	if err := rm1.setTag(tbl, requireKeys, invalidField); err != nil {
@@ -447,7 +445,7 @@ var cronMaps = map[int]int64{
 var cronInterval = []int64{60, 60, 24, 30, 1, 1}
 
 func checkRunTime(cronStr string) int64 {
-	var millis = 1000
+	millis := 1000
 	nextRunTime := int64(0)
 	fields := strings.Fields(cronStr)
 	for idx, f := range fields {

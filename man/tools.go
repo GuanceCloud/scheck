@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -36,10 +37,10 @@ type Tmp struct {
 }
 
 /*
-list to string
+list to string.
 */
 func (t *Tmp) arrayTostring(i []string) string {
-	var str = ""
+	str := ""
 	for k, v := range i {
 		if k == 0 {
 			str += v
@@ -54,7 +55,7 @@ func (t *Tmp) htmlURL(i []string) string {
 	str := ""
 	for _, v := range i {
 		title := ""
-		url := ""
+		var urlstr string
 		spaceRe := regexp.MustCompile(regexpStr)
 
 		matches := spaceRe.FindAllStringSubmatch(v, -1)
@@ -65,15 +66,15 @@ func (t *Tmp) htmlURL(i []string) string {
 			spaceRe, _ := regexp.Compile(regexpHTTP)
 			matches := spaceRe.FindAllStringSubmatch(v, -1)
 			if matches != nil {
-				url = matches[0][0]
-				str += fmt.Sprintf("<a href=\"%s\" target=\"_blank\">%s</a>\n<br/>", url, title)
+				urlstr = matches[0][0]
+				str += fmt.Sprintf("<a href=\"%s\" target=\"_blank\">%s</a>\n<br/>", urlstr, title)
 			}
 		} else {
 			spaceRe, _ := regexp.Compile(regexpHTTP)
 			matches := spaceRe.FindAllStringSubmatch(v, -1)
 			if matches != nil {
-				url = matches[0][0]
-				str += fmt.Sprintf("<a href=\"%s\" target=\"_blank\">%s</a>\n", url, url)
+				urlstr = matches[0][0]
+				str += fmt.Sprintf("<a href=\"%s\" target=\"_blank\">%s</a>\n", urlstr, urlstr)
 			} else {
 				str += "无"
 			}
@@ -95,7 +96,8 @@ func (t *Tmp) GetTemplate() string {
 	}
 	newTmpl, err := template.New(t.Path).Funcs(funcMap).Parse(tpl)
 	if err != nil {
-		l.Fatalf("parsing: %s", err.Error())
+		l.Errorf("parsing: %s", err.Error())
+		return ""
 	}
 	buf := new(bytes.Buffer)
 
@@ -135,13 +137,14 @@ func (m *Markdown) TemplateDecodeFile() error {
 		return err
 	}
 	if err = toml.Unmarshal([]byte(fileStr), m); err != nil {
-		l.Warnf("Deserialization error err=%v", err)
+		l.Warnf("Deserialization error err=%v path=%s", err, m.path)
 		return err
 	}
 	return nil
 }
 
 /*
+PathExists :
 	Determine whether the file or folder exists
 	If the error returned is nil, the file or folder exists
 	If the returned error type is judged as true using OS. Isnotexist(), the file or folder does not exist
@@ -171,7 +174,7 @@ func ScheckDir(id, outputPath string) {
 }
 
 func IsAppand(filePath string) bool {
-	files, _ := ioutil.ReadFile(filePath)
+	files, _ := ioutil.ReadFile(filepath.Clean(filePath))
 	return bytes.Contains(files, []byte("fitOs"))
 }
 
@@ -191,12 +194,14 @@ func ScheckList(dirPath string) []string {
 
 func CreateFile(content, file string) error {
 	file = doFilepath(file)
-	f, err := os.OpenFile(file, os.O_CREATE|os.O_RDWR|os.O_TRUNC, global.FileModeRW)
+	f, err := os.OpenFile(filepath.Clean(file), os.O_CREATE|os.O_RDWR|os.O_TRUNC, global.FileModeRW)
 	if err != nil {
 		l.Fatalf("fail to open file err=%v", err)
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	_, err = f.Write([]byte(content))
 	if err != nil {
 		l.Fatalf("fail to write to file err=%v", err)
@@ -237,10 +242,10 @@ func DfTemplate(filesName []string, outputPath string) {
 		count++
 	}
 
-	l.Debugf("Template generation MF quantity =%d, in%s directory \n", count, outputPath)
+	l.Debugf("Template generation MF quantity =%d, in%s directory ", count, outputPath)
 }
 
-// The parameter is a file list without a file suffix
+// ToMakeMdFile :The parameter is a file list without a file suffix.
 func ToMakeMdFile(filesName []string, outputPath string) {
 	if _, err := os.Stat(outputPath); err != nil {
 		if err := os.MkdirAll(outputPath, os.ModeDir|os.ModePerm); err != nil {
@@ -292,6 +297,7 @@ func ToMakeMdFile(filesName []string, outputPath string) {
 }
 
 /*
+ScheckCoreSyncDisk :
 	Clear system script path
 	Rewrite script
 

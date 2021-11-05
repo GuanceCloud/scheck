@@ -4,7 +4,10 @@ package file
 
 import (
 	"os"
+	"strconv"
 	"syscall"
+
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/impl"
 
 	lua "github.com/yuin/gopher-lua"
 )
@@ -27,6 +30,22 @@ func fileInfo2Table(fi os.FileInfo, table *lua.LTable) {
 	table.RawSetString("ctime", lua.LNumber(st.Ctim.Sec))
 	table.RawSetString("mtime", lua.LNumber(st.Mtim.Sec))
 	table.RawSetString("atime", lua.LNumber(st.Atim.Sec))
+
+	if st.Uid == 0 {
+		table.RawSetString("username", lua.LString("root"))
+	} else {
+		if us, err := impl.GetUserDetail(""); err == nil {
+			for _, u := range us {
+				if u.UID != "0" {
+					if uid, err := strconv.Atoi(u.UID); err == nil {
+						if uint32(uid) == st.Uid {
+							table.RawSetString("username", lua.LString(u.Name))
+						}
+					}
+				}
+			}
+		}
+	}
 
 	typ := "-"
 	mod := fi.Mode().String()

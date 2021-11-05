@@ -15,7 +15,6 @@ func BenchmarkGetState(b *testing.B) {
 	}
 }
 
-// nolint
 func TestInitStatePool(t *testing.T) {
 	type args struct {
 		initCap int
@@ -30,6 +29,7 @@ func TestInitStatePool(t *testing.T) {
 		{name: "less", args: args{initCap: 20, totCap: 15}},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			InitStatePool(tt.args.initCap, tt.args.totCap)
 		})

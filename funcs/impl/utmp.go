@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+
+	errors "golang.org/x/xerrors"
 )
 
 const (
@@ -59,7 +61,7 @@ func ParseUtmp(file io.Reader) ([]*Utmp, error) {
 	for {
 		u, readErr := readLine(file)
 		if readErr != nil {
-			if readErr == io.EOF {
+			if errors.Is(readErr, io.EOF) {
 				break
 			}
 			return nil, readErr
@@ -69,7 +71,7 @@ func ParseUtmp(file io.Reader) ([]*Utmp, error) {
 	return us, nil
 }
 
-// read utmp
+// read utmp.
 func readLine(file io.Reader) (*utmpImpl, error) {
 	u := new(utmpImpl)
 
@@ -107,7 +109,7 @@ func newUtmp(u *utmpImpl) *Utmp {
 	}
 }
 
-// get byte \0 index
+// get byte \0 index.
 func getByteLen(byteArray []byte) int {
 	n := bytes.IndexByte(byteArray, 0)
 	if n == -1 {

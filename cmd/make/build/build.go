@@ -1,7 +1,10 @@
+// Package build :build & download
 package build
 
 import (
-	"crypto/md5" // #nosec
+
+	// #nosec
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -32,7 +35,6 @@ var (
 	}
 	ArchLen        = 2
 	ReleaseVersion = git.Version
-	CommandName    = "go"
 )
 
 var (
@@ -78,7 +80,8 @@ func prepare() *versionDesc {
 		l.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(PubDir, Release, "version"), versionInfo, os.ModeAppend|os.ModePerm); err != nil {
+	err = ioutil.WriteFile(filepath.Join(PubDir, Release, "version"), versionInfo, os.ModeAppend|os.ModePerm)
+	if err != nil {
 		l.Fatal(err)
 	}
 
@@ -151,7 +154,7 @@ func Compile() {
 }
 
 func calcMD5(path string) string {
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(path) // nolint
 	if err != nil {
 		return ""
 	}
@@ -177,7 +180,8 @@ func compileArch(bin, goos, goarch, dir, version string) {
 		"build",
 		"-o", output,
 		"-ldflags",
-		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s -X main.DownloadURL=%s", ReleaseType, version, DownloadAddr),
+		fmt.Sprintf("-w -s -X main.ReleaseType=%s -X main.Version=%s -X main.DownloadURL=%s",
+			ReleaseType, version, DownloadAddr),
 		MainEntry,
 	}
 
@@ -198,7 +202,8 @@ func compileArch(bin, goos, goarch, dir, version string) {
 	if fileMd5 == "" {
 		l.Fatalf("fail to compute md5: %s", output)
 	}
-	if err := ioutil.WriteFile(filepath.Join(PubDir, Release, md5File), []byte(fileMd5), os.ModeAppend|os.ModePerm); err != nil {
+	err = ioutil.WriteFile(filepath.Join(PubDir, Release, md5File), []byte(fileMd5), os.ModeAppend|os.ModePerm)
+	if err != nil {
 		l.Fatalf("fail to write md5 checksum, %s", err)
 	}
 }
@@ -230,7 +235,8 @@ func buildInstaller(outdir, goos, goarch, installerName string) {
 }
 
 func runEnv(args, env []string) ([]byte, error) {
-	cmd := exec.Command(CommandName, args...)
+	name := "go"
+	cmd := exec.Command(name, args...) // nolint:gosec
 	if env != nil {
 		cmd.Env = append(os.Environ(), env...)
 	}

@@ -21,22 +21,31 @@ func Trigger(ls *lua.LState) int {
 	templateVals := map[string]string{}
 	lv := ls.Get(global.LuaArgIdx1)
 	if lv != lua.LNil {
-		switch lv.Type() {
+		switch lv.Type() { // nolint
 		case lua.LTTable:
-			templateTable = lv.(*lua.LTable)
+			var ok bool
+			templateTable, ok = lv.(*lua.LTable)
+			if !ok {
+				l.Warnf("type assertion checked error")
+			}
 		case lua.LTString:
 			manifestFileName = string(lv.(lua.LString))
+		default:
 		}
 	}
 
 	lv = ls.Get(global.LuaArgIdx2)
 	if lv.Type() == lua.LTTable {
-		templateTable = lv.(*lua.LTable)
+		var ok bool
+		templateTable, ok = lv.(*lua.LTable)
+		if !ok {
+			l.Warnf("type assertion checked error")
+		}
 	}
 
 	if templateTable != nil {
 		templateTable.ForEach(func(k lua.LValue, v lua.LValue) {
-			switch v.Type() {
+			switch v.Type() { // nolint
 			case lua.LTBool:
 			case lua.LTNumber:
 			case lua.LTString:

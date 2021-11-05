@@ -10,9 +10,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
-/*
- send Msg to datakit
-*/
+// DatakitWriter :send Msg to datakit.
 type DatakitWriter struct {
 	httpURL      string
 	pending      []*sample
@@ -25,7 +23,7 @@ func newDatakitWriter(filePath string, maxPending int) *DatakitWriter {
 	if !strings.HasPrefix(filePath, "http://") && !strings.HasPrefix(filePath, "https://") {
 		filePath = "http://" + filePath
 	}
-	var chanL = 10
+	chanL := 10
 	dk := &DatakitWriter{
 		httpURL:      filePath,
 		maxPending:   maxPending,
@@ -38,10 +36,10 @@ func newDatakitWriter(filePath string, maxPending int) *DatakitWriter {
 }
 
 func (dk *DatakitWriter) Stop() {
-
 }
 
-func (dk *DatakitWriter) ReadMsg(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) {
+func (dk *DatakitWriter) ReadMsg(measurement string,
+	tags map[string]string, fields map[string]interface{}, t ...time.Time) {
 	var data []byte
 	var err error
 	data, err = makeMetric(measurement, tags, fields, t...)
@@ -52,7 +50,7 @@ func (dk *DatakitWriter) ReadMsg(measurement string, tags map[string]string, fie
 }
 
 func (dk *DatakitWriter) start() {
-	var timeSleep = 10
+	timeSleep := 10
 	for {
 		select {
 		case sam := <-dk.samSig:
@@ -99,7 +97,9 @@ func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 		return
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		l.Errorf("%s", err)

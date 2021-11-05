@@ -13,7 +13,7 @@ type dumperror struct {
 	needdump bool
 }
 
-func CreateDumpError(flag bool) *dumperror {
+func createDumpError(flag bool) *dumperror {
 	tNow := time.Now()
 	timeNow := tNow.Format("20060102-150405")
 	logFolder := global.DumpFolder
@@ -33,23 +33,26 @@ func CreateDumpError(flag bool) *dumperror {
 	name := logFolder + "/" + timeNow + "_dump.log"
 	dump := &dumperror{
 		filename: name,
-		needdump: flag}
+		needdump: flag,
+	}
 	dump.DumpError()
 	return dump
 }
 
-func (Dump *dumperror) DumpError() {
-	if Dump.needdump {
-		logFile, err := os.OpenFile(Dump.filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0660)
+func (dump *dumperror) DumpError() {
+	if dump.needdump {
+		logFile, err := os.OpenFile(dump.filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, global.FileModeRW)
 		if err != nil {
 			l.Errorf("open dump file err:%v", err)
 			return
 		}
-		defer logFile.Close()
-		syscall.Dup2(int(logFile.Fd()), int(os.Stderr.Fd()))
+		defer func() {
+			_ = logFile.Close()
+		}()
+		_ = syscall.Dup2(int(logFile.Fd()), int(os.Stderr.Fd()))
 	}
 }
 
 func Start() {
-	CreateDumpError(true)
+	createDumpError(true)
 }

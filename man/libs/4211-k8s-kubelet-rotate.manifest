@@ -1,0 +1,30 @@
+id="4211-k8s-kubelet-rotate"
+category="container"
+level="info"
+title="确保--rotate-certificates参数没有设置为false" 
+desc="kubelet启动参数：rotate-certificates，不可以设置为false"
+cron="0 */30 * * *"
+# 开关
+disabled=false
+os_arch=["Linux"]
+
+
+description=["启用kubelet客户端证书"]
+rationale=["会使kubelet在其现有证书到期时通过创建新的csr来替换其客户端证书，确保不会因为证书到期导致集群不可用，从而解决证书的可用性。"]
+riskitems=["容器安全"]
+audit='''执行以下命令以验证：
+```bash
+ps -ef | grep kubelet | grep rotate-certificates
+```
+'''
+remediation='''kubelet 版本要求不能低于v1.16.0
+执行下面的命令：
+```bash
+#> vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+```
+设置或添加参数 --rotate-certificates=true 或者删除 --rotate-certificates=false
+'''
+impact=["您必须重新设置证书参数以确保kubelet运行的安全性和可用性"]
+defaultvalue=["默认情况下：--rotate-certificates=true"]
+references=["[kubelet](https://github.com/kubernetes/kubernetes/pull/41912)","[kubelet-configuration](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/#kubelet-configuration)"]
+CIS=["无"]

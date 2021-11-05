@@ -1,3 +1,4 @@
+// Package net for net func to lua
 package net
 
 import (
@@ -9,11 +10,13 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-var apiLock = make(chan int, 1)
-var api = map[string]lua.LGFunction{
-	"interface_addresses": InterfaceAddresses,
-	"http_get":            HTTPGet,
-}
+var (
+	apiLock = make(chan int, 1)
+	api     = map[string]lua.LGFunction{
+		"interface_addresses": InterfaceAddresses,
+		"http_get":            HTTPGet,
+	}
+)
 
 func Loader(l *lua.LState) int {
 	apiLock <- 0
@@ -69,18 +72,23 @@ func InterfaceAddresses(l *lua.LState) int {
 }
 
 func HTTPGet(l *lua.LState) int {
+	var url string
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
 		return lua.MultRet
+	} else {
+		url = lua.LVAsString(lv)
 	}
-	url := lv.(lua.LString)
-	body, err := http.Get(url.String())
+
+	body, err := http.Get(url) // nolint
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
-	defer body.Body.Close()
+	defer func() {
+		_ = body.Body.Close()
+	}()
 	data, err := ioutil.ReadAll(body.Body)
 	if err != nil {
 		l.RaiseError("%s", err)

@@ -39,7 +39,7 @@ func InitStatePool(initCap, totCap int) {
 	pool = p
 }
 
-// 从池子中获取一个lua state
+// 从池子中获取一个lua state.
 func (p *statePool) getState() *lua.ScriptRunTime {
 	p.lock.Lock()
 	var w *lua.ScriptRunTime
@@ -97,6 +97,5 @@ func (p *statePool) putPool(srt *lua.ScriptRunTime) {
 	} else {
 		srt.Ls.Close()
 	}
-	l.Debugf("put to pool . and running=%d", p.running)
 	p.lock.Unlock()
 }

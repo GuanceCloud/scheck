@@ -46,7 +46,9 @@ func (dump *dumperror) DumpError() {
 			l.Errorf("open dump file err:%v", err)
 			return
 		}
-		defer logFile.Close()
+		defer func() {
+			_ = logFile.Close()
+		}()
 		_ = syscall.Dup3(int(logFile.Fd()), int(os.Stderr.Fd()), 0)
 	}
 }

@@ -13,13 +13,12 @@ import (
 	"time"
 
 	"github.com/elazarl/goproxy"
-
 	tu "gitlab.jiagouyun.com/cloudcare-tools/cliutils/testutil"
 )
 
 func TestProxy(t *testing.T) {
 	tlsServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "hello, tls client")
+		_, _ = fmt.Fprint(w, "hello, tls client")
 	}))
 
 	defer tlsServer.Close()
@@ -42,7 +41,7 @@ func TestProxy(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
-	defer proxysrv.Shutdown(ctx)
+	defer proxysrv.Shutdown(ctx) // nolint
 
 	time.Sleep(time.Second) // wait proxy server OK
 
@@ -95,16 +94,15 @@ func TestProxy(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-
-			defer resp.Body.Close()
 			t.Logf("resp: %s", string(body))
+			_ = resp.Body.Close()
 		}
 	}
 }
 
 func TestInsecureSkipVerify(t *testing.T) {
 	tlsServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "hello, tls client")
+		_, _ = fmt.Fprint(w, "hello, tls client")
 	}))
 
 	defer tlsServer.Close()
@@ -141,15 +139,15 @@ func TestInsecureSkipVerify(t *testing.T) {
 				t.Error(err)
 			}
 
-			defer resp.Body.Close()
 			t.Logf("resp: %s", string(body))
+			_ = resp.Body.Close()
 		}
 	}
 }
 
 func hello(w http.ResponseWriter, req *http.Request) {
 	time.Sleep(time.Millisecond * 50)
-	fmt.Fprintf(w, "hello\n")
+	_, _ = fmt.Fprintf(w, "hello\n")
 }
 
 func TestClientTimeWait(t *testing.T) {
@@ -196,7 +194,7 @@ func TestClientTimeWait(t *testing.T) {
 					t.Error(err)
 				}
 
-				io.Copy(ioutil.Discard, resp.Body)
+				_, _ = io.Copy(ioutil.Discard, resp.Body)
 
 				if err := resp.Body.Close(); err != nil {
 					t.Error(err)

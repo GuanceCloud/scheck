@@ -73,13 +73,14 @@ func TestKernelInfo(t *testing.T) {
 			} else {
 				lv := tt.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
-					lt := lv.(*lua.LTable)
-					lt.ForEach(func(key lua.LValue, value lua.LValue) {
-						keyStr := lua.LVAsString(key)
-						valStr := lua.LVAsString(value)
-						t.Logf("key=%s val=%s", keyStr, valStr)
-					})
-					t.Log("uname  run ok ")
+					if lt, ok := lv.(*lua.LTable); ok {
+						lt.ForEach(func(key lua.LValue, value lua.LValue) {
+							keyStr := lua.LVAsString(key)
+							valStr := lua.LVAsString(value)
+							t.Logf("key=%s val=%s", keyStr, valStr)
+						})
+						t.Log("uname  run ok ")
+					}
 				}
 			}
 		})
@@ -202,15 +203,17 @@ func TestShellHistory(t *testing.T) {
 			} else {
 				lv := tt.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
-					lt := lv.(*lua.LTable)
-					lt.ForEach(func(_ lua.LValue, value lua.LValue) {
-						valT := value.(*lua.LTable)
-						valT.ForEach(func(name lua.LValue, cron lua.LValue) {
-							nameStr := lua.LVAsString(name)
-							cronStr := lua.LVAsString(cron)
-							t.Logf("show crontab:  %s : %s", nameStr, cronStr)
+					if lt, ok := lv.(*lua.LTable); ok {
+						lt.ForEach(func(_ lua.LValue, value lua.LValue) {
+							if valT, ok := value.(*lua.LTable); ok {
+								valT.ForEach(func(name lua.LValue, cron lua.LValue) {
+									nameStr := lua.LVAsString(name)
+									cronStr := lua.LVAsString(cron)
+									t.Logf("show crontab:  %s : %s", nameStr, cronStr)
+								})
+							}
 						})
-					})
+					}
 				}
 			}
 		})
@@ -287,10 +290,11 @@ func TestSysctl(t *testing.T) {
 			} else {
 				lv := tt.args.l.Get(1)
 				if lv.Type() == lua.LTTable {
-					lt := lv.(*lua.LTable)
-					lt.ForEach(func(key lua.LValue, value lua.LValue) {
-						t.Logf("key = %s val=%s", lua.LVAsString(key), lua.LVAsString(value))
-					})
+					if lt, ok := lv.(*lua.LTable); ok {
+						lt.ForEach(func(key lua.LValue, value lua.LValue) {
+							t.Logf("key = %s val=%s", lua.LVAsString(key), lua.LVAsString(value))
+						})
+					}
 				}
 			}
 		})

@@ -1,3 +1,5 @@
+// Package dumperror Output terminal to file
+// and
 package dumperror
 
 import (

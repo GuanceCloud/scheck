@@ -17,7 +17,6 @@ local function check()
         local exist=false
         for ii,vv in ipairs(old) do
             if vv["path"] == v["path"] then
---                  print(vv['name'])
                 exist = true
                 break
             end

@@ -39,18 +39,22 @@ var linuxAPI = map[string]lua.LGFunction{
 	"sysctl":             Sysctl,
 	"rpm_list":           RpmList,
 	"rpm_query":          RpmQuery,
+	"process_command":    getProcessCommand,
 }
 
+// nolint
 func KernelInfo(l *lua.LState) int {
 	var kernel lua.LTable
 	if data, err := ioutil.ReadFile(`/proc/cmdline`); err == nil {
 		args := strings.Split(string(data), " ")
 		additionalArguments := ""
+		var boot = 11
+		var argL = 5
 		for _, arg := range args {
-			if len(arg) > 11 && arg[0:11] == "BOOT_IMAGE=" {
-				kernel.RawSetString("path", lua.LString(arg[11:]))
-			} else if len(arg) > 5 && arg[0:5] == "root=" {
-				kernel.RawSetString("device", lua.LString(arg[5:]))
+			if len(arg) > boot && arg[0:boot] == "BOOT_IMAGE=" {
+				kernel.RawSetString("path", lua.LString(arg[boot:]))
+			} else if len(arg) > argL && arg[0:argL] == "root=" {
+				kernel.RawSetString("device", lua.LString(arg[argL:]))
 			} else {
 				if additionalArguments != "" {
 					additionalArguments += " "
@@ -137,6 +141,7 @@ func Users(l *lua.LState) int {
 	return 1
 }
 
+// nolint
 func Shadow(l *lua.LState) int {
 	var partsL = 9
 	file, err := os.Open("/etc/shadow")
@@ -144,7 +149,9 @@ func Shadow(l *lua.LState) int {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	var result lua.LTable
 	reader := bufio.NewReader(file)
@@ -171,14 +178,12 @@ func Shadow(l *lua.LState) int {
 		psw := parts[1]
 		if psw == "" {
 			status = "empty"
+		} else if psw == "!!" {
+			status = "not-set"
+		} else if psw[:1] == "*" || psw[:1] == "!" || psw[:1] == "x" {
+			status = "locked"
 		} else {
-			if psw == "!!" {
-				status = "not-set"
-			} else if psw[:1] == "*" || psw[:1] == "!" || psw[:1] == "x" {
-				status = "locked"
-			} else {
-				status = "active"
-			}
+			status = "active"
 		}
 
 		if d, err := strconv.Atoi(parts[2]); err == nil && d > 0 {
@@ -343,11 +348,13 @@ func ShellHistory(l *lua.LState) int {
 }
 
 func parseUtmpFile(file string) (*lua.LTable, error) {
-	f, err := os.Open(file)
+	f, err := os.Open(filepath.Clean(file))
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	var result lua.LTable
 	utmps, err := impl.ParseUtmp(f)
 	if err != nil {
@@ -564,5 +571,38 @@ func RpmQuery(l *lua.LState) int {
 	}
 
 	l.Push(lua.LString(buf.String()))
+	return 1
+}
+
+// 获取一个进程的启动的参数：config，crt信息，等
+// 比如：获取scheck的config参数  getProcessCommand（“scheck”，“config”）
+func getProcessCommand(l *lua.LState) int {
+	lv := l.Get(1)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
+	}
+	processName := string(lv.(lua.LString))
+
+	lv2 := l.Get(2)
+	if lv.Type() != lua.LTString {
+		l.TypeError(1, lua.LTString)
+		return lua.MultRet
+	}
+	command := string(lv2.(lua.LString))
+	cmdline := impl.GetCommandLine(processName)
+	if cmdline == "" {
+		l.RaiseError("can not find this process:%s", processName)
+		return lua.MultRet
+	}
+	arguments := impl.GetCmdline(cmdline)
+	for key, val := range arguments {
+		if key == command {
+			l.Push(lua.LString(val))
+			return 1
+		}
+	}
+	// 当没有此参数时或参数为空， 应当返回空 而不是错误。
+	l.Push(lua.LString(""))
 	return 1
 }

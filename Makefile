@@ -61,7 +61,7 @@ endef
 gofmt:
 	@GO111MODULE=off go fmt ./...
 
-local: lint_deps
+local: deps
 	$(call build,local,$(LOCAL_ARCHS),$(LOCAL_DOWNLOAD_ADDR))
 
 local_all: deps
@@ -113,4 +113,4 @@ lint_deps: man gofmt vet
 test_deps: man gofmt vet
 
 lint: lint_deps
-	@golangci-lint run | tee check.err # https://golangci-lint.run/usage/install/#local-installation
+	@golangci-lint run --fix # https://golangci-lint.run/usage/install/#local-installation

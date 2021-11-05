@@ -1,3 +1,4 @@
+// Package output :datakit is upload to aliyun log
 package output
 
 import (
@@ -60,13 +61,14 @@ func (a *AliYunLog) CreateProject() {
 	}
 
 	// ttl is time-to-live(in day) of logs
-	var ttl = 3
+	ttl := 3
 	// shardCnt is the number of shards
-	var shardCnt = 2
+	shardCnt := 2
 	// maxSplitShard is the max number of shard
-	var maxSplitShard = 6
+	maxSplitShard := 6
 	if _, err := a.Client.GetLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName); err != nil {
-		if err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName, ttl, shardCnt, true, maxSplitShard); err != nil {
+		if err := a.Client.CreateLogStore(a.AliSls.ProjectName, a.AliSls.LogStoreName,
+			ttl, shardCnt, true, maxSplitShard); err != nil {
 			l.Errorf("Create LogStore : %s failed %v\n", a.AliSls.LogStoreName, err)
 		}
 	}
@@ -88,7 +90,7 @@ func (a *AliYunLog) CreateProject() {
 
 func (a *AliYunLog) CreateIndex(fields map[string]interface{}) error {
 	indexKey := map[string]sls.IndexKey{}
-	var timeStep = 4
+	timeStep := 4
 	for i := range fields {
 		indexKey[i] = sls.IndexKey{
 			Token:         []string{""},
@@ -157,11 +159,11 @@ func newSls(aliSls *config.AliSls, maxpending int) *AliYunLog {
 }
 
 func (a *AliYunLog) Stop() {
-
 }
 
 //
-func (a *AliYunLog) ReadMsg(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) {
+func (a *AliYunLog) ReadMsg(measurement string, tags map[string]string,
+	fields map[string]interface{}, t ...time.Time) {
 	var data []byte
 	var err error
 

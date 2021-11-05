@@ -1,8 +1,11 @@
+// Package file is go export for lua
 package file
 
 import (
 	"bytes"
-	"crypto/md5" // nolint:gosec
+
+	// nolint:gosec
+	"crypto/md5"
 	"encoding/hex"
 	"io/ioutil"
 	"os"
@@ -16,9 +19,7 @@ import (
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
-var (
-	l = logger.DefaultSLogger("func")
-)
+var l = logger.DefaultSLogger("func")
 
 var api = map[string]lua.LGFunction{
 	"ls":            Ls,
@@ -57,7 +58,7 @@ func Ls(l *lua.LState) int {
 		rescue = bool(lv.(lua.LBool))
 	}
 
-	var files = l.NewTable()
+	files := l.NewTable()
 
 	if !rescue {
 		list, err := ioutil.ReadDir(dir)
@@ -130,7 +131,6 @@ func Info(l *lua.LState) int {
 }
 
 func ReadFile(l *lua.LState) int {
-	content := ""
 	lv := l.Get(1)
 	if lv.Type() != lua.LTString {
 		l.TypeError(1, lua.LTString)
@@ -139,13 +139,12 @@ func ReadFile(l *lua.LState) int {
 
 	path := string(lv.(lua.LString))
 	path = strings.TrimSpace(path)
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
 	}
-	content = string(data)
-	l.Push(lua.LString(content))
+	l.Push(lua.LString(string(data)))
 	return 1
 }
 
@@ -158,7 +157,7 @@ func Hash(l *lua.LState) int {
 
 	path := string(lv.(lua.LString))
 	path = strings.TrimSpace(path)
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(filepath.Clean(path))
 	if err != nil {
 		l.RaiseError("%s", err)
 		return lua.MultRet
@@ -258,12 +257,11 @@ func dirWatch(path string, scchan lua.LChannel) {
 }
 
 func PathWatch(l *lua.LState) int {
-	var strN = 1
-	var chanN = 2
+	strN := 1
+	chanN := 2
 	path := l.ToString(strN)
 	scchan := l.ToChannel(chanN)
-	_, err := os.Stat(path)
-	if err != nil {
+	if _, err := os.Stat(path); err != nil {
 		return lua.MultRet
 	}
 	dirWatch(path, scchan)

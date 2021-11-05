@@ -9,7 +9,7 @@ import (
 )
 
 func fileInfo2Table(fi os.FileInfo, table *lua.LTable) {
-	var fileModeL = 9
+	fileModeL := 9
 	typ := "-"
 	mod := fi.Mode().String()
 	if len(mod) > fileModeL {

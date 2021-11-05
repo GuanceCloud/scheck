@@ -32,7 +32,6 @@ end
 local function check()
     local cache_key = "use_pty"
     local current = use_pty()
-   -- print(current)
     local old = cache.get_cache(cache_key)
 
     if old == nil then

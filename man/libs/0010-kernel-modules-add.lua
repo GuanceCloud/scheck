@@ -16,7 +16,7 @@ local function check()
         local exist=false
         for ii,vv in ipairs(old) do
             if vv["name"] == v["name"] then
-                 --print(vv['name'])
+            
                 exist = true
                 break
             end

@@ -23,7 +23,7 @@ import (
 )
 
 /*
-PacketHeader represents packet header
+PacketHeader represents packet header.
 */
 type PacketHeader struct {
 	Length     uint32
@@ -31,7 +31,7 @@ type PacketHeader struct {
 }
 
 /*
-InitialHandshakePacket represents initial handshake packet sent by MySQL Server
+InitialHandshakePacket represents initial handshake packet sent by MySQL Server.
 */
 type InitialHandshakePacket struct {
 	ProtocolVersion   uint8
@@ -198,7 +198,7 @@ func (r *InitialHandshakePacket) Decode(conn net.Conn) error {
 }
 
 func (r *InitialHandshakePacket) String() string {
-	var fields = make([]string, 0)
+	fields := make([]string, 0)
 	fields = append(fields, fmt.Sprintf("ProtocolVersion: %d", r.ProtocolVersion),
 		fmt.Sprintf("ServerVersion: %s", r.ServerVersion),
 		fmt.Sprintf("ConnectionId: %d", r.ConnectionID),
@@ -229,7 +229,7 @@ func (r CapabilityFlag) Has(flag CapabilityFlag) bool {
 	return r&flag != 0
 }
 
-// Debug Helper
+// String :Debug Helper.
 func (r CapabilityFlag) String() string {
 	var names []string
 

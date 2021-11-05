@@ -1,5 +1,9 @@
 # 用户自定义属于自己的规则文件及lib库
 
+- 版本：%s
+- 发布日期：%s
+- 操作系统支持：windows/amd64,windows/386,linux/arm,linux/arm64,linux/386,linux/amd64
+
 ## scheck规则介绍
 *lua规则介绍*:
 
@@ -88,7 +92,7 @@ systemctl restart scheck.service
 
 登录[观测云](https://www.guance.com) 控制台->导航栏->安全巡检：查看安装巡检信息，发现有一条消息是修改了主机名
 
-   ![image](image-hostname.png)
+   ![image](https://security-checker-prod.oss-cn-hangzhou.aliyuncs.com/img/image-hostname.png)
 
 
 ## 规则库

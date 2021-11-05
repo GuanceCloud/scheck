@@ -1,5 +1,18 @@
 # Scheck 版本历史
 
+## 1.0.5（2021/11/03）
+
+### 发布说明
+
+代码相关
+- 新增 容器相关的[go-openlib](funcs#容器相关（container）)接口函数
+- 增加21个容器相关脚本规则
+- 优化单元测试：有特定的环境需求时可使用mock进行测试
+
+脚本相关：
+- 增加[k8s相关:kube-apiserver,kubelet,etcd检测脚本](0400-k8s-node-conf-priv)
+- 增加[docker相关：container启动命令，container列表等检测脚本](0310-docker-runlike)
+
 ## 1.0.4（2021/10/14）
 
 ### 发布说明

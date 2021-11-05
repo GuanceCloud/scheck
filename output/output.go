@@ -1,3 +1,4 @@
+// Package output : output to log,datakit and aliyun...
 package output
 
 import (
@@ -6,12 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
-
-	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
-
 	ifxcli "github.com/influxdata/influxdb1-client/v2"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/config"
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
 var (
@@ -65,7 +64,7 @@ func Close() {
 	}
 }
 
-// SendMetric lua.trigger callback
+// SendMetric lua.trigger callback.
 func SendMetric(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) error {
 	if uploads == nil {
 		uploads = make(map[string]outPuterInterface)
@@ -75,7 +74,7 @@ func SendMetric(measurement string, tags map[string]string, fields map[string]in
 		uploads["stdout"] = newLocalLog("stdout")
 	}
 	for _, writer := range uploads {
-		go writer.ReadMsg(measurement, tags, fields, t...)
+		writer.ReadMsg(measurement, tags, fields, t...)
 	}
 	return nil
 }

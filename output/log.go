@@ -8,11 +8,10 @@ import (
 	"time"
 
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
-
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
-// localLog 本地存储
+// localLog 本地存储.
 type localLog struct {
 	filePath   string
 	outputFile io.WriteCloser
@@ -49,7 +48,8 @@ func (log *localLog) Stop() {
 	_ = log.outputFile.Close()
 }
 
-func (log *localLog) ReadMsg(measurement string, tags map[string]string, fields map[string]interface{}, t ...time.Time) {
+func (log *localLog) ReadMsg(measurement string,
+	tags map[string]string, fields map[string]interface{}, t ...time.Time) {
 	var data []byte
 	var err error
 	data, err = makeMetric(measurement, tags, fields, t...)
