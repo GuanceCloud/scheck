@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/git"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
 )
 
@@ -19,19 +20,23 @@ type DatakitWriter struct {
 	samSig       chan *sample
 }
 
-func newDatakitWriter(filePath string, maxPending int) *DatakitWriter {
-	if !strings.HasPrefix(filePath, "http://") && !strings.HasPrefix(filePath, "https://") {
-		filePath = "http://" + filePath
+func newDatakitWriter(httpURL string, maxPending int) *DatakitWriter {
+	if !strings.HasPrefix(httpURL, "http://") && !strings.HasPrefix(httpURL, "https://") {
+		httpURL = "http://" + httpURL
 	}
 	chanL := 10
+	version := spiltVersion(git.Version)
+	if version != "" {
+		version = "?version=" + version // 请求参数添加版本信息
+	}
 	dk := &DatakitWriter{
-		httpURL:      filePath,
+		httpURL:      httpURL + version,
 		maxPending:   maxPending,
 		lastSendTime: time.Now().Unix(),
 		samSig:       make(chan *sample, chanL),
 	}
 	go dk.start()
-	l.Infof("init output for datakit ok,path=%s", filePath)
+	l.Infof("init output for datakit ok,path=%s", httpURL)
 	return dk
 }
 
@@ -68,6 +73,7 @@ func (dk *DatakitWriter) start() {
 	}
 }
 
+// ToUpstream :send msg to datakit. The buffer will be emptied whether the message is sent successfully or not.
 func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 	var datas [][]byte
 	for _, s := range sams {
@@ -109,4 +115,14 @@ func (dk *DatakitWriter) ToUpstream(sams ...*sample) {
 		l.Errorf("post %d to %s failed(HTTP: %d): %s, cost %v, data dropped",
 			len(body), dk.httpURL, resp.StatusCode, string(respBody), time.Since(time.Now()))
 	}
+}
+
+func spiltVersion(version string) string {
+	if version == "" {
+		return ""
+	}
+	if !strings.Contains(version, "-") {
+		return version
+	}
+	return strings.Split(version, "-")[0]
 }

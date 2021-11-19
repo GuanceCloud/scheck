@@ -16,6 +16,7 @@
 	- [监控系统用户的变化](scheck-userchange)
 	- [用户自定义规则及lib库](custom-how-to)
 
+- [lua内置标准库和lua-lib](lualib)
 - [Scheck Funcs支持清单](funcs)
 
 - [其他]()

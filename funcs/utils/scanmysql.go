@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	lua "github.com/yuin/gopher-lua"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/funcs/impl"
 	"gitlab.jiagouyun.com/cloudcare-tools/sec-checker/internal/global"
@@ -324,7 +323,7 @@ func MysqlPortsList(l *lua.LState) int {
 			err = handshakePacket.Decode(conn)
 			if err != nil {
 				log.Debugf("Failed to decode packet: %s\n", err.Error())
-				//return
+				// return
 				continue
 			}
 			var item lua.LTable

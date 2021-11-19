@@ -1,5 +1,16 @@
 # Scheck 版本历史
 
+## 1.0.6（2021/11/19）
+
+### 发布说明
+
+代码相关
+- 上报信息到datakit时带上version信息
+- 增加readme-en，[github](https://github.com/DataFlux-cn/scheck) 上下载代码可编译
+- 增加文档 [如何使用lua标准库和lua-lib](lualib)
+- 修复部分规则bug
+
+
 ## 1.0.5（2021/11/03）
 
 ### 发布说明
@@ -13,31 +24,36 @@
 - 增加[k8s相关:kube-apiserver,kubelet,etcd检测脚本](0400-k8s-node-conf-priv)
 - 增加[docker相关：container启动命令，container列表等检测脚本](0310-docker-runlike)
 
+----
+
 ## 1.0.4（2021/10/14）
 
 ### 发布说明
 
-- 修复 scheck安装后version等文件权限混乱
-- 修复 datakit无法上报信息时导致的规则运行异常
-- 调整 lua引用Golang lib[使用方式](funcs)
-- 调整 命令 `-luastatus` 后不再生成本地的html文件和md文件
-- 调整 数据类型文件（密码库）移动至当前目录下的 `data`中，不再随进程重启而覆盖
-- 新增 用户[规则ID规范](custom-how-to#lua规则命名规范)检测 
-- 新增 funcs：删除缓存和删除全局缓存 [方法列表](funcs#del_cache)
-- 内存优化
-- lua规则运行平滑性优化
+- 修复 scheck 安装后 version 等文件权限混乱
+- 修复 datakit 无法上报信息时导致的规则运行异常
+- 调整 lua 引用 golang lib [使用方式](funcs)
+- 调整命令 `-luastatus` 后不再生成本地的 html 文件和 md 文件
+- 调整数据类型文件（密码库）移动至当前目录下的 `data` 中，不再随进程重启而覆盖
+- 新增用户[规则ID规范](custom-how-to#lua规则命名规范)检测 
+- 新增删除缓存和删除全局缓存[方法](funcs#del_cache)
+- 内存使用优化
+- lua 规则运行平滑性优化
 
-脚本相关：
+安全监测脚本相关：
 
-- 增加[crontab检测脚本](0142-crontab-add)
+- 增加[crontab 检测脚本](0142-crontab-add)
 - [加强用户检测频率](0001-user-add)（从轮询形式变成实时监听）
 
+----
 
 ## 1.0.3（2021/09/27）
 
 ### 发布说明
 
 - 修复 fsnotify manifest 文件错误。
+
+----
 
 ## 1.0.2（2021/09/23）
 
@@ -52,8 +68,9 @@
 - 增加 Lua 运行的[统计信息](scheck-how-to#c5609495)
 - 增加命令行 `-check` [功能](scheck-how-to#c5609495)
 
+----
 
-## v2.0.0-67-gd445240（2021/8/27）
+## v1.0.0-67-gd445240（2021/8/27）
 ### 发布说明
 
 脚本相关：
@@ -75,6 +92,7 @@
 - cpu 性能优化
 - 语雀文档重构
 
+----
 
 ## v1.0.1-67-gd445240（2021/6/18）
 ### 发布说明
@@ -87,8 +105,7 @@
 
 - 添加3个func
 
-
-
+----
 
 ## v1.0.1-62-g7715dc6
 ### 发布说明
@@ -107,4 +124,3 @@
 ### Bug 修复
 
 - 优化脚本运行性能
-

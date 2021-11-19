@@ -118,7 +118,7 @@ func ListeningPorts(l *lua.LState) int {
 
 	var result lua.LTable
 	for _, info := range socketList {
-		if info.Family == syscall.AF_UNIX && info.UnixSocketPath == "" {
+		if info.Family == syscall.AF_UNIX { // AF_UNIX:It can only be used for local communication.
 			continue
 		}
 
@@ -150,10 +150,11 @@ func ListeningPorts(l *lua.LState) int {
 				item.RawSetString("family", lua.LString("AF_INET6"))
 			}
 			item.RawSetString("protocol", lua.LString(impl.LinuxProtocolNames[info.Protocol]))
+
+			item.RawSetString("fd", lua.LNumber(info.Fd))
+			item.RawSetString("net_namespace", lua.LNumber(info.Namespace))
+			result.Append(&item)
 		}
-		item.RawSetString("fd", lua.LNumber(info.Fd))
-		item.RawSetString("net_namespace", lua.LNumber(info.Namespace))
-		result.Append(&item)
 	}
 
 	l.Push(&result)

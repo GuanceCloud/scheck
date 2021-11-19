@@ -319,6 +319,7 @@ func procEnumerateProcesses() ([]int, error) {
 	return pids, nil
 }
 
+// GetProcessSimpleInfo :get process info msg.
 func GetProcessSimpleInfo(pid int) (name, path, cmdline string, err error) {
 	if pid < 0 {
 		return

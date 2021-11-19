@@ -119,8 +119,8 @@ func (c *Checker) start(ctx context.Context) {
 
 	if pool != nil {
 		l.Infof("scheduler start")
-		go c.taskScheduler.run()
-		go c.taskScheduler.runOnce()
+		go c.taskScheduler.run()     //nolint:contextcheck
+		go c.taskScheduler.runOnce() //nolint:contextcheck
 	} else {
 		l.Fatalf("pool is nil ,exit!")
 	}

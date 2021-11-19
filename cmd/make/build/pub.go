@@ -195,7 +195,7 @@ func InitOC() *cliutils.OssCli {
 	}
 
 	if ak == "" || sk == "" {
-		l.Fatalf("oss access key or secret key missing, tag=%s", strings.ToUpper(Release))
+		l.Fatalf("oss access key or secret key missing, tag=%s ak=%s sk=%s", strings.ToUpper(Release), ak, sk)
 	}
 	split := 2 // at most 2 substrings
 	ossSlice := strings.SplitN(DownloadAddr, "/", split)

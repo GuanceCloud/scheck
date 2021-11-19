@@ -1,4 +1,4 @@
-// Package output :datakit is upload to aliyun log
+// Package output : upload to aliyunSls log
 package output
 
 import (
