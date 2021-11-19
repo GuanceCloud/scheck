@@ -1,19 +1,38 @@
+简体中文 | [English](readme-en.md)
+
 # Security Checker
 
-一般在运维过程中有非常重要的工作就是对系统，软件，包括日志等一系列的状态进行巡检，传统方案往往是通过工程师编写shell（bash）脚本进行类似的工作，通过一些远程的脚本管理工具实现集群的管理。但这种方法实际上非常危险，由于系统巡检操作存在权限过高的问题，往往使用root方式运行，一旦恶意脚本执行，后果不堪设想。  
-实际情况中存在两种恶意脚本，一种是恶意命令，如 `rm -rf`，另外一种是进行数据偷窃，如将数据通过网络 IO 泄露给外部。 
-因此 Security Checker 希望提供一种新型的安全的脚本方式（限制命令执行，限制本地IO，限制网络IO）来保证所有的行为安全可控，并且 Security Checker 将以日志方式通过统一的网络模型进行巡检事件的收集。同时 Security Checker 将提供海量的可更新的规则库脚本，包括系统，容器，网络，安全等一系列的巡检。
+Scheck 是运行在用户本地机器上的一种安全巡检工具，主要来保证主机所有的行为安全可控，一旦检测到安全巡检事件，它们将被汇总给 [观测云](https://www.guance.com)。在观测云中，用户可以查看并分析自己的主机操作安全性。
 
+在运维工作中，一个非常重要的部分就是对系统、软件、日志等一系列数据进行检查，传统方案往往是通过编写脚本（如 Shell）来处理它们。但这种方法实际上非常危险，由于系统巡检操作存在权限过高的问题，如果权限配置失当（如用 root 方式运行），一旦执行了恶性脚本（数据删除、信息窃取等），后果将不堪设想
 
-[安装/更新](#安装/更新)  
-[配置](#配置)  
-[规则](#检测规则)  
-[测试规则](#测试规则)  
-[行协议](#行协议)  
-[函数](./funcs.md)  
-[示例](#示例)  
+## 使用源码编译&安装
+> 由于Scheck引用了内部库，所以在使用源码安装或二次开发时无法使用go mod tidy/vendor相关命令(无法找到包)，请使用GOPATH模式，并手动将新的第三方库放到`$GOPATH/src`下。
 
-## 安装/更新
+### go get from github
+```shell script
+cd $GOPATH/src
+go get -d  github.com/DataFlux-cn/scheck
+```
+### 依赖
+- `git`
+- `make`:for Makefile
+- `golangci-lint`: for Makefile usage
+- `packr2`: for packaging manuals
+- `tree`: for Makefile manuals
+
+###  build  
+由于scheck是维护在gitlib上，所以项目中引用的路径都是gitlib...，为了方便操作，先设置好编译环境：
+```shell script
+cd $GOPATH/src
+mkdir -p gitlab.jiagouyun.com/cloudcare-tools/sec-checker
+cp -r github.com/DataFlux-cn/scheck/. gitlab.jiagouyun.com/cloudcare-tools/sec-checker/
+cp -r github.com/DataFlux-cn/scheck/vendor/. $GOPATH/src/
+GO111MODULE=off;make
+```
+> make相关指令请查看文件：[Makefile](Makefile)
+
+## 安装/更新  使用二进制进行安装
 ### Linux 平台
 *安装*：  
 ```Shell
@@ -54,6 +73,13 @@ $env:SC_UPGRADE;Set-ExecutionPolicy Bypass -scope Process -Force; Import-Module 
 
 默认安装目录为 `/usr/local/scheck`。
 安装完成后会将可用系统规则安装到`rules.d`子目录下。Security Checker的更新会更新规则包。
+
+## More references(Detailed documentation)
+- [最佳实践](https://www.yuque.com/dataflux/sec_checker/best-practices)
+- scheck [更多命令](https://www.yuque.com/dataflux/sec_checker/scheck-how-to#c5609495)
+- 如何使用lua标准库之外的 [lua-lib](https://www.yuque.com/dataflux/sec_checker/lualib) , [go-openlib](https://www.yuque.com/dataflux/sec_checker/funcs)
+- 现有的规则库[列表](https://www.yuque.com/dataflux/sec_checker/0001-user-add)
+- 用户自定义属于自己的规则文件及创建lib库，[从零开始教程](https://www.yuque.com/dataflux/sec_checker/custom-how-to)
 
 ## 配置
 

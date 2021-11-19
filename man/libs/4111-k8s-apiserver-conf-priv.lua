@@ -9,7 +9,7 @@ local cache = require("cache")
 local filemonitor = require("filemonitor")
 
 local function check(files)
-    local kube_node = cache.get_global_cache('kube_apiserver')
+    local kube_node = cache.get_global_cache('apiserver')
     if kube_node == nil or not kube_node then
         return
     end

@@ -47,6 +47,7 @@ func InitModules() {
 	goOpenLibsMux.modules["json"] = utils.JSONLoader
 	goOpenLibsMux.modules["cache"] = utils.CacheLoader
 	goOpenLibsMux.modules["mysql"] = utils.MysqlLoader
+	utils.InitLog()
 }
 
 func HandleFunc(pattern string, f func(state *lua.LState) int) {

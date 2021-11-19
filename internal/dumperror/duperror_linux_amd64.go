@@ -34,7 +34,8 @@ func createDumpError(flag bool) *dumperror {
 	name := filepath.Join(logFolder, timeNow+"_dump.log")
 	dump := &dumperror{
 		filename: name,
-		needdump: flag}
+		needdump: flag,
+	}
 	dump.DumpError()
 	return dump
 }

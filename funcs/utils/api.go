@@ -2,7 +2,14 @@ package utils
 
 import (
 	lua "github.com/yuin/gopher-lua"
+	"gitlab.jiagouyun.com/cloudcare-tools/cliutils/logger"
 )
+
+var log = logger.DefaultSLogger("utils")
+
+func InitLog() {
+	log = logger.SLogger("utils")
+}
 
 var jsonAPI = map[string]lua.LGFunction{
 	"json_encode": JSONEncode,
@@ -26,6 +33,9 @@ var mysqlAPI = map[string]lua.LGFunction{
 
 var utilsAPI = map[string]lua.LGFunction{
 	"get_command_value": CommandValue,
+	"sc_hash_md5":       HashMd5,
+	"sc_hash_sha256":    HashSha256,
+	"sc_hash_sha1":      HashSha1,
 }
 
 func UtilsLoader(l *lua.LState) int {

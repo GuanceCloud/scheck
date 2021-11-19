@@ -1,4 +1,5 @@
-//+build windows
+//go:build windows
+// +build windows
 
 package file
 
@@ -9,10 +10,9 @@ import (
 )
 
 func fileInfo2Table(fi os.FileInfo, table *lua.LTable) {
-	fileModeL := 9
 	typ := "-"
 	mod := fi.Mode().String()
-	if len(mod) > fileModeL {
+	if len(mod) > 9 {
 		typ = mod[0:1]
 	}
 	table.RawSetString("type", lua.LString(typ))

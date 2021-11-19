@@ -5,7 +5,11 @@
   skip-dirs = []
 
 [linters-settings]
-
+  [linters-settings.gosec]
+    excludes = [
+      "G307", # Deferring unsafe method "Close" on type "\*os.File"
+      "G108", # Profiling endpoint is automatically exposed on /debug/pprof
+    ]
   [linters-settings.govet]
     check-shadowing = false
 
@@ -89,7 +93,8 @@
     "golint", # Too strict
     "interfacer",
     "scopelint", # obsoluted: https://github.com/kyoh86/scopelint#obsoleted
-
+    # "varnamelen", # 变量命令长度不能太短  1.43.0
+    # ireturn, nilnil 版本要求：1.43
     # 代码太复杂
     "gocognit",
     "gocyclo", 

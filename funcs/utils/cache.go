@@ -3,6 +3,7 @@ package utils
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 
 	lua "github.com/yuin/gopher-lua"
@@ -165,7 +166,6 @@ func SetGlobalCache(l *lua.LState) int {
 		return 0
 	default:
 	}
-
 	val := &cacheValue{}
 	val.fromLuaVal(lv)
 
@@ -190,6 +190,14 @@ func GetGlobalCache(l *lua.LState) int {
 }
 
 func SetCache(l *lua.LState) int {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Warnf("set cache err =%v", err)
+			buf := make([]byte, 2048)
+			runtime.Stack(buf, true)
+			log.Warnf("%s", string(buf))
+		}
+	}()
 	globalCfg := GetScriptGlobalConfig(l)
 	if globalCfg == nil || globalCfg.RulePath == "" {
 		return 0
@@ -215,10 +223,9 @@ func SetCache(l *lua.LState) int {
 	case lua.LTString:
 	case lua.LTTable:
 	case lua.LTChannel, lua.LTFunction, lua.LTNil, lua.LTThread, lua.LTUserData:
-		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number'", lv.Type().String())
+		l.RaiseError("invalid value type %s, only support boolean', 'string', 'number','table'", lv.Type().String())
 		return 0
 	}
-
 	val := &cacheValue{}
 	val.fromLuaVal(lv)
 	_ = sc.setKey(key, val)

@@ -27,3 +27,39 @@ func TestGetCmdline(t *testing.T) {
 		})
 	}
 }
+
+func TestGetListeningPorts(t *testing.T) {
+	tests := []struct {
+		name string
+		want []map[string]interface{}
+	}{
+		{name: "case", want: nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetListeningPorts(); got == nil {
+				t.Errorf("GetListeningPorts() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetCommandLine(t *testing.T) {
+	type args struct {
+		processName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "case", args: args{processName: "datakit"}, want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetCommandLine(tt.args.processName); got != tt.want {
+				t.Errorf("GetCommandLine() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

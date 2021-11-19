@@ -48,8 +48,8 @@ func KernelInfo(l *lua.LState) int {
 	if data, err := ioutil.ReadFile(`/proc/cmdline`); err == nil {
 		args := strings.Split(string(data), " ")
 		additionalArguments := ""
-		var boot = 11
-		var argL = 5
+		boot := 11
+		argL := 5
 		for _, arg := range args {
 			if len(arg) > boot && arg[0:boot] == "BOOT_IMAGE=" {
 				kernel.RawSetString("path", lua.LString(arg[boot:]))
@@ -80,7 +80,7 @@ func KernelInfo(l *lua.LState) int {
 
 func KernelModules(l *lua.LState) int {
 	var result lua.LTable
-	var partsMax = 5
+	partsMax := 5
 	if data, err := ioutil.ReadFile(`/proc/modules`); err == nil {
 		mods := strings.Split(string(data), "\n")
 		for _, mod := range mods {
@@ -143,7 +143,7 @@ func Users(l *lua.LState) int {
 
 // nolint
 func Shadow(l *lua.LState) int {
-	var partsL = 9
+	partsL := 9
 	file, err := os.Open("/etc/shadow")
 	if err != nil {
 		l.RaiseError("%s", err)
@@ -428,7 +428,7 @@ func Crontab(l *lua.LState) int {
 	}
 
 	parseLine := func(path, line string, num int) *lua.LTable {
-		var cronL = 5
+		cronL := 5
 		if line == "" {
 			return nil
 		}
@@ -442,7 +442,7 @@ func Crontab(l *lua.LState) int {
 			return nil
 		}
 		var command string
-		var keys = []string{"minute", "hour", "day_of_month", "month", "day_of_week"}
+		keys := []string{"minute", "hour", "day_of_month", "month", "day_of_week"}
 
 		for i := 0; i < len(columns); i++ {
 			if i < cronL {
@@ -513,7 +513,7 @@ func Sysctl(l *lua.LState) int {
 
 	lines := strings.Split(buf.String(), "\n")
 	var result lua.LTable
-	var lineL = 2
+	lineL := 2
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, "=")

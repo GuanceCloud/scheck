@@ -101,7 +101,8 @@ func start() {
 			CPU: &specs.LinuxCPU{
 				Period: &period,
 				Quota:  &q,
-			}})
+			},
+		})
 		if err != nil {
 			l.Debugf("failed of update cgroup: %s", err)
 			continue

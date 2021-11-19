@@ -139,7 +139,7 @@ func (scheduler *TaskScheduler) run() {
 		if next <= 0 {
 			if rule != nil {
 				state := pool.getState()
-				go rule.RunJob(state)
+				go rule.RunJob(state) //nolint:contextcheck
 			}
 			scheduler.doAndReset(key)
 			continue
@@ -152,7 +152,7 @@ func (scheduler *TaskScheduler) run() {
 				state := pool.getState()
 				scheduler.doAndReset(key)
 				if rule != nil {
-					go rule.RunJob(state)
+					go rule.RunJob(state) //nolint:contextcheck
 					timer.Stop()
 				}
 			case <-scheduler.stop:
